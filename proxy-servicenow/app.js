@@ -14,6 +14,7 @@ const logoutRoutes = require('./api/auth/logout');
 const ProductOfferingCatalog = require('./api/ProductOfferingCatalog/index')
 const ProductOfferingCategory = require('./api/ProductOfferingCategory/index')
 const ProductOffering = require('./api/ProductOffering/index')
+const productSpecificationRoutes = require('./api/ProductSpecification');
 
 
 require('dotenv').config();
@@ -66,6 +67,9 @@ app.use('/api', [
   authRoutes,    // Login
   signupRoutes,  // Registration + confirmation
 ]);
+
+app.use('/send-specification', productSpecificationRoutes);
+app.use('/api', productSpecificationRoutes);
 
 // Protected routes
 app.use('/api', authjwt , [
