@@ -40,7 +40,7 @@ function ProductOfferingCatalogForm({ open, setOpen, initialData = null, dispatc
     onSubmit: async (values, {resetForm}) => {
       try {
         const action = isEditMode
-          ? updateCatalog({ id: initialData.sys_id, ...values })
+          ? updateCatalog({ id: initialData._id, ...values })
           : createCatalog(values);
         await dispatch(action).unwrap();
         setOpen(false);

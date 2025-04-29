@@ -22,7 +22,7 @@ function Table({ setData, setOpen }) {
         dispatch(getall({ page: 1, limit: 6 }));
     }, [dispatch]);
 
-    const handleDelete = async (productId) => {
+    const handleDelete = async (productId) => {      
         await dispatch(deleteCatalog(productId));
         // Refresh current page after deletion
         dispatch(getall({ page: currentPage, limit }));
@@ -92,7 +92,7 @@ function Table({ setData, setOpen }) {
                                             title="Delete the catalog"
                                             description="Are you sure to delete this catalog?"
                                             icon={<i className="ri-error-warning-line text-red-600 mr-2"></i>}
-                                            onConfirm={() => handleDelete(product.sys_id)}
+                                            onConfirm={() => handleDelete(product._id)}
                                         >
                                             <button className="text-gray-500 hover:text-red-600 ">
                                                 <i className="ri-delete-bin-6-line text-2xl"></i>
