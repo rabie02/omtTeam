@@ -11,6 +11,9 @@ export const getall = createAsyncThunk(
         headers: { authorization: access_token },
         params: { page, limit }
       });
+
+      console.log(response.data);
+      
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -89,6 +92,8 @@ export const deleteCatalog = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
+      console.log(id);
+      
       await axios.delete(`/api/product-offering-catalog/${id}`, {
         headers: { authorization: access_token },
       });
