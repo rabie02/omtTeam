@@ -2,14 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Card, Input, Button, Pagination, Spin, Empty, message } from 'antd';
 import { SearchOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { getallPublished } from '../../../features/servicenow/product-specification/productSpecificationSlice';
+import { getPublished } from '../../../features/servicenow/product-specification/productSpecificationSlice';
 import { searchAI, setSearchTerm as setAiSearchTerm, clearResults } from '../../../features/servicenow/ai-search/aiSearchSlice';
 import defaultProductImage from '@assets/default-product.png';
 import Chatbot from './Chatbot';
 
 const { Search } = Input;
 const { Meta } = Card;
-
 
 const ProductSpecifications = () => {
   const dispatch = useDispatch();
@@ -18,7 +17,10 @@ const ProductSpecifications = () => {
   const {
     data: specs,
     loading: specsLoading,
-    error: specsError
+    error: specsError,
+    currentPage,
+    totalItems,
+    limit: apiLimit
   } = useSelector((state) => state.productSpecification);
   
   // AI Search from Redux
@@ -30,18 +32,21 @@ const ProductSpecifications = () => {
   } = useSelector((state) => state.aiSearch);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const productsPerPage = 8;
+  const [localPage, setLocalPage] = useState(1);
 
+  // Fetch data when page changes
   useEffect(() => {
-    dispatch(getallPublished());
-    
+    dispatch(getPublished({ page: 1, limit: 8 }));
+  }, [dispatch, localPage, apiLimit]);
+
+  // Polling effect
+  useEffect(() => {
     const interval = setInterval(() => {
-      dispatch(getallPublished());
+      dispatch(getPublished({ page: localPage, limit: apiLimit }));
     }, 5000);
     
     return () => clearInterval(interval);
-  }, [dispatch]);
+  }, [dispatch, localPage, apiLimit]);
 
   useEffect(() => {
     if (aiSearchError) {
@@ -49,20 +54,17 @@ const ProductSpecifications = () => {
     }
   }, [aiSearchError]);
 
+  // Filter specs based on search term (client-side filtering)
   const filteredSpecs = specs?.filter(spec =>
     spec?.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
     spec?.display_name?.toLowerCase()?.includes(searchTerm.toLowerCase())
   ) || [];
 
+  // Calculate total pages from API response
+  const totalPages = Math.ceil(totalItems / apiLimit);
 
-  // Pagination logic
-  const indexOfLastProduct = currentPage * productsPerPage;
-  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = filteredSpecs.slice(indexOfFirstProduct, indexOfLastProduct);
-  const totalPages = Math.ceil(filteredSpecs.length / productsPerPage);
-
-  const paginate = (pageNumber) => {
-    setCurrentPage(pageNumber);
+  const handlePageChange = (page) => {
+    setLocalPage(page);
     window.scrollTo({ top: 200, behavior: 'smooth' });
   };
 
@@ -108,7 +110,7 @@ const ProductSpecifications = () => {
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
-              setCurrentPage(1);
+              setLocalPage(1);
             }}
             className="w-full max-w-md"
           />
@@ -121,7 +123,7 @@ const ProductSpecifications = () => {
   
         {/* Products Grid */}
         <div className="mb-8">
-          {currentProducts.length === 0 ? (
+          {filteredSpecs.length === 0 ? (
             <Empty
               description="No specifications found"
               className="flex flex-col items-center justify-center py-10"
@@ -129,7 +131,7 @@ const ProductSpecifications = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {currentProducts.map((spec) => (
+                {filteredSpecs.map((spec) => (
                   <Card
                     key={spec.sys_id}
                     hoverable
@@ -151,7 +153,7 @@ const ProductSpecifications = () => {
                     ]}
                   >
                     <Meta
-                      title={<div className="truncate">{spec.displayName}</div>}
+                      title={<div className="truncate">{spec.display_name || spec.displayName}</div>}
                       description={
                         <div className="truncate text-gray-500" title={`Ref: ${spec.name}`}>
                           Ref: {spec.name}
@@ -170,14 +172,14 @@ const ProductSpecifications = () => {
                 ))}
               </div>
   
-              {/* Pagination */}
+              {/* Pagination - Now using API pagination */}
               {totalPages > 1 && (
                 <div className="flex justify-center mt-8">
                   <Pagination
-                    current={currentPage}
-                    total={filteredSpecs.length}
-                    pageSize={productsPerPage}
-                    onChange={paginate}
+                    current={localPage}
+                    total={totalItems}
+                    pageSize={apiLimit}
+                    onChange={handlePageChange}
                     showSizeChanger={false}
                     className="mt-4"
                   />
@@ -187,75 +189,75 @@ const ProductSpecifications = () => {
           )}
         </div>
 
-         {/* AI Search Section */}
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-2 text-gray-800">AI Product Search</h2>
-        <p className="text-gray-600 mb-6">Describe what you're looking for and our AI will find matching products</p>
-        
-        <div className="flex flex-col sm:flex-row gap-4 mb-4">
-          <Input
-            placeholder="Describe your ideal product..."
-            size="large"
-            value={aiSearchTerm}
-            onChange={handleAiSearchTermChange}
-            className="flex-1"
-          />
-          <Button
-            type="primary"
-            size="large"
-            loading={isAiSearching}
-            onClick={handleAiSearch}
-            icon={<SearchOutlined />}
-            className="bg-green-500 hover:bg-green-600"
-          >
-            AI Search
-          </Button>
-          {aiResults.length > 0 && (
-            <Button
+        {/* AI Search Section */}
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-2 text-gray-800">AI Product Search</h2>
+          <p className="text-gray-600 mb-6">Describe what you're looking for and our AI will find matching products</p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 mb-4">
+            <Input
+              placeholder="Describe your ideal product..."
               size="large"
-              onClick={handleClearAiResults}
-              danger
+              value={aiSearchTerm}
+              onChange={handleAiSearchTermChange}
+              className="flex-1"
+            />
+            <Button
+              type="primary"
+              size="large"
+              loading={isAiSearching}
+              onClick={handleAiSearch}
+              icon={<SearchOutlined />}
+              className="bg-green-500 hover:bg-green-600"
             >
-              Clear
+              AI Search
             </Button>
+            {aiResults.length > 0 && (
+              <Button
+                size="large"
+                onClick={handleClearAiResults}
+                danger
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+
+          {/* AI Results */}
+          {aiResults.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-lg font-medium mb-4 text-gray-800">AI Search Results</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {aiResults.map((result, index) => (
+                  <Card
+                    key={index}
+                    hoverable
+                    className="h-full"
+                  >
+                    <h4 className="text-blue-500 font-medium mb-2">{result.title || 'Product'}</h4>
+                    <p className="text-gray-600 mb-4 text-sm">{result.description || 'No description available'}</p>
+                    <Button type="link" className="p-0">
+                      Learn more <ArrowRightOutlined />
+                    </Button>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {isAiSearching && (
+            <div className="flex justify-center py-6">
+              <Spin tip="Searching..." />
+            </div>
+          )}
+
+          {!isAiSearching && aiSearchTerm && aiResults.length === 0 && (
+            <Empty
+              description="No AI results found"
+              className="flex flex-col items-center justify-center py-6"
+            />
           )}
         </div>
-
-        {/* AI Results - remains the same but now using Redux-managed state */}
-        {aiResults.length > 0 && (
-          <div className="mt-6">
-            <h3 className="text-lg font-medium mb-4 text-gray-800">AI Search Results</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {aiResults.map((result, index) => (
-                <Card
-                  key={index}
-                  hoverable
-                  className="h-full"
-                >
-                  <h4 className="text-blue-500 font-medium mb-2">{result.title || 'Product'}</h4>
-                  <p className="text-gray-600 mb-4 text-sm">{result.description || 'No description available'}</p>
-                  <Button type="link" className="p-0">
-                    Learn more <ArrowRightOutlined />
-                  </Button>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {isAiSearching && (
-          <div className="flex justify-center py-6">
-            <Spin tip="Searching..." />
-          </div>
-        )}
-
-        {!isAiSearching && aiSearchTerm && aiResults.length === 0 && (
-          <Empty
-            description="No AI results found"
-            className="flex flex-col items-center justify-center py-6"
-          />
-        )}
-      </div>
       </div>
 
       {/* Chatbot */}
