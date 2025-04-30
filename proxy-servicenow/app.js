@@ -14,7 +14,7 @@ const logoutRoutes = require('./api/auth/logout');
 const ProductOfferingCatalog = require('./api/ProductOfferingCatalog/index')
 const ProductOfferingCategory = require('./api/ProductOfferingCategory/index')
 const ProductOffering = require('./api/ProductOffering/index')
-
+const channel = require('./api/channel/index')
 
 require('dotenv').config();
 
@@ -75,7 +75,7 @@ app.use('/api', authjwt , [
   ProductOfferingCatalog,
   ProductOfferingCategory,
   ProductOffering,
-
+  channel,
 
 ]);
 
