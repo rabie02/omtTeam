@@ -5,7 +5,7 @@ import productOfferingCategoryReducer from '../features/servicenow/product-offer
 import productOfferingReducer from '../features/servicenow/product-offering/productOfferingSlice';
 import productSpecificationReducer from '../features/servicenow/product-specification/productSpecificationSlice';
 import channelReducer from '../features/servicenow/channel/channelSlice';
-
+import aiSearchReducer from '../features/servicenow/ai-search/aiSearchSlice';
 const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -14,6 +14,7 @@ const store = configureStore({
     productOffering: productOfferingReducer,
     productSpecification: productSpecificationReducer,
     channel: channelReducer,
+    aiSearch: aiSearchReducer,
   },
 });
 

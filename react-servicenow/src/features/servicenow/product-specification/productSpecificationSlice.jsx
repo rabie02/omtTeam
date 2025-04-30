@@ -16,6 +16,22 @@ export const getall = createAsyncThunk(
     }
   );
 
+export const getallPublished = createAsyncThunk(
+    'ProductOffering/getallPubSpec',
+    async (_, { rejectWithValue }) => {
+      try {      
+        const access_token = localStorage.getItem('access_token');
+        const response = await axios.get("/api/product-spec", {
+          headers: { authorization: access_token },
+          params: { status: 'published'}
+        });
+        return response.data || [];
+      } catch (error) {
+        return rejectWithValue(error.response?.data?.message || error.message);
+      }
+    }
+  );
+
 
 const ProductSpecificationSlice = createSlice({
     name: 'ProductSpecification',
@@ -37,6 +53,18 @@ const ProductSpecificationSlice = createSlice({
             state.loading = null;
           })
           .addCase(getall.rejected, (state, action)=>{
+            state.error = action.payload;
+            state.loading = null;
+          })
+          .addCase(getallPublished.pending, (state)=>{
+            state.loading = true;
+            state.loading = null;
+          })
+          .addCase(getallPublished.fulfilled, (state, action)=>{
+            state.data = action.payload;
+            state.loading = null;
+          })
+          .addCase(getallPublished.rejected, (state, action)=>{
             state.error = action.payload;
             state.loading = null;
           });
