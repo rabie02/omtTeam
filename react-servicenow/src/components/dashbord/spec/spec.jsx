@@ -38,7 +38,7 @@ const ProductSpecifications = () => {
   useEffect(() => {
   const fetchSpecs = async () => {
     try {
-      setLoading(true);
+      setLoading(false);
       const response = await axios.get(SN_CONFIG.endpoints.searchSpecs, {
         baseURL: SN_CONFIG.baseURL,
         auth: SN_CONFIG.auth,
