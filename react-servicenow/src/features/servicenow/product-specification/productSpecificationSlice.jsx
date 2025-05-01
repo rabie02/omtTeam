@@ -1,12 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 export const getall = createAsyncThunk(
     'ProductOffering/getallSpec',
     async (_, { rejectWithValue }) => {
       try {      
         const access_token = localStorage.getItem('access_token');
-        const response = await axios.get("/api/product-spec", {
+        const response = await axios.get(`${backendUrl}/api/product-spec`, {
           headers: { authorization: access_token },
         
         }); 
@@ -23,7 +24,7 @@ export const getPublished = createAsyncThunk(
     async ({ page = 1, limit = 8 }, { rejectWithValue }) => {
       try {      
         const access_token = localStorage.getItem('access_token');
-        const response = await axios.get("/api/product-specification", {
+        const response = await axios.get(`${backendUrl}/api/product-specification`, {
           headers: { authorization: access_token },
           params: { page, limit, status: 'published'}
         });
