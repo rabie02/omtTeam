@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
 // Async Thunks
 export const getall = createAsyncThunk(
   'ProductOfferingCategory/getall',
