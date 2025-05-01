@@ -267,16 +267,7 @@ const ProductSpecifications = () => {
                         onClick={() => showSpecDetails(spec)}
                       >
                         Voir détails
-                      </Button>,
-                      spec.status !== 'published' && (
-                        <Button 
-                          type="dashed" 
-                          block
-                          onClick={() => showPublishConfirm(spec)}
-                        >
-                          Publier
-                        </Button>
-                      )
+                      </Button>
                     ].filter(Boolean)}
                   >
                     <Meta
