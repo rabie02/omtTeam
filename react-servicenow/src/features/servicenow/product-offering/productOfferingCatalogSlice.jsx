@@ -9,7 +9,7 @@ export const getall = createAsyncThunk(
   async ({ page = 1, limit = 6 }, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      const response = await axios.get("${backendUrl}/api/product-offering-catalog", {
+      const response = await axios.get(`${backendUrl}/api/product-offering-catalog`, {
         headers: { authorization: access_token },
         params: { page, limit }
       });
@@ -43,7 +43,7 @@ export const createCatalog = createAsyncThunk(
   async (productData, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      const response = await axios.post("${backendUrl}/api/product-offering-catalog", productData, {
+      const response = await axios.post(`${backendUrl}/api/product-offering-catalog`, productData, {
         headers: { authorization: access_token },
       });
       return response.data.result;
