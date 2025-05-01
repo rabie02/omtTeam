@@ -2,11 +2,11 @@
 import React from 'react';
 import PrivateRoute from '../middleware/PrivateRoute'; // Make sure this exists
 import DashboardLayout from '../layout/dashbord';
-import Home from '../views/dashbord'; 
-import Catalog from '../views/dashbord/ProductOfferingCatalog'; 
-import POCategory from '../views/dashbord/ProductOfferingCategory';
-import PO from '../views/dashbord/ProductOffering';
-import PS from '../views/dashbord/ProductSpec';
+import Home from '../views/Pages/Dashboard/index'; 
+import Catalog from '../views/Pages/ProductOffering/ProductOfferingCatalog/ProductOfferingCatalog'; 
+import POCategory from '../views/Pages/ProductOffering/ProductOfferingCategory/ProductOfferingCategory';
+import PO from '../views/Pages/ProductOffering/ProductOffering/ProductOffering';
+import PS from '../views/Pages/ProductSpec/ProductSpec';
 const dashboardRoutes = {
   path: '/dashboard',
   element: (

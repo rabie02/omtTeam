@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import Table from '../../components/dashbord/ProductOfferingCategory/Table';
-import Form from '../../components/dashbord/ProductOfferingCategory/Form';
+import Table from '../../../../components/dashbord/ProductOfferingCategory/Table';
+import Form from '../../../../components/dashbord/ProductOfferingCategory/Form';
 
 
 function ProductOfferingCategory() {
