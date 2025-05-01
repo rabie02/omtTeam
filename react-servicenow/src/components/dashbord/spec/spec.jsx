@@ -36,35 +36,42 @@ const ProductSpecifications = () => {
 
   // Fetch data from ServiceNow
   useEffect(() => {
-    const fetchSpecs = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get(SN_CONFIG.endpoints.searchSpecs, {
-          baseURL: SN_CONFIG.baseURL,
-          auth: SN_CONFIG.auth,
-          params: {
-            sysparm_limit: apiLimit,
-            sysparm_query: 'status=published',
-            sysparm_offset: (localPage - 1) * apiLimit
-          }
-        });
-        setSpecs(response.data.result);
-        setTotalItems(response.data.headers['x-total-count'] || response.data.result.length);
-      } catch (err) {
-        console.error('Erreur de chargement des spécifications:', err);
-        setError("Impossible de charger les spécifications.");
-      } finally {
-        setLoading(false);
+  const fetchSpecs = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(SN_CONFIG.endpoints.searchSpecs, {
+        baseURL: SN_CONFIG.baseURL,
+        auth: SN_CONFIG.auth,
+        params: {
+          sysparm_limit: apiLimit,
+          sysparm_query: 'status=published',
+          sysparm_offset: (localPage - 1) * apiLimit,
+          sysparm_display_value: true // Pour obtenir les valeurs affichables
+        }
+      });
+      
+      setSpecs(response.data.result);
+      
+      // Correction ici : utiliser response.headers au lieu de response.data.headers
+      setTotalItems(response.headers['x-total-count'] || response.data.result.length);
+    } catch (err) {
+      console.error('Erreur de chargement des spécifications:', err);
+      setError(`Impossible de charger les spécifications: ${err.message}`);
+      
+      // Vérification supplémentaire pour les erreurs 404
+      if (err.response?.status === 404) {
+        console.error('URL incorrecte ou endpoint inexistant:', SN_CONFIG.baseURL + SN_CONFIG.endpoints.searchSpecs);
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchSpecs();
-    
-    // Polling every 5 seconds
-    const interval = setInterval(fetchSpecs, 5000);
-    return () => clearInterval(interval);
-  }, [localPage, apiLimit]);
-
+  fetchSpecs();
+  
+  const interval = setInterval(fetchSpecs, 5000);
+  return () => clearInterval(interval);
+}, [localPage, apiLimit]);
   useEffect(() => {
     if (aiSearchError) {
       message.error(aiSearchError);
