@@ -46,7 +46,7 @@ const ProductSpecifications = () => {
         baseURL: SN_CONFIG.baseURL,
         auth: SN_CONFIG.auth,
         params: {
-          sysparm_limit: 10000,
+          sysparm_limit: apiLimit,
           sysparm_query: 'status=published',
           sysparm_offset: (localPage - 1) * apiLimit,
           sysparm_display_value: true,
