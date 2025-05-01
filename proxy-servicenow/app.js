@@ -38,8 +38,19 @@ const limiter = rateLimit({
 
 // Configuration
 
+const allowedOrigins = [
+  'https://omt-team-hlmx.vercel.app',
+  'https://delightful-sky-0cdf0611e.6.azurestaticapps.net'
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['Authorization']
