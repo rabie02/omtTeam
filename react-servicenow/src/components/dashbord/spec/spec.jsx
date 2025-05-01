@@ -54,10 +54,20 @@ const ProductSpecifications = () => {
         }
       });
       
-      // Double vérification du statut
-      const publishedSpecs = response.data.result.filter(spec => spec.status === 'published');
-      setSpecs(publishedSpecs);
-      setTotalItems(publishedSpecs.length);
+       const countResponse = await axios.get(SN_CONFIG.endpoints.searchSpecs, {
+      baseURL: SN_CONFIG.baseURL,
+      auth: SN_CONFIG.auth,
+      params: {
+        sysparm_query: 'status=published',
+        sysparm_fields: 'sys_id',
+        sysparm_limit: 10000 // limite haute
+      }
+    });
+
+    const publishedSpecs = response.data.result;
+    setSpecs(publishedSpecs);
+
+    setTotalItems(countResponse.data.result.length);
     } catch (err) {
       console.error('Erreur de chargement:', err);
       setError(`Erreur: ${err.response?.data?.error?.message || err.message}`);
