@@ -1,13 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-
+const backendUrl = import.meta.env.VITE_BACKEND_URL; // sans slash à la fin
 // Async Thunks
 export const getall = createAsyncThunk(
   'Channel/getall',
   async (_, { rejectWithValue }) => {
     try {      
       const access_token = localStorage.getItem('access_token');
-      const response = await axios.get("/api/channel", {
+      const response = await axios.get(`${backendUrl}/api/channel`, {
         headers: { authorization: access_token },
       });
       return response.data.result || [];
