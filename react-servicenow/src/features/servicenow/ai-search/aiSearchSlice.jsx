@@ -1,12 +1,12 @@
 // features/aiSearch/aiSearchSlice.js
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
-
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 export const searchAI = createAsyncThunk(
   'aiSearch/search',
   async (searchTerm, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`/api/ai-search?term=${encodeURIComponent(searchTerm)}`);
+      const response = await axios.get(`${backendUrl}/api/ai-search?term=${encodeURIComponent(searchTerm)}`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.error || 'AI search failed');
