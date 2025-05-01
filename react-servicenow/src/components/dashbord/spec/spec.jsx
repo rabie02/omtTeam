@@ -394,18 +394,6 @@ const ProductSpecifications = () => {
           <Button key="back" onClick={() => setIsModalVisible(false)}>
             Fermer
           </Button>,
-          selectedSpec?.status !== 'published' && (
-            <Button 
-              key="publish" 
-              type="primary"
-              onClick={() => {
-                setIsModalVisible(false);
-                showPublishConfirm(selectedSpec);
-              }}
-            >
-              Publier
-            </Button>
-          )
         ].filter(Boolean)}
         width={800}
       >
