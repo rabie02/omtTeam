@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 
+const API_URL = import.meta.env.VITE_BACKEND_URL;
 
 
 export const userLogin = createAsyncThunk(
@@ -8,12 +9,12 @@ export const userLogin = createAsyncThunk(
   async ({ username, password }, { rejectWithValue }) => {
     try {
       const { data } = await axios.post(
-        '/api/get-token',
+        `${API_URL}/api/get-token`,
         { username, password },
         {
           headers: { 'Content-Type': 'application/json' },
           timeout: 8000,
-          withCredentials: true // send cookies
+          withCredentials: true
         }
       );
       return data;
@@ -37,7 +38,7 @@ export const registerUser = createAsyncThunk(
   'auth/registerUser',
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post('/api/request-registration', userData);
+      const response = await axios.post(`${API_URL}/api/request-registration`, userData);
       return response.data;
     } catch (err) {
       if (err.response) {
@@ -68,7 +69,7 @@ export const userLogout = createAsyncThunk(
       // Only attempt API logout if we have a token
       if (token) {
         await axios.post(
-          `/api/logout`,
+          `${API_URL}/api/logout`,
           {},
           {
             headers: {
