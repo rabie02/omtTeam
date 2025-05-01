@@ -3,6 +3,8 @@ import { useDispatch } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { userLogin } from '../../features/auth/authActions';
 import { message } from 'antd';
+import axios from 'axios';
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const MESSAGE_MAPPINGS = {
   // Error messages
@@ -26,7 +28,21 @@ function LoginForm() {
     username: '',
     password: '' 
   });
-  
+  export const userLogin = createAsyncThunk(
+  'auth/login',
+  async (credentials, thunkAPI) => {
+    try {
+      const response = await axios.post(`${backendUrl}/api/login`, credentials, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      return response.data; // Doit contenir { id_token: ..., user: ... }
+    } catch (error) {
+      const customError = error.response?.data || { type: 'unknown_error' };
+      return thunkAPI.rejectWithValue(customError);
+    }
+  }
+);
   const [messageContent, setMessageContent] = useState({ text: '', type: '' });
   const dispatch = useDispatch();
   const navigate = useNavigate();
