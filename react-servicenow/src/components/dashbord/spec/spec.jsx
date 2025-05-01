@@ -1,52 +1,69 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Input, Button, Pagination, Spin, Empty, message } from 'antd';
 import { SearchOutlined, ArrowRightOutlined } from '@ant-design/icons';
-import { useDispatch, useSelector } from 'react-redux';
-import { getPublished } from '../../../features/servicenow/product-specification/productSpecificationSlice';
-import { searchAI, setSearchTerm as setAiSearchTerm, clearResults } from '../../../features/servicenow/ai-search/aiSearchSlice';
+import axios from 'axios';
 import defaultProductImage from '@assets/default-product.png';
 import Chatbot from './Chatbot';
 
 const { Search } = Input;
 const { Meta } = Card;
 
-const ProductSpecifications = () => {
-  const dispatch = useDispatch();
-  
-  // Product specs from Redux
-  const {
-    data: specs,
-    loading: specsLoading,
-    error: specsError,
-    currentPage,
-    totalItems,
-    limit: apiLimit
-  } = useSelector((state) => state.productSpecification);
-  
-  // AI Search from Redux
-  const {
-    results: aiResults,
-    loading: isAiSearching,
-    error: aiSearchError,
-    searchTerm: aiSearchTerm
-  } = useSelector((state) => state.aiSearch);
+const SN_CONFIG = {
+  baseURL: import.meta.env.VITE_SN_URL || 'https://dev323456.service-now.com',
+  auth: {
+    username: import.meta.env.VITE_SN_USER || 'admin',
+    password: import.meta.env.VITE_SN_PASS || 'bz!T-1ThIc1L'
+  },
+  endpoints: {
+    searchSpecs: '/api/now/table/sn_prd_pm_product_specification'
+  }
+};
 
+const ProductSpecifications = () => {
+  const [specs, setSpecs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [localPage, setLocalPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [apiLimit] = useState(8);
+  
+  // AI Search state
+  const [aiResults, setAiResults] = useState([]);
+  const [isAiSearching, setIsAiSearching] = useState(false);
+  const [aiSearchError, setAiSearchError] = useState(null);
+  const [aiSearchTerm, setAiSearchTerm] = useState('');
 
-  // Fetch data when page changes
+  // Fetch data from ServiceNow
   useEffect(() => {
-    dispatch(getPublished({ page: 1, limit: 8 }));
-  }, [dispatch, localPage, apiLimit]);
+    const fetchSpecs = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(SN_CONFIG.endpoints.searchSpecs, {
+          baseURL: SN_CONFIG.baseURL,
+          auth: SN_CONFIG.auth,
+          params: {
+            sysparm_limit: apiLimit,
+            sysparm_query: 'status=published',
+            sysparm_offset: (localPage - 1) * apiLimit
+          }
+        });
+        setSpecs(response.data.result);
+        setTotalItems(response.data.headers['x-total-count'] || response.data.result.length);
+      } catch (err) {
+        console.error('Erreur de chargement des spécifications:', err);
+        setError("Impossible de charger les spécifications.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Polling effect
-  useEffect(() => {
-    const interval = setInterval(() => {
-      dispatch(getPublished({ page: localPage, limit: apiLimit }));
-    }, 5000);
+    fetchSpecs();
     
+    // Polling every 5 seconds
+    const interval = setInterval(fetchSpecs, 5000);
     return () => clearInterval(interval);
-  }, [dispatch, localPage, apiLimit]);
+  }, [localPage, apiLimit]);
 
   useEffect(() => {
     if (aiSearchError) {
@@ -68,32 +85,45 @@ const ProductSpecifications = () => {
     window.scrollTo({ top: 200, behavior: 'smooth' });
   };
 
-  const handleAiSearch = () => {
+  const handleAiSearch = async () => {
     if (!aiSearchTerm.trim()) {
       message.warning('Please enter a search term');
       return;
     }
-    dispatch(searchAI(aiSearchTerm));
-  };
-
-  const handleAiSearchTermChange = (e) => {
-    dispatch(setAiSearchTerm(e.target.value));
+    
+    try {
+      setIsAiSearching(true);
+      setAiSearchError(null);
+      // Ici vous devriez implémenter votre appel API pour la recherche AI
+      // Pour l'exemple, je simule une réponse après 1 seconde
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setAiResults([
+        { title: 'Résultat AI 1', description: 'Description du produit trouvé par AI' },
+        { title: 'Résultat AI 2', description: 'Autre produit correspondant à votre recherche' }
+      ]);
+    } catch (err) {
+      setAiSearchError("Erreur lors de la recherche AI");
+      console.error(err);
+    } finally {
+      setIsAiSearching(false);
+    }
   };
 
   const handleClearAiResults = () => {
-    dispatch(clearResults());
+    setAiResults([]);
+    setAiSearchTerm('');
   };
 
-  if (specsLoading) return (
+  if (loading) return (
     <div className="flex flex-col items-center justify-center h-64">
       <Spin size="large" />
       <p className="mt-4 text-gray-600">Loading specifications...</p>
     </div>
   );
 
-  if (specsError) return (
+  if (error) return (
     <div className="flex flex-col items-center justify-center h-64">
-      <p className="text-red-500 font-medium">Error: {specsError}</p>
+      <p className="text-red-500 font-medium">Error: {error}</p>
     </div>
   );
 
@@ -172,7 +202,7 @@ const ProductSpecifications = () => {
                 ))}
               </div>
   
-              {/* Pagination - Now using API pagination */}
+              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex justify-center mt-8">
                   <Pagination
@@ -199,7 +229,7 @@ const ProductSpecifications = () => {
               placeholder="Describe your ideal product..."
               size="large"
               value={aiSearchTerm}
-              onChange={handleAiSearchTermChange}
+              onChange={(e) => setAiSearchTerm(e.target.value)}
               className="flex-1"
             />
             <Button
