@@ -57,7 +57,7 @@ const ProductSpecifications = () => {
       // Double vérification du statut
       const publishedSpecs = response.data.result.filter(spec => spec.status === 'published');
       setSpecs(publishedSpecs);
-      setTotalItems(response.headers['x-total-count'] || publishedSpecs.length);
+      setTotalItems(publishedSpecs.length);
     } catch (err) {
       console.error('Erreur de chargement:', err);
       setError(`Erreur: ${err.response?.data?.error?.message || err.message}`);
@@ -114,9 +114,9 @@ const ProductSpecifications = () => {
   };
 
   // Filter specs based on search term
-  const filteredSpecs = specs.filter(spec =>
-    (spec?.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-    (spec?.display_name?.toLowerCase()?.includes(searchTerm.toLowerCase()))
+   const filteredSpecs = specs.filter(spec =>
+    spec?.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+    spec?.display_name?.toLowerCase()?.includes(searchTerm.toLowerCase())
   );
 
   // Calculate total pages
