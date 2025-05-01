@@ -68,10 +68,7 @@ const ProductSpecifications = () => {
   };
 
   fetchSpecs();
-  
-  const interval = setInterval(fetchSpecs);
-  return () => clearInterval(interval);
-}, [localPage, apiLimit]);
+  }, [localPage, apiLimit]);
   useEffect(() => {
     if (aiSearchError) {
       message.error(aiSearchError);
