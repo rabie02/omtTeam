@@ -69,7 +69,7 @@ const ProductSpecifications = () => {
 
   fetchSpecs();
   
-  const interval = setInterval(fetchSpecs, 5000);
+  const interval = setInterval(fetchSpecs);
   return () => clearInterval(interval);
 }, [localPage, apiLimit]);
   useEffect(() => {
