@@ -7,7 +7,7 @@ export const getall = createAsyncThunk(
   async ({ page = 1, limit = 6 }, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      const response = await axios.get("/api/product-offering-category", {
+      const response = await axios.get("${backendUrl}/api/product-offering-category", {
         headers: { authorization: access_token },
         params: { page, limit }
       });
@@ -23,7 +23,7 @@ export const getOne = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      const response = await axios.get(`/api/product-offering-category/${id}`, {
+      const response = await axios.get(`${backendUrl}/api/product-offering-category/${id}`, {
         headers: { authorization: access_token },
       });
       return response.data;
@@ -38,7 +38,7 @@ export const createCategory = createAsyncThunk(
   async (productData, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      const response = await axios.post("/api/product-offering-category", productData, {
+      const response = await axios.post("${backendUrl}/api/product-offering-category", productData, {
         headers: { authorization: access_token },
       });
       return response.data.result;
@@ -58,7 +58,7 @@ export const updatecategoryStatus = createAsyncThunk(
                       : currentStatus;
 
       const response = await axios.patch(
-        `/api/product-offering-category/${id}`, 
+        `${backendUrl}/api/product-offering-category/${id}`, 
         { status: newStatus },
         { headers: { authorization: access_token } }
       );
@@ -77,7 +77,7 @@ export const updateCategory = createAsyncThunk(
 
       console.log(productData);
       
-      const response = await axios.patch(`/api/product-offering-category/${id}`, productData, {
+      const response = await axios.patch(`${backendUrl}/api/product-offering-category/${id}`, productData, {
          headers: { authorization: access_token, 'Content-Type': 'multipart/form-data'  } 
       });
       console.log(response);
@@ -94,7 +94,7 @@ export const deleteCategory = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      await axios.delete(`/api/product-offering-category/${id}`, {
+      await axios.delete(`${backendUrl}/api/product-offering-category/${id}`, {
         headers: { authorization: access_token },
       });
       return id;
