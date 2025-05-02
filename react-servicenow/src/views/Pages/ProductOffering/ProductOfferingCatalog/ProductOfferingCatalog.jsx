@@ -1,36 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import Table from '../../components/dashbord/ProductOffering/Table';
-import Form from '../../components/dashbord/ProductOffering/Form';
-import { getall as getSpecs } from '../../features/servicenow/product-specification/productSpecificationSlice';
-import { getall as getCats } from '../../features/servicenow/product-offering/productOfferingCategorySlice';
-import { getall as getChannels } from '../../features/servicenow/channel/channelSlice';
-import { useDispatch, useSelector } from 'react-redux';
+import React, { useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
+import Table from '../../../../components/dashbord/ProductOfferingCatalog/Table';
+import Form from '../../../../components/dashbord/ProductOfferingCatalog/Form';
 
-function ProductOffering() {
+
+function ProductOfferingCatalog() {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState(null); 
-
   const dispatch = useDispatch();
-  // Selectors
-  const { data: specs, loading: specsLoading, error: specsError } = useSelector(
-    (state) => state.productSpecification
-  );
-  const { data: cats, loading: catsLoading, error: catsError } = useSelector(
-    (state) => state.productOfferingCategory
-  );
-  const { data: channels, loading: channelsLoading, error: channelsError } =
-    useSelector((state) => state.channel);
-  useEffect(() => {
-      if (localStorage.getItem('access_token')) {
-        dispatch(getSpecs());
-        dispatch(getCats({ page: 1, limit: 99 }));
-        dispatch(getChannels());
-      } else {
-        console.error('Auth token not found. Please login.');
-      }
-    }, [dispatch]);
-
-  const options = {specifications: specs, categories: cats, channels: channels}
 
   return (
     <>
@@ -73,7 +50,7 @@ function ProductOffering() {
           <Table setData={setData} setOpen={setOpen} dispatch={dispatch} ></Table>
         </div>
          
-         <Form open={open} setOpen={setOpen} initialData={data} options={options} dispatch={dispatch}></Form>
+         <Form open={open} setOpen={setOpen} initialData={data} dispatch={dispatch} ></Form>
 
 
       </div>
@@ -81,4 +58,4 @@ function ProductOffering() {
   );
 }
 
-export default ProductOffering;
+export default ProductOfferingCatalog;
