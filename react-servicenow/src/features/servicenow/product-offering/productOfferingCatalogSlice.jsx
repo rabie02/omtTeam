@@ -4,16 +4,13 @@ import axios from 'axios';
 // Async Thunks
 export const getall = createAsyncThunk(
   'productOfferingCatalog/getall',
-  async ({ page = 1, limit = 6 }, { rejectWithValue }) => {
+  async ({ page = 1, limit = 6, q }, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
       const response = await axios.get("/api/product-offering-catalog", {
         headers: { authorization: access_token },
-        params: { page, limit }
+        params: { page, limit, q }
       });
-
-      console.log(response.data);
-      
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -92,8 +89,6 @@ export const deleteCatalog = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      console.log(id);
-      
       await axios.delete(`/api/product-offering-catalog/${id}`, {
         headers: { authorization: access_token },
       });

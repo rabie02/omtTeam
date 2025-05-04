@@ -6,10 +6,10 @@ import {
     deleteCatalog
 } from '../../../features/servicenow/product-offering/productOfferingCatalogSlice';
 
-function Table({ setData, setOpen }) {
+function Table({ setData, setOpen, searchQuery }) {
     const dispatch = useDispatch();
     const {
-        data: products,
+        data,
         loading,
         error,
         currentPage,
@@ -17,20 +17,27 @@ function Table({ setData, setOpen }) {
         limit
     } = useSelector((state) => state.productOfferingCatalog);
 
-
     useEffect(() => {
-        dispatch(getall({ page: 1, limit: 6 }));
-    }, [dispatch]);
+        // Include searchQuery in the API call
+        dispatch(getall({ page: 1, limit: 6, q: searchQuery }));
+    }, [dispatch, searchQuery]); // Add searchQuery to dependencies
 
     const handleDelete = async (productId) => {      
         await dispatch(deleteCatalog(productId));
-        // Refresh current page after deletion
-        dispatch(getall({ page: currentPage, limit }));
+        // Refresh with current search and pagination
+        dispatch(getall({ 
+            page: currentPage, 
+            limit,
+            q: searchQuery 
+        }));
     };
-    
 
     const handlePageChange = (page) => {
-        dispatch(getall({ page, limit }));
+        dispatch(getall({ 
+            page, 
+            limit,
+            q: searchQuery 
+        }));
     };
 
     const changeData = (newData) => {
@@ -40,6 +47,7 @@ function Table({ setData, setOpen }) {
 
     if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
     if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
+    
     return (
         <div className='w-full justify-center flex'>
             <div className="w-9/12">
@@ -56,7 +64,7 @@ function Table({ setData, setOpen }) {
                     </thead>
 
                     <tbody className="divide-y divide-gray-200">
-                        {!products || products.length === 0 ? (
+                        {!data || data.length === 0 ? (
                             <tr>
                                 <td colSpan="6" className="py-8 text-center">
                                     <Empty
@@ -66,7 +74,7 @@ function Table({ setData, setOpen }) {
                                 </td>
                             </tr>
                         ) : (
-                            products.map((product) => (
+                            data.map((product) => (
                                 <tr key={product.number} className="*:text-gray-900 *:first:font-medium">
                                     <td className="px-3 py-3 whitespace-nowrap">{product.number}</td>
                                     <td className="px-3 py-3 whitespace-nowrap">{product.name}</td>
@@ -116,7 +124,6 @@ function Table({ setData, setOpen }) {
                     />
                 </div>
             </div>
-
         </div>
     );
 }
