@@ -40,7 +40,7 @@ omtTeam/
 
 2.
    ```bash
-   cd react-servicenow
+  cd react-servicenow
   npm install
   npm run dev
 
