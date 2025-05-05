@@ -38,11 +38,15 @@ omtTeam/
    ```bash
    git clone [your-repository-url]
 
-2. cd react-servicenow
-npm install
-npm run dev
+2.
+   ```bash
+   cd react-servicenow
+  npm install
+  npm run dev
 
-3. cd proxy-servicenow
+3.
+```bash
+cd proxy-servicenow
 npm install
 npx nodemon app.js
 
