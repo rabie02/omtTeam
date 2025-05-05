@@ -1,26 +1,25 @@
 const mongoose = require('mongoose');
 
-const ProductSpecSchema = new mongoose.Schema({
-  id: { type: String, unique: true },
-  href: String,
-  name: String,
-  displayName: String,
-  version: String,
-  internalVersion: String,
-  internalId: String,
-  description: String,
-  lastUpdate: Date,
-  lifecycleStatus: String,
-  isBundle: Boolean,
-  validFor: {
-    startDateTime: Date,
-    endDateTime: Date
+const productSpecificationSchema = new mongoose.Schema({
+  // Keep MongoDB's default _id
+  // Store ServiceNow's sys_id as a separate field
+  sys_id: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true  // Add index for faster queries
   },
-  serviceSpecification: Array,
-  productSpecificationRelationship: Array,
-  resourceSpecification: Array,
-  productSpecCharacteristic: Array,
+  display_name: String,
+  specification_category: String,
+  specification_type: String,
+  start_date: String,
+  description: String,
   status: String
+}, { 
+  timestamps: true,
+  strict: false
 });
 
-module.exports = mongoose.model('product_specifications', ProductSpecSchema);
+const ProductSpecification = mongoose.model('ProductSpecification', productSpecificationSchema, 'product_specifications');
+
+module.exports = ProductSpecification;

@@ -14,16 +14,18 @@ const logoutRoutes = require('./api/auth/logout');
 const ProductOfferingCatalog = require('./api/ProductOfferingCatalog/index')
 const ProductOfferingCategory = require('./api/ProductOfferingCategory/index')
 const ProductOffering = require('./api/ProductOffering/index')
-const productSpecificationRoutes = require('./api/ProductSpecification');
-
+const channel = require('./api/channel/index')
+const productSpecificationRoutes = require('./routes/productSpecificationRoutes');
 
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+app.set('trust proxy', 1);
 // Database connection
 connectDB();
+
 
 // Rate limiting
 const limiter = rateLimit({
@@ -38,8 +40,20 @@ const limiter = rateLimit({
 
 // Configuration
 
+const allowedOrigins = [
+  'https://omt-team-hlmx.vercel.app',
+  'https://delightful-sky-0cdf0611e.6.azurestaticapps.net',
+  'http://localhost:5173'
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['Authorization']
@@ -68,9 +82,7 @@ app.use('/api', [
   signupRoutes,  // Registration + confirmation
 ]);
 
-app.use('/send-specification', productSpecificationRoutes);
 app.use('/api', productSpecificationRoutes);
-
 // Protected routes
 app.use('/api', authjwt , [
   // logout
@@ -79,7 +91,9 @@ app.use('/api', authjwt , [
   ProductOfferingCatalog,
   ProductOfferingCategory,
   ProductOffering,
-
+  channel,
+  
+  
 
 ]);
 
