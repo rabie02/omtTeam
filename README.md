@@ -39,7 +39,7 @@ omtTeam/
 
 ```bash
 # 1. Clone the repository
-git clone [your-repository-url]
+git clone [[your-repository-url]](https://github.com/rabie02/omtTeam.git)
 cd omtTeam
 
 # 2. Set up and run the React frontend
