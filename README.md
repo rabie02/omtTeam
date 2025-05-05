@@ -1,8 +1,8 @@
 # React Redux App with Tailwind, Ant Design, Remix Icon, Formik, Yup, and Express Proxy
 
-A modern frontend project using **React** and **Redux**, styled with **Tailwind CSS**, **Ant Design**, and **RemixIcon**, featuring **Formik** with **Yup** for robust form handling. An **Express.js** server is used to proxy API requests.
+A modern full-stack project featuring React frontend with Express proxy server. Includes robust state management, form handling, and modern styling solutions.
 
-> 📌 **Note:** Everything you need is already included. **You don't need to add any other libraries.**
+> 📌 **Note:** All required dependencies are pre-configured. **No additional libraries needed.**
 
 ## ⚙️ Features
 
@@ -10,8 +10,40 @@ A modern frontend project using **React** and **Redux**, styled with **Tailwind 
 - 🎨 Tailwind CSS for utility-first styling
 - 💎 Ant Design for prebuilt UI components
 - 🖼️ Remix Icon for icons
-- ✅ Formik + Yup for form handling and validation
-- 🌐 Express proxy server to handle API requests and avoid CORS issues
+- ✅ Formik + Yup for form handling/validation
+- 🌐 Express proxy server for API requests/CORS handling
 
 ## 📁 Project Structure
+
+omtTeam/
+├── react-servicenow/       # Frontend application
+│   ├── src/                # React source code
+│   ├── package.json        # Frontend dependencies
+│   └── ...                 # Other React config files
+│
+└── proxy-servicenow/       # Express proxy server
+    ├── app.js              # Server configuration
+    ├── package.json        # Backend dependencies
+    └── ...                 # Other server files
+
+## 🚀 Getting Started
+
+### Requirements
+- Node.js (v16+ recommended)
+- npm (v8+ recommended)
+
+### Installation & Running
+
+1. **Clone the repository**
+   ```bash
+   git clone [your-repository-url]
+
+2. cd react-servicenow
+npm install
+npm run dev
+
+3. cd proxy-servicenow
+npm install
+npx nodemon app.js
+
 
