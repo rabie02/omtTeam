@@ -511,7 +511,7 @@ const Chatbot = () => {
   return (
     <div className={`fixed bottom-8 right-8 z-[1000] transition-all duration-300 ease-in-out ${isOpen ? 'open' : ''}`}>
       <button 
-        className="flex items-center bg-blue-600 text-white border-none rounded-[50px] py-3.5 px-6 cursor-pointer shadow-md transition-all duration-300 ease-in-out font-medium hover:bg-blue-700 hover:scale-105"
+        className="flex items-center bg-cyan-700 text-white border-none py-3.5 px-6 cursor-pointer shadow-md transition-all duration-300 ease-in-out font-medium hover:bg-cyan-600 hover:scale-105"
         onClick={toggleChatbot}
       >
         <div className="w-6 h-6 mr-2.5">

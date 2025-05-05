@@ -16,6 +16,8 @@ const ProductOfferingCategory = require('./api/ProductOfferingCategory/index')
 const ProductOffering = require('./api/ProductOffering/index')
 const channel = require('./api/channel/index')
 const ProductSpecification = require('./api/ProductSpecification/index');
+const AiSearch = require('./api/ai-search/index')
+
 
 require('dotenv').config();
 
@@ -78,16 +80,12 @@ app.use('/api', authjwt , [
   ProductOffering,
   channel,
   ProductSpecification,
-
+  AiSearch
 ]);
 
 
 
-app.get('/some-route', (req, res) => {
-  res.send(`
-    <img src="/images/category/image-1745920717570-291694430.png">
-  `);
-});
+
 
 // Health check
 app.get('/health', (req, res) => {

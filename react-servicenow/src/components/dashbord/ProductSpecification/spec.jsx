@@ -189,81 +189,9 @@ const ProductSpecifications = () => {
           )}
         </div>
 
-        {/* AI Search Section */}
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-2 text-gray-800">AI Product Search</h2>
-          <p className="text-gray-600 mb-6">Describe what you're looking for and our AI will find matching products</p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <Input
-              placeholder="Describe your ideal product..."
-              size="large"
-              value={aiSearchTerm}
-              onChange={handleAiSearchTermChange}
-              className="flex-1"
-            />
-            <Button
-              type="primary"
-              size="large"
-              loading={isAiSearching}
-              onClick={handleAiSearch}
-              icon={<SearchOutlined />}
-              className="bg-green-500 hover:bg-green-600"
-            >
-              AI Search
-            </Button>
-            {aiResults.length > 0 && (
-              <Button
-                size="large"
-                onClick={handleClearAiResults}
-                danger
-              >
-                Clear
-              </Button>
-            )}
-          </div>
-
-          {/* AI Results */}
-          {aiResults.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-lg font-medium mb-4 text-gray-800">AI Search Results</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {aiResults.map((result, index) => (
-                  <Card
-                    key={index}
-                    hoverable
-                    className="h-full"
-                  >
-                    <h4 className="text-blue-500 font-medium mb-2">{result.title || 'Product'}</h4>
-                    <p className="text-gray-600 mb-4 text-sm">{result.description || 'No description available'}</p>
-                    <Button type="link" className="p-0">
-                      Learn more <ArrowRightOutlined />
-                    </Button>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {isAiSearching && (
-            <div className="flex justify-center py-6">
-              <Spin tip="Searching..." />
-            </div>
-          )}
-
-          {!isAiSearching && aiSearchTerm && aiResults.length === 0 && (
-            <Empty
-              description="No AI results found"
-              className="flex flex-col items-center justify-center py-6"
-            />
-          )}
-        </div>
+        
       </div>
-
-      {/* Chatbot */}
-      <div className="fixed bottom-8 right-8 z-50">
-        <Chatbot />
-      </div>
+  
     </div>
   );
 };
