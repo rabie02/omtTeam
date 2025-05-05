@@ -43,6 +43,11 @@ omtTeam/
   cd react-servicenow
   npm install
   npm run dev
+3.
+  ```bash
+    cd proxy-servicenow
+   npm install
+   npx nodemon app.js
 
 3.
 ```bash
