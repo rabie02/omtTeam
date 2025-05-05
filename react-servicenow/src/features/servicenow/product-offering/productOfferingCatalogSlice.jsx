@@ -50,19 +50,20 @@ export const createCatalog = createAsyncThunk(
 
 export const updateCatalogStatus = createAsyncThunk(
   'productOfferingCatalog/updateStatus',
-  async ({ id, currentStatus }, { rejectWithValue }) => {
+  async ({ id, status }, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      const newStatus = currentStatus === 'draft' ? 'published' 
-                      : currentStatus === 'published' ? 'retired'
-                      : currentStatus;
+      console.log(status);
 
       const response = await axios.patch(
-        `/api/product-offering-catalog/${id}`, 
-        { status: newStatus },
+        `/api/product-offering-catalog-status/${id}`, 
+        { status: status },
         { headers: { authorization: access_token } }
       );
+      console.log(response.data);
       return response.data.result;
+      
+      
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
     }
@@ -109,7 +110,7 @@ const productOfferingCatalogSlice = createSlice({
     totalPages: 1,
     totalItems: 0,
     limit: 6,
-    loading: true,
+    loading: false,
     error: null
   },
   reducers: {},
@@ -185,6 +186,7 @@ const productOfferingCatalogSlice = createSlice({
         state.error = null;
       })
       .addCase(updateCatalog.fulfilled, (state, action) => {
+       
         const index = state.data.findIndex(p => p.sys_id === action.payload.sys_id);
         if (index !== -1) {
           state.data[index] = action.payload;

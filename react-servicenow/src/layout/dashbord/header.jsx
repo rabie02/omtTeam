@@ -75,7 +75,20 @@ function Header() {
   ];
   
   return (
-    <header className="p-5 pb-2 sticky top-0 shadow-md flex justify-end bg-white z-50">
+    <header className="p-5 pb-2 sticky top-0 shadow-md flex justify-between bg-white z-50">
+      <div>
+      <div className="relative w-10 transition-all focus-within:w-72 focus-within:border border-cyan-600 hover:w-72 hover:border ">
+              <input
+                type="text"
+                placeholder="Search..."
+                id="searchInput"
+                className="w-full py-2 pl-10 pr-6 text-gray-700 bg-white  outline-none transition-all "
+              />
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+              <i class="ri-search-line text-2xl"></i>
+              </div>
+            </div>
+      </div>
       <div className="space-x-5 flex items-center">
         <div>
           <Badge count={5}>
