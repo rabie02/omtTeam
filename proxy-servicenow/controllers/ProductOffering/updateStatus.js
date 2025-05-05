@@ -35,6 +35,16 @@ module.exports = async (req, res)=>{
           }
         }
       );
+      
+      try {
+        await ProductOffering.updateOne(
+          { id: req.body.sys_id },
+          { $set: snResponse.data},
+          { runValidators: true }
+        );
+      } catch (mongoError) {
+        return handleMongoError(res, snResponse.data, mongoError, 'update');
+      }
   
       res.json(snResponse.data);
       

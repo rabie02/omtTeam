@@ -4,12 +4,12 @@ import axios from 'axios';
 // Async Thunks
 export const getall = createAsyncThunk(
   'ProductOffering/getall',
-  async ({ page = 1, limit = 6 }, { rejectWithValue }) => {
+  async ({ page = 1, limit = 6, q }, { rejectWithValue }) => {
     try {      
       const access_token = localStorage.getItem('access_token');
       const response = await axios.get("/api/product-offering", {
         headers: { authorization: access_token },
-        params: { page, limit }
+        params: { page, limit, q }
       }); 
       
       return response.data || [];

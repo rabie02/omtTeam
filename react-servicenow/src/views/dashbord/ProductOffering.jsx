@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from 'react-redux';
 function ProductOffering() {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState(null); 
-
+  const [searchQuery, setSearchQuery] = useState(null);
   const dispatch = useDispatch();
   // Selectors
   const { data: specs, loading: specsLoading, error: specsError } = useSelector(
@@ -42,6 +42,8 @@ function ProductOffering() {
               <input
                 type="text"
                 placeholder="Search..."
+                value={searchQuery || ''}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 id="searchInput"
                 className="w-full py-2 pl-10 pr-4 text-gray-700 bg-white border outline-none transition-all border-gray-300"
               />
@@ -70,7 +72,7 @@ function ProductOffering() {
         </div>
 
         <div className='flex justify-center items-center py-5'>
-          <Table setData={setData} setOpen={setOpen} dispatch={dispatch} ></Table>
+          <Table setData={setData} setOpen={setOpen} dispatch={dispatch} searchQuery={searchQuery}></Table>
         </div>
          
          <Form open={open} setOpen={setOpen} initialData={data} options={options} dispatch={dispatch}></Form>
