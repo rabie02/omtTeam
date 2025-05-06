@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Popconfirm, Pagination, Spin, Empty } from 'antd';
 import { getall, deleteProductOffering } from '../../../features/servicenow/product-offering/productOfferingSlice';
 
-function Table({setData , setOpen}) {
+function Table({setData , setOpen, searchQuery}) {
     const dispatch = useDispatch();
             const {
                 data: products,
@@ -15,14 +15,14 @@ function Table({setData , setOpen}) {
             } = useSelector((state) => state.productOffering);
     
     useEffect(() => {
-        dispatch(getall({ page: 1, limit: 6 }));
-    }, [dispatch]);
+        dispatch(getall({ page: 1, limit: 6, q:searchQuery }));
+    }, [dispatch, searchQuery]);
     
 
     const handleDelete = async (productId) => {
         await dispatch(deleteProductOffering(productId));
         // Refresh current page after deletion
-        dispatch(getall({ page: currentPage, limit }));
+        dispatch(getall({ page: currentPage, limit, q:searchQuery }));
     };
 
     function changeData(newData) {
@@ -31,7 +31,7 @@ function Table({setData , setOpen}) {
       }
 
     const handlePageChange = (page) => {
-            dispatch(getall({ page, limit }));
+            dispatch(getall({ page, limit, q:searchQuery }));
         };
 
     

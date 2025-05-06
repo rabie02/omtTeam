@@ -14,16 +14,16 @@ function Header() {
       const cleanupClientStorage = () => {
         // Clear all localStorage items
         localStorage.clear();
-        
+
         // Clear sessionStorage
         sessionStorage.clear();
-        
+
         // Clear cookies
         document.cookie.split(';').forEach(cookie => {
           const [name] = cookie.trim().split('=');
           document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
         });
-        
+
         // Clear service worker cache (if used)
         if ('caches' in window) {
           caches.keys().then(names => {
@@ -34,24 +34,24 @@ function Header() {
 
       // Execute cleanup
       cleanupClientStorage();
-      
+
       // Dispatch Redux logout action
       const result = await dispatch(userLogout());
-      
+
       if (userLogout.fulfilled.match(result)) {
         message.success('Logged out successfully');
       }
-      
+
       // Redirect to login page
       navigate('/login', { replace: true });
-      
+
     } catch (error) {
       console.error('Logout error:', error);
       message.error('Logged out locally (API failed)');
       navigate('/login', { replace: true });
     }
   };
-  
+
   const items = [
     {
       label: <Link to="/profile" className="text-md"><i className="ri-user-line mr-1"></i> Profile</Link>,
@@ -73,18 +73,24 @@ function Header() {
       key: 'logout',
     },
   ];
-  
+
   return (
-    <header className="p-5 pb-2 sticky top-0 shadow-md flex justify-end bg-white">
+    <header className="p-5 pb-2 sticky top-0 shadow-md flex justify-end bg-white z-50">
+
       <div className="space-x-5 flex items-center">
+        <div>
+          <Link to='/dashboard/help'>
+            <i class="ri-questionnaire-line text-3xl"></i>
+          </Link>
+        </div>
         <div>
           <Badge count={5}>
             <i className="ri-notification-3-line text-3xl"></i>
           </Badge>
         </div>
 
-        <Dropdown 
-          menu={{ items }} 
+        <Dropdown
+          menu={{ items }}
           trigger={['click']}
           placement="bottomRight"
         >

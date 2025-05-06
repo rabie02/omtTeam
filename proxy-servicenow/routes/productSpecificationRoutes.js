@@ -4,6 +4,6 @@ const router = express.Router();
 const productSpecificationRouter = require('../api/ProductSpecification');
 
 // Mount the product specification router
-router.use('/product-specifications', productSpecificationRouter);
+router.use('/product-specification', productSpecificationRouter);
 
 module.exports = router;

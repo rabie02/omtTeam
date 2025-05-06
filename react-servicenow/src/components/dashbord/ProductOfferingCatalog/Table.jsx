@@ -3,13 +3,14 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Popconfirm, Empty, Spin, Pagination } from 'antd';
 import {
     getall,
-    deleteCatalog
+    deleteCatalog,
+    updateCatalogStatus
 } from '../../../features/servicenow/product-offering/productOfferingCatalogSlice';
 
-function Table({ setData, setOpen }) {
+function Table({ setData, setOpen, searchQuery }) {
     const dispatch = useDispatch();
     const {
-        data: products,
+        data,
         loading,
         error,
         currentPage,
@@ -17,20 +18,37 @@ function Table({ setData, setOpen }) {
         limit
     } = useSelector((state) => state.productOfferingCatalog);
 
-
     useEffect(() => {
-        dispatch(getall({ page: 1, limit: 6 }));
-    }, [dispatch]);
+        dispatch(getall({ page: 1, limit: 6, q: searchQuery }));
+    }, [dispatch, searchQuery]);
 
-    const handleDelete = async (productId) => {
+    const handleDelete = async (productId) => {      
         await dispatch(deleteCatalog(productId));
-        // Refresh current page after deletion
-        dispatch(getall({ page: currentPage, limit }));
+        dispatch(getall({ 
+            page: currentPage, 
+            limit,
+            q: searchQuery 
+        }));
     };
-    
+
+    const handleUpdateStatus = async (productId, newStatus) => {     
+        await dispatch(updateCatalogStatus({ 
+            id: productId, 
+            status: newStatus 
+        }));
+        dispatch(getall({ 
+            page: currentPage, 
+            limit,
+            q: searchQuery 
+        }));
+    };
 
     const handlePageChange = (page) => {
-        dispatch(getall({ page, limit }));
+        dispatch(getall({ 
+            page, 
+            limit,
+            q: searchQuery 
+        }));
     };
 
     const changeData = (newData) => {
@@ -38,12 +56,26 @@ function Table({ setData, setOpen }) {
         setOpen(true);
     };
 
+    const getStatusAction = (currentStatus) => {
+        switch (currentStatus.toLowerCase()) {
+            case 'draft':
+                return { action: 'Publish', newStatus: 'published' };
+            case 'published':
+                return { action: 'Archive', newStatus: 'archived' };
+            case 'archived':
+                return { action: 'Retire', newStatus: 'retired' };
+            default:
+                return { action: 'Update Status', newStatus: currentStatus };
+        }
+    };
+
     if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
     if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
+    
     return (
         <div className='w-full justify-center flex'>
             <div className="w-9/12">
-                <table className=" divide-y-2 min-w-full divide-gray-200 overflow-x-auto border border-gray-300  shadow-2xl">
+                <table className="divide-y-2 min-w-full divide-gray-200 overflow-x-auto border border-gray-300 shadow-2xl">
                     <thead className="ltr:text-left rtl:text-right bg-cyan-700 text-white">
                         <tr className="*:font-medium ">
                             <th className="px-3 py-3 whitespace-nowrap">Number</th>
@@ -56,7 +88,7 @@ function Table({ setData, setOpen }) {
                     </thead>
 
                     <tbody className="divide-y divide-gray-200">
-                        {!products || products.length === 0 ? (
+                        {!data || data.length === 0 ? (
                             <tr>
                                 <td colSpan="6" className="py-8 text-center">
                                     <Empty
@@ -66,41 +98,55 @@ function Table({ setData, setOpen }) {
                                 </td>
                             </tr>
                         ) : (
-                            products.map((product) => (
-                                <tr key={product.number} className="*:text-gray-900 *:first:font-medium">
-                                    <td className="px-3 py-3 whitespace-nowrap">{product.number}</td>
-                                    <td className="px-3 py-3 whitespace-nowrap">{product.name}</td>
-                                    <td className="px-3 py-3 whitespace-nowrap">
-                                        <span className={`px-2 py-1 text-md capitalize rounded ${product.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
-                                            {product.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-3 py-3 whitespace-nowrap">
-                                        {product.start_date ? new Date(product.start_date).toISOString().split("T")[0] : 'N/A'}
-                                    </td>
-                                    <td className="px-3 py-3 whitespace-nowrap">
-                                        {product.end_date ? new Date(product.end_date).toISOString().split("T")[0] : 'N/A'}
-                                    </td>
-                                    <td className="px-3 py-3 whitespace-nowrap">
-                                        <button
-                                            className="mr-2 text-gray-500 hover:text-yellow-400 "
-                                            onClick={() => changeData(product)}
-                                        >
-                                            <i className="ri-pencil-line text-2xl"></i>
-                                        </button>
-                                        <Popconfirm
-                                            title="Delete the catalog"
-                                            description="Are you sure to delete this catalog?"
-                                            icon={<i className="ri-error-warning-line text-red-600 mr-2"></i>}
-                                            onConfirm={() => handleDelete(product.sys_id)}
-                                        >
-                                            <button className="text-gray-500 hover:text-red-600 ">
-                                                <i className="ri-delete-bin-6-line text-2xl"></i>
+                            data.map((product) => {
+                                const { action, newStatus } = getStatusAction(product.status);
+                                
+                                return (
+                                    <tr key={product.number} className="*:text-gray-900 *:first:font-medium">
+                                        <td className="px-3 py-3 whitespace-nowrap">{product.number}</td>
+                                        <td className="px-3 py-3 whitespace-nowrap">{product.name}</td>
+                                        <td className="px-3 py-3 whitespace-nowrap">
+                                            <span className={`px-2 py-1 text-md capitalize rounded ${product.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                                                {product.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap">
+                                            {product.start_date ? new Date(product.start_date).toISOString().split("T")[0] : 'N/A'}
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap">
+                                            {product.end_date ? new Date(product.end_date).toISOString().split("T")[0] : 'N/A'}
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap">
+                                            <Popconfirm
+                                                title={`${action} Catalog`}
+                                                description={`Are you sure you want to ${action.toLowerCase()} this catalog?`}
+                                                icon={<i className="ri-error-warning-line text-yellow-600 text-md mr-2"></i>}
+                                                onConfirm={() => handleUpdateStatus(product._id, newStatus)}
+                                            >
+                                                <button className="text-gray-500 hover:text-green-600">
+                                                    <i className="ri-loop-right-line text-2xl"></i>
+                                                </button>
+                                            </Popconfirm>
+                                            <button
+                                                className="mx-2 text-gray-500 hover:text-yellow-400"
+                                                onClick={() => changeData(product)}
+                                            >
+                                                <i className="ri-pencil-line text-2xl"></i>
                                             </button>
-                                        </Popconfirm>
-                                    </td>
-                                </tr>
-                            ))
+                                            <Popconfirm
+                                                title="Delete the catalog"
+                                                description="Are you sure to delete this catalog?"
+                                                icon={<i className="ri-error-warning-line text-red-600 mr-2"></i>}
+                                                onConfirm={() => handleDelete(product._id)}
+                                            >
+                                                <button className="text-gray-500 hover:text-red-600">
+                                                    <i className="ri-delete-bin-6-line text-2xl"></i>
+                                                </button>
+                                            </Popconfirm>
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>
@@ -116,7 +162,6 @@ function Table({ setData, setOpen }) {
                     />
                 </div>
             </div>
-
         </div>
     );
 }

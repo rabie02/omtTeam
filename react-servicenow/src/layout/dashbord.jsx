@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import Sidebar from "./dashbord/sidebar";
 import Header from "./dashbord/header";
+import Chatbot from '../components/dashbord/ProductSpecification/Chatbot'
 
 function Dashboard() {
     return (
@@ -13,6 +14,9 @@ function Dashboard() {
                 </div>
 
             </div>
+            <div className="fixed bottom-8 right-8 z-50">
+                    <Chatbot />
+                  </div>
         </div>
     );
 }
