@@ -8,7 +8,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'https://omtproject-d5b9hdebawhugbdy.francecentral-01.azurewebsites.net',
         changeOrigin: true,
       }
     }

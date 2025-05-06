@@ -13,6 +13,7 @@ router.get('/product-offering-catalog', getAll);
 router.get('/product-offering-catalog/:id', getOne);
 router.post('/product-offering-catalog', create);
 router.patch('/product-offering-catalog/:id', update);
+router.patch('/product-offering-catalog-status/:id', updateStatus);
 router.delete('/product-offering-catalog/:id', deleteHandler);
 
 module.exports = router;

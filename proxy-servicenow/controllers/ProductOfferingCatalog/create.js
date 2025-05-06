@@ -29,14 +29,23 @@ module.exports = async (req, res) => {
       }
     );
 
+    let mongoDoc;
     try {
-      const mongoDoc = new ProductOfferingCatalog(snResponse.data.result);
+      mongoDoc = new ProductOfferingCatalog(snResponse.data.result);
       await mongoDoc.save();
     } catch (mongoError) {
       return handleMongoError(res, snResponse.data, mongoError, 'creation');
     }
 
-    res.status(201).json(snResponse.data);
+    // Merge ServiceNow data with MongoDB _id
+    const responseData = {
+      result: {
+        ...snResponse.data.result,
+        _id: mongoDoc._id,  // Add MongoDB _id to the result
+      },
+    };
+
+    res.status(201).json(responseData);
   } catch (error) {
     if (axios.isAxiosError(error)) {
       return res.status(error.response?.status || 500).json({
