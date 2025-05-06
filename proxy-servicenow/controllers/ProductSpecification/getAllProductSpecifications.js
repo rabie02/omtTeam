@@ -7,11 +7,22 @@ const ProductSpecification = require('../../models/productSpecification');
  */
 const getAllProductSpecifications = async (req, res) => {
   try {
-    const productSpecs = await ProductSpecification.find({});
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 8;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      ProductSpecification.find().skip(skip).limit(limit),
+      ProductSpecification.countDocuments()
+    ]);
+
     res.status(200).json({
       success: true,
-      count: productSpecs.length,
-      data: productSpecs
+      count: data.length,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      data
     });
   } catch (error) {
     console.error("Error fetching product specifications:", error);
