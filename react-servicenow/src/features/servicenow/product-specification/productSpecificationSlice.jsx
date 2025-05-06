@@ -20,7 +20,7 @@ export const getall = createAsyncThunk(
 
 export const getPublished = createAsyncThunk(
     'ProductOffering/getallPubSpec',
-    async ({ page = 1, limit = 8 }, { rejectWithValue }) => {
+    async ({ page = 1, limit}, { rejectWithValue }) => {
       try {      
         const access_token = localStorage.getItem('access_token');
         const response = await axios.get("/api/product-specification", {
@@ -39,10 +39,13 @@ const ProductSpecificationSlice = createSlice({
     name: 'ProductSpecification',
     initialState: { 
       data: [],
-      selectedProduct: null,
-      loading: true,
+      currentPage: 1,
+      totalPages: 0,
+      totalItems: 0,
+      limit: 6,
+      loading: false,
       error: null
-    },
+  },
     extraReducers: (builder) => {
       builder
         // getall
