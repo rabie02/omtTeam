@@ -1,15 +1,58 @@
-import { useLocation } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import Logo from '@assets/nbg-e-omt.svg';
+import { userLogout } from '../../features/auth/authActions';
+import { useDispatch } from 'react-redux';
+import { message } from 'antd';
 
 const Sidebar = () => {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState({});
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const handleLogout = async (e) => {
-    e.preventDefault();
-    // Your logout logic
+  const handleLogout = async () => {
+    try {
+      // Perform comprehensive client-side cleanup first
+      const cleanupClientStorage = () => {
+        // Clear all localStorage items
+        localStorage.clear();
+        
+        // Clear sessionStorage
+        sessionStorage.clear();
+        
+        // Clear cookies
+        document.cookie.split(';').forEach(cookie => {
+          const [name] = cookie.trim().split('=');
+          document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        });
+        
+        // Clear service worker cache (if used)
+        if ('caches' in window) {
+          caches.keys().then(names => {
+            names.forEach(name => caches.delete(name));
+          });
+        }
+      };
+
+      // Execute cleanup
+      cleanupClientStorage();
+      
+      // Dispatch Redux logout action
+      const result = await dispatch(userLogout());
+      
+      if (userLogout.fulfilled.match(result)) {
+        message.success('Logged out successfully');
+      }
+      
+      // Redirect to login page
+      navigate('/login', { replace: true });
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      message.error('Logged out locally (API failed)');
+      navigate('/login', { replace: true });
+    }
   };
 
   const toggleExpand = (path) => {
@@ -55,6 +98,7 @@ const Sidebar = () => {
                 ] 
               },
               { path: '/dashboard/product-specification', icon: 'file-list', text: 'Product Specification' },
+              {path:'/dashboard/customer-order', icon:'shopping-basket', text:'Customer Orders'}
             ].map((item) => {
               const hasChildren = item.children && item.children.length > 0;
               const isItemActive = isActive(item.path) || (hasChildren && isChildActive(item.children));

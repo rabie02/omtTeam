@@ -15,7 +15,10 @@ const ProductOfferingCatalog = require('./api/ProductOfferingCatalog/index')
 const ProductOfferingCategory = require('./api/ProductOfferingCategory/index')
 const ProductOffering = require('./api/ProductOffering/index')
 const channel = require('./api/channel/index')
+const account = require('./api/account/index')
 const ProductSpecification = require('./api/ProductSpecification/index');
+const customerOrder = require('./api/CustomerOrder/index');
+
 
 require('dotenv').config();
 
@@ -78,7 +81,8 @@ app.use('/api', authjwt , [
   ProductOffering,
   channel,
   ProductSpecification,
-
+  customerOrder,
+  account
 ]);
 
 
