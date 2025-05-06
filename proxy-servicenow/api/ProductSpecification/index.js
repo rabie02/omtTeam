@@ -14,7 +14,7 @@ const handleMongoError = (res, serviceNowData, error, operation) => {
 };
 
 // Endpoint to receive product specifications from ServiceNow
-router.post('/', async (req, res) => {
+router.post('/product-specification', async (req, res) => {
   try {
     console.log('Received specification data:', req.body);
     
