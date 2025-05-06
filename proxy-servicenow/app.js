@@ -95,12 +95,6 @@ app.use('/api', authjwt , [
 
 
 
-app.get('/some-route', (req, res) => {
-  res.send(`
-    <img src="/images/category/image-1745920717570-291694430.png">
-  `);
-});
-
 // Health check
 app.get('/health', (req, res) => {
   res.status(200).json({ 
