@@ -7,6 +7,7 @@ const getOne = require('../../controllers/ProductOfferingCatalog/getone');
 const create = require('../../controllers/ProductOfferingCatalog/create');
 const update = require('../../controllers/ProductOfferingCatalog/update');
 const deleteHandler = require('../../controllers/ProductOfferingCatalog/delete');
+const updateStatus = require('../../controllers/ProductOfferingCatalog/updateStatus');
 
 // Define routes
 router.get('/product-offering-catalog', getAll);

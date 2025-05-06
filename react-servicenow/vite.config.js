@@ -3,12 +3,15 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import * as path from 'path' // 🛠️ Fixed path import
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: backendUrl,
         changeOrigin: true,
       }
     }
