@@ -22,13 +22,15 @@ export const getall = createAsyncThunk(
 
 export const getPublished = createAsyncThunk(
     'ProductOffering/getallPubSpec',
-    async ({ page = 1, limit}, { rejectWithValue }) => {
+    async ({ page = 1, limit, q}, { rejectWithValue }) => {
       try {      
         const access_token = localStorage.getItem('access_token');
-        const response = await axios.get(`${backendUrl}/api/product-specification`, {
+        const response = await axios.get(`/api/product-specification`, {
           headers: { authorization: access_token },
-          params: { page, limit, status: 'published'}
+          params: { page, limit, q}
         });
+        console.log(q);
+        
         return response.data || [];
       } catch (error) {
         return rejectWithValue(error.response?.data?.message || error.message);
