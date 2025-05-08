@@ -33,6 +33,6 @@ export default defineConfig(({ mode }) => {
         '@views': path.resolve(__dirname, './src/views'),
       }
     },
-   
+
   }
 })
