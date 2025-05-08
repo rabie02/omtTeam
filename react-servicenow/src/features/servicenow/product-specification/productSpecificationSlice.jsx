@@ -25,7 +25,7 @@ export const getPublished = createAsyncThunk(
     async ({ page = 1, limit, q}, { rejectWithValue }) => {
       try {      
         const access_token = localStorage.getItem('access_token');
-        const response = await axios.get(`/api/product-specification`, {
+        const response = await axios.get(`${backendUrl}/api/product-specification`, {
           headers: { authorization: access_token },
           params: { page, limit, q}
         });       
