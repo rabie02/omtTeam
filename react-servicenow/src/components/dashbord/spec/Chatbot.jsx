@@ -10,7 +10,8 @@ const Chatbot = () => {
       options: [
         "Lister les spécifications",
         "Créer une nouvelle spécification",
-        "Aide-moi à publier une spécification"
+        "Aide-moi à publier une spécification",
+        "Rechercher un article de connaissance"
       ]
     }
   ]);
@@ -150,7 +151,16 @@ const Chatbot = () => {
           ]
         };
         break;
+  
+        case 'knowledge':
+          setCurrentStep('knowledge_query');
+          return {
+            text: "D'accord, sur quel sujet souhaitez-vous chercher un article de connaissance ?",
+            sender: 'bot',
+            intent: 'knowledge'
+          };
         
+  
       case 'help':
       default:
         response = {
@@ -160,13 +170,14 @@ const Chatbot = () => {
             "Lister les spécifications",
             "Créer une nouvelle spécification",
             "Publier une spécification",
-            "Rechercher par norme"
+            "Afficher des articles de connaissance"
           ]
         };
     }
-    
+  
     return response;
   };
+  
 
   const startSpecCreation = () => {
     setCurrentStep('name');
@@ -190,13 +201,52 @@ const Chatbot = () => {
   };
 
   const processStepResponse = async (input) => {
+    // Étape de recherche d'article de connaissance
+    if (currentStep === 'knowledge_query') {
+      const articles = await searchKnowledgeArticles(input);
+      setCurrentStep(null);
+    
+      if (articles.length > 0) {
+        addBotMessage("Voici quelques articles de connaissance qui peuvent vous aider :");
+    
+        setMessages(prev => [
+          ...prev,
+          {
+            text: '',
+            sender: 'bot',
+            data: articles.map(article => ({
+              name: article.short_description,
+              number: article.display_number,
+              topic: article.topic,
+              body: article.text
+            })),
+            intent: 'knowledge'
+          },
+          {
+            text: "Que souhaitez-vous faire maintenant ?",
+            sender: 'bot',
+            options: [
+              "Lister les spécifications",
+              "Créer une nouvelle spécification",
+              "Aide-moi à publier une spécification",
+              "Rechercher un article de connaissance"
+            ]
+          }
+        ]);
+      } else {
+        addBotMessage("Aucun article trouvé pour votre demande.");
+      }
+      return;
+    }
+    
+  
     switch(currentStep) {
       case 'name':
         setSpecData({...specData, name: input});
         setCurrentStep('display_name');
         addBotMessage(`Nom enregistré: ${input}. Quel est le nom d'affichage?`);
         break;
-      
+  
       case 'display_name':
         setSpecData({...specData, display_name: input});
         setCurrentStep('category');
@@ -208,19 +258,19 @@ const Chatbot = () => {
           "Autre"
         ]);
         break;
-      
+  
       case 'category':
         setSpecData({...specData, category: input});
         setCurrentStep('type');
         addBotMessage(`Catégorie enregistrée: ${input}. Quel est le type?`);
         break;
-      
+  
       case 'type':
         setSpecData({...specData, type: input});
         setCurrentStep('start_date');
         addBotMessage(`Type enregistré: ${input}. Quelle est la date de début (format yyyy-MM-dd)?`);
         break;
-      
+  
       case 'start_date':
         if (!isValidDate(input)) {
           addBotMessage("Format de date invalide. Veuillez entrer la date au format yyyy-MM-dd.");
@@ -230,7 +280,7 @@ const Chatbot = () => {
         setCurrentStep('end_date');
         addBotMessage(`Date de début enregistrée: ${input}. Quelle est la date de fin (format yyyy-MM-dd)?`);
         break;
-      
+  
       case 'end_date':
         if (!isValidDate(input)) {
           addBotMessage("Format de date invalide. Veuillez entrer la date au format yyyy-MM-dd.");
@@ -240,31 +290,31 @@ const Chatbot = () => {
         setCurrentStep('owner');
         addBotMessage(`Date de fin enregistrée: ${input}. Qui est le propriétaire?`);
         break;
-      
+  
       case 'owner':
         setSpecData({...specData, owner: input});
         setCurrentStep('description');
         addBotMessage(`Propriétaire enregistré: ${input}. Veuillez fournir une description.`);
         break;
-      
+  
       case 'description':
         setSpecData({...specData, description: input});
         setCurrentStep('external_code');
         addBotMessage(`Description enregistrée. Quel est le code externe?`);
         break;
-      
+  
       case 'external_code':
         setSpecData({...specData, external_code: input});
         setCurrentStep('line');
         addBotMessage(`Code externe enregistré: ${input}. Quelle est la ligne de produit?`);
         break;
-      
+  
       case 'line':
         setSpecData({...specData, line: input});
         setCurrentStep('cost_to_company');
         addBotMessage(`Ligne de produit enregistrée: ${input}. Quel est le coût pour l'entreprise?`);
         break;
-      
+  
       case 'cost_to_company':
         setSpecData({...specData, cost_to_company: input});
         setCurrentStep('composite');
@@ -273,7 +323,7 @@ const Chatbot = () => {
           "Non"
         ]);
         break;
-      
+  
       case 'composite':
         const isComposite = input.toLowerCase() === 'oui';
         setSpecData({...specData, composite: isComposite});
@@ -283,7 +333,7 @@ const Chatbot = () => {
           "Non"
         ]);
         break;
-      
+  
       case 'installation_required':
         const installationRequired = input.toLowerCase() === 'oui';
         setSpecData({...specData, installation_required: installationRequired});
@@ -293,17 +343,18 @@ const Chatbot = () => {
           "Non"
         ]);
         break;
-      
+  
       case 'location_specific':
         const locationSpecific = input.toLowerCase() === 'oui';
         setSpecData({...specData, location_specific: locationSpecific});
         confirmAndSaveSpec();
         break;
-      
+  
       default:
         addBotMessage("Je n'ai pas compris. Pouvez-vous répéter?");
     }
   };
+  
 
   const isValidDate = (dateString) => {
     const regEx = /^\d{4}-\d{2}-\d{2}$/;
@@ -361,28 +412,35 @@ const Chatbot = () => {
   // Détection d'intention améliorée
   const detectIntent = (text) => {
     text = text.toLowerCase();
-    
+  
     if (/(liste|afficher|voir|donner|chercher|recherche|trouver)/.test(text) && 
         /(spécification|spec|fiche|produit)/.test(text)) {
       return 'search';
     }
-    
+  
     if (/(créer|nouveau|nouvelle|ajouter|générer)/.test(text) && 
         /(spécification|spec|fiche)/.test(text)) {
       return 'create';
     }
-    
+  
     if (/(publier|valider|finaliser|activer)/.test(text) && 
         /(spécification|spec|fiche)/.test(text)) {
       return 'publish';
     }
-    
+  
+    if (/(article|connaissance|aide|faq|question)/.test(text) || 
+        text.includes("afficher des articles de connaissance")) {
+      return 'knowledge';
+    }
+  
     if (/(aide|assistance|help|soutien)/.test(text)) {
       return 'help';
     }
-    
+  
     return 'help';
   };
+  
+  
 
   // Fonctions ServiceNow
   const searchSpecifications = async (query = '') => {
@@ -408,6 +466,36 @@ const Chatbot = () => {
       throw new Error("Impossible de récupérer les spécifications.");
     }
   };
+
+  const searchKnowledgeArticles = async (query = '') => {
+    try {
+      const response = await axios.get(
+        'https://dev268291.service-now.com/api/now/table/kb_knowledge',
+        {
+          auth: {
+            username: 'group2',
+            password: 'K5F/Uj/lDbo9YAS'
+          },
+          headers: {
+            Accept: 'application/json'
+          },
+          params: {
+            sysparm_query: `workflow=published^short_descriptionLIKE${query}`,
+            sysparm_limit: 5,
+            sysparm_fields: 'short_description,display_number,topic,text',
+            sysparm_display_value: true,
+            sysparm_exclude_reference_link: true
+          }
+        }
+      );
+      return response.data.result;
+    } catch (error) {
+      console.error("❌ Erreur knowledge:", error);
+      throw new Error("Impossible de récupérer les articles de connaissance.");
+    }
+  };
+  
+  
 
   const publishSpecification = async (specId) => {
     try {
@@ -472,6 +560,52 @@ const Chatbot = () => {
       </div>
     );
   };
+
+  const formatArticles = (articles) => {
+    if (!articles || !Array.isArray(articles) || articles.length === 0) {
+      return (
+        <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">
+          Aucun article trouvé.
+        </div>
+      );
+    }
+  
+    return (
+      <div className="grid grid-cols-1 gap-3 mt-3">
+        {articles.map((article, index) => (
+          <div
+            key={index}
+            className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 text-sm"
+          >
+            <h4 className="font-semibold text-blue-700 mb-2">{article.name}</h4>
+            <table className="table-auto text-left w-full text-gray-700 text-sm">
+              <tbody>
+                {article.number && (
+                  <tr>
+                    <td className="font-medium pr-2 py-1">Numéro :</td>
+                    <td>{article.number}</td>
+                  </tr>
+                )}
+                {article.topic && (
+                  <tr>
+                    <td className="font-medium pr-2 py-1">Sujet :</td>
+                    <td>{article.topic}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            {article.body && (
+              <div className="mt-2 text-gray-800 leading-6">
+                <hr className="my-2" />
+                <div dangerouslySetInnerHTML={{ __html: article.body }} />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };  
+  
 
   // Fonctions utilitaires
   const addBotMessage = (text, options = []) => {
@@ -549,7 +683,7 @@ const Chatbot = () => {
                     : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm'
                 }`}>
                   {msg.text}
-                  {msg.data && formatSpecifications(msg.data)}
+                  {msg.data && (msg.intent === 'knowledge' ? formatArticles(msg.data) : formatSpecifications(msg.data))}
                   
                   {msg.options && (
                     <div className="flex flex-wrap gap-2.5 mt-3">
