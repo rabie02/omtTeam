@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Modal } from 'antd';
+import { formatDateForInput } from '@/utils/formatDateForInput.js'
 import { updateCatalog, createCatalog } from '../../../features/servicenow/product-offering/productOfferingCatalogSlice';
 
 const generateCodeFromName = (name) => {
@@ -14,7 +15,8 @@ const generateCodeFromName = (name) => {
     }
     if (codePrefix.length >= 8) break;
   }
-  return `${codePrefix}101`;
+  const randomNumber = Math.floor(Math.random() * 900) + 100;
+  return `${codePrefix}${randomNumber}`;
 };
 
 const validationSchema = Yup.object().shape({
@@ -30,14 +32,14 @@ function ProductOfferingCatalogForm({ open, setOpen, initialData = null, dispatc
   const formik = useFormik({
     initialValues: {
       name: initialData?.name || '',
-      start_date: initialData?.start_date?.split(' ')[0] || '',
-      end_date: initialData?.end_date?.split(' ')[0] || '',
+      start_date: formatDateForInput(initialData?.start_date) || '',
+      end_date: initialData?.end_date ? formatDateForInput(initialData?.end_date) : '',
       status: initialData?.status || 'draft',
       description: initialData?.description || '',
       code: initialData?.code || '',
     },
     validationSchema,
-    onSubmit: async (values, {resetForm}) => {
+    onSubmit: async (values, { resetForm }) => {
       try {
         const action = isEditMode
           ? updateCatalog({ id: initialData._id, ...values })
@@ -185,8 +187,8 @@ function ProductOfferingCatalogForm({ open, setOpen, initialData = null, dispatc
                 ? 'Updating...'
                 : 'Creating...'
               : isEditMode
-              ? 'Update Catalog'
-              : 'Create Catalog'}
+                ? 'Update Catalog'
+                : 'Create Catalog'}
           </button>
         </div>
       </form>

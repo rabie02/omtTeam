@@ -22,32 +22,32 @@ function Table({ setData, setOpen, searchQuery }) {
         dispatch(getall({ page: 1, limit: 6, q: searchQuery }));
     }, [dispatch, searchQuery]);
 
-    const handleDelete = async (productId) => {      
+    const handleDelete = async (productId) => {
         await dispatch(deleteCatalog(productId));
-        dispatch(getall({ 
-            page: currentPage, 
+        dispatch(getall({
+            page: currentPage,
             limit,
-            q: searchQuery 
+            q: searchQuery
         }));
     };
 
-    const handleUpdateStatus = async (productId, newStatus) => {     
-        await dispatch(updateCatalogStatus({ 
-            id: productId, 
-            status: newStatus 
+    const handleUpdateStatus = async (productId, newStatus) => {
+        await dispatch(updateCatalogStatus({
+            id: productId,
+            status: newStatus
         }));
-        dispatch(getall({ 
-            page: currentPage, 
+        dispatch(getall({
+            page: currentPage,
             limit,
-            q: searchQuery 
+            q: searchQuery
         }));
     };
 
     const handlePageChange = (page) => {
-        dispatch(getall({ 
-            page, 
+        dispatch(getall({
+            page,
             limit,
-            q: searchQuery 
+            q: searchQuery
         }));
     };
 
@@ -61,9 +61,9 @@ function Table({ setData, setOpen, searchQuery }) {
             case 'draft':
                 return { action: 'Publish', newStatus: 'published' };
             case 'published':
-                return { action: 'Archive', newStatus: 'archived' };
-            case 'archived':
                 return { action: 'Retire', newStatus: 'retired' };
+            case 'archived':
+                return { action: 'Archive', newStatus: 'archived' };
             default:
                 return { action: 'Update Status', newStatus: currentStatus };
         }
@@ -71,7 +71,7 @@ function Table({ setData, setOpen, searchQuery }) {
 
     if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
     if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
-    
+
     return (
         <div className='w-full justify-center flex'>
             <div className="w-9/12">
@@ -100,7 +100,7 @@ function Table({ setData, setOpen, searchQuery }) {
                         ) : (
                             data.map((product) => {
                                 const { action, newStatus } = getStatusAction(product.status);
-                                
+
                                 return (
                                     <tr key={product.number} className="*:text-gray-900 *:first:font-medium">
                                         <td className="px-3 py-3 whitespace-nowrap">{product.number}</td>

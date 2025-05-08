@@ -33,17 +33,6 @@ export default defineConfig(({ mode }) => {
         '@views': path.resolve(__dirname, './src/views'),
       }
     },
-    build: {
-      // Ensure frontend uses correct API endpoint in production
-      sourcemap: true,
-      //rollupOptions: {
-        //external: ['react'], // Keep this if you need it
-        //output: {
-          //manualChunks: {
-            //react: ['react', 'react-dom'],
-          //}
-        //}
-      //}
-    }
+
   }
 })

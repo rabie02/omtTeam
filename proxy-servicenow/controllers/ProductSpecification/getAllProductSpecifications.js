@@ -10,10 +10,22 @@ const getAllProductSpecifications = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 8;
     const skip = (page - 1) * limit;
+    const searchQuery = req.query.q;
+
+    let query = {};
+    if (searchQuery) {
+      const searchTerm = searchQuery.toLowerCase();
+      query = {
+        $or: [
+          { display_name: { $regex: `.*${searchTerm}.*`, $options: 'i' } },
+          { specification_type: { $regex: `.*${searchTerm}.*`, $options: 'i' } },
+        ]
+      };
+    }
 
     const [data, total] = await Promise.all([
-      ProductSpecification.find().skip(skip).limit(limit),
-      ProductSpecification.countDocuments()
+      ProductSpecification.find(query).skip(skip).limit(limit),
+      ProductSpecification.countDocuments(query)
     ]);
 
     res.status(200).json({
