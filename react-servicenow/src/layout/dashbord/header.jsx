@@ -80,7 +80,7 @@ function Header() {
       <div className="space-x-5 flex items-center">
         <div>
           <Link to='/dashboard/help'>
-            <i class="ri-questionnaire-line text-3xl"></i>
+            <i className="ri-questionnaire-line text-3xl"></i>
           </Link>
         </div>
         <div>

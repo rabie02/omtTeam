@@ -76,9 +76,9 @@ function AiSearch() {
                 <div className="bg-gray-50 border border-gray-200  p-6 mb-8">
                     {/* AI Results */}
                     {  aiResults.length == 0 && (
-                        <div class="max-w-2xl mx-auto p-6 bg-white mt-10">
-                            <h2 class="text-2xl font-bold text-gray-800 mb-4">Need Help? We're Here for You!</h2>
-                            <p class="text-gray-600 mb-6">
+                        <div className="max-w-2xl mx-auto p-6 bg-white mt-10">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-4">Need Help? We're Here for You!</h2>
+                            <p className="text-gray-600 mb-6">
                                 Have a question or need assistance? Our team is here to help! Whether you're having trouble navigating the site, need more information, or just want to ask something — feel free to reach out.
                             </p>
 

@@ -278,11 +278,11 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           disabled={formik.isSubmitting}
           className="w-full border rounded px-3 py-2"
         >
-          <option disabled>Select a product specification</option>
+          <option value="">Select a product specification</option>
           {/* Map over the specs passed via props */}
           {options.specifications.map(spec => ( spec.status ==="published"?
                 <option key={spec.id || spec.sys_id} value={spec.id || spec.sys_id}> {/* Use correct ID field */}
-                    {spec.name} {/* Use correct Name field */}
+                    {spec.display_name} {/* Use correct Name field */}
                 </option> : ""
                 ))}
           </select>
@@ -304,7 +304,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           disabled={formik.isSubmitting}
           className="w-full border rounded px-3 py-2"
         >
-          <option disabled>Select a Category</option>
+          <option value="">Select a Category</option>
           {/* Map over the categories passed via props */}
           {options.categories.map(cat => ( cat.status ==="published" || "draft" ?
                 <option key={cat.id || cat.sys_id} value={cat.id || cat.sys_id}> {/* Use correct ID field */}

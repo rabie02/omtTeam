@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Table from '../../components/dashbord/ProductOffering/Table';
 import Form from '../../components/dashbord/ProductOffering/Form';
-import { getall as getSpecs } from '../../features/servicenow/product-specification/productSpecificationSlice';
+import { getPublished as getSpecs } from '../../features/servicenow/product-specification/productSpecificationSlice';
 import { getall as getCats } from '../../features/servicenow/product-offering/productOfferingCategorySlice';
 import { getall as getChannels } from '../../features/servicenow/channel/channelSlice';
 import { useDispatch, useSelector } from 'react-redux';
@@ -22,13 +22,14 @@ function ProductOffering() {
     useSelector((state) => state.channel);
   useEffect(() => {
       if (localStorage.getItem('access_token')) {
-        dispatch(getSpecs());
+        dispatch(getSpecs({ page: 1, limit: 99 }));
         dispatch(getCats({ page: 1, limit: 99 }));
         dispatch(getChannels());
       } else {
         console.error('Auth token not found. Please login.');
       }
     }, [dispatch]);
+    console.log(specs);
 
   const options = {specifications: specs, categories: cats, channels: channels}
 
