@@ -7,6 +7,7 @@ import Catalog from '../views/dashbord/ProductOfferingCatalog';
 import POCategory from '../views/dashbord/ProductOfferingCategory';
 import PO from '../views/dashbord/ProductOffering';
 import PS from '../views/dashbord/ProductSpec';
+import AiSearch from '../views/dashbord/ai-search';
 const dashboardRoutes = {
   path: '/dashboard',
   element: (
@@ -20,8 +21,10 @@ const dashboardRoutes = {
     { path: 'category', element:<POCategory/>},
     { path: 'product-offering', element:<PO/>},
     { path: 'product-specification', element:<PS/>},
+    { path: 'Help', element:<AiSearch/>},
     // ... other dashboard sub-routes
   ],
 };
 
 export default dashboardRoutes;
+
