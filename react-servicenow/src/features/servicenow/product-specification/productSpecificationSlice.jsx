@@ -28,9 +28,7 @@ export const getPublished = createAsyncThunk(
         const response = await axios.get(`/api/product-specification`, {
           headers: { authorization: access_token },
           params: { page, limit, q}
-        });
-        console.log(q);
-        
+        });       
         return response.data || [];
       } catch (error) {
         return rejectWithValue(error.response?.data?.message || error.message);

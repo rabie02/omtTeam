@@ -11,8 +11,6 @@ const getAllProductSpecifications = async (req, res) => {
     const limit = parseInt(req.query.limit) || 8;
     const skip = (page - 1) * limit;
     const searchQuery = req.query.q;
-    console.log(req.query.q);
-    
 
     let query = {};
     if (searchQuery) {

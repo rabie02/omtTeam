@@ -15,7 +15,8 @@ const generateCodeFromName = (name) => {
     }
     if (codePrefix.length >= 8) break;
   }
-  return `${codePrefix}101`;
+  const randomNumber = Math.floor(Math.random() * 900) + 100;
+  return `${codePrefix}${randomNumber}`;
 };
 
 const validationSchema = Yup.object().shape({
