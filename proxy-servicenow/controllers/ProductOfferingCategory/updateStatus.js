@@ -1,6 +1,6 @@
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
-const ProductOffering = require('../../models/ProductOffering');
+const ProductOfferingCategory = require('../../models/ProductOfferingCategory');
 const handleMongoError = require('../../utils/handleMongoError');
 
 module.exports = async (req, res)=>{
@@ -23,11 +23,13 @@ module.exports = async (req, res)=>{
       if (!isValidOperation) {
         return res.status(400).json({ error: 'Only two fields allowed: sys_id & status!' });
       }
-     
-  
-      const snResponse = await axios.patch(
-        `${process.env.SERVICE_NOW_URL}/api/sn_prd_pm/product_offering_api/po_pub`,
-        req.body,
+
+      const snResponse2 = await axios.patch(
+        `${process.env.SERVICE_NOW_URL}/api/sn_prd_pm/product_offering_api/poc_pub`,
+        {
+            sys_id: req.body.sys_id,
+            status: req.body.status
+        },
         {
           headers: {
             'Content-Type': 'application/json',
@@ -37,19 +39,19 @@ module.exports = async (req, res)=>{
       );
       
       try {
-        await ProductOffering.updateOne(
-          { id: req.body.sys_id },
-          { $set: snResponse.data},
+        await ProductOfferingCategory.updateOne(
+          { sys_id: req.body.sys_id },
+          { $set: {status:req.body.status}},
           { runValidators: true }
         );
       } catch (mongoError) {
-        return handleMongoError(res, snResponse.data, mongoError, 'update');
+        return handleMongoError(res, snResponse2.data, mongoError, 'update');
       }
   
-      res.json(snResponse.data);
+      res.json(snResponse2.data);
       
     } catch (error) {
-      console.error('Error update product offering\'s state: ', error);
+      console.error('Error update product offering category \'s state: ', error);
       const status = error.response?.status || 500;
       const message = error.response?.data?.error?.message || error.message;
       res.status(status).json({ error: message });

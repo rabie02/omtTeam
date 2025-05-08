@@ -7,7 +7,7 @@ export const getall = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {      
       const access_token = localStorage.getItem('access_token');
-      const response = await axios.get(`${backendUrl}/api/channel`, {
+      const response = await axios.get(`/api/channel`, {
         headers: { authorization: access_token },
       });
       return response.data.result || [];

@@ -8,6 +8,8 @@ const upload = require('../../utils/uplaod');
 const ProductOfferingCategory = require('../../models/ProductOfferingCategory');
 const deleteOldFiles = require('../../utils/deletefiles')
 
+const updateStatus = require('../../controllers/ProductOfferingCategory/updateStatus');
+const createRelation = require('../../controllers/CatalogCategroyRelationship/create');
 
 const router = express.Router();
 require('dotenv').config();
@@ -22,6 +24,8 @@ const handleMongoError = (res, serviceNowData, error, operation) => {
   });
 };
 
+router.patch('/product-offering-category-status', updateStatus);
+router.post('/category-catalog-relation', createRelation);
 // GET ALL (with pagination)
 router.get('/product-offering-category', async (req, res) => {
   try {

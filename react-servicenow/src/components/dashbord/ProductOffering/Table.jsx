@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Popconfirm, Pagination, Spin, Empty } from 'antd';
-import { getall, deleteProductOffering } from '../../../features/servicenow/product-offering/productOfferingSlice';
+import { getall, deleteProductOffering, updateProductOfferingStatus } from '../../../features/servicenow/product-offering/productOfferingSlice';
 
-function Table({setData , setOpen}) {
+function Table({setData , setOpen, searchQuery}) {
     const dispatch = useDispatch();
             const {
                 data: products,
@@ -15,14 +15,26 @@ function Table({setData , setOpen}) {
             } = useSelector((state) => state.productOffering);
     
     useEffect(() => {
-        dispatch(getall({ page: 1, limit: 6 }));
-    }, [dispatch]);
+        dispatch(getall({ page: 1, limit: 6, q:searchQuery }));
+    }, [dispatch, searchQuery]);
     
 
     const handleDelete = async (productId) => {
         await dispatch(deleteProductOffering(productId));
         // Refresh current page after deletion
-        dispatch(getall({ page: currentPage, limit }));
+        dispatch(getall({ page: currentPage, limit, q:searchQuery }));
+    };
+
+     const handleUpdateStatus = async (productId, newStatus) => {     
+        await dispatch(updateProductOfferingStatus({ 
+            sys_id: productId, 
+            status: newStatus 
+        }));
+        dispatch(getall({ 
+            page: currentPage, 
+            limit,
+            q: searchQuery 
+        }));
     };
 
     function changeData(newData) {
@@ -31,9 +43,22 @@ function Table({setData , setOpen}) {
       }
 
     const handlePageChange = (page) => {
-            dispatch(getall({ page, limit }));
+            dispatch(getall({ page, limit, q:searchQuery }));
         };
 
+
+    const getStatusAction = (currentStatus) => {
+        switch (currentStatus.toLowerCase()) {
+            case 'draft':
+                return { action: 'Publish', newStatus: 'published' };
+            case 'published':
+                return { action: 'Retire', newStatus: 'retired' };
+            case 'retired':
+                return { action: 'Archive', newStatus: 'archived' };
+            default:
+                return { action: 'Update Status', newStatus: currentStatus };
+        }
+    };
     
 
     if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
@@ -68,6 +93,17 @@ function Table({setData , setOpen}) {
                             <td className="px-3 py-3 whitespace-nowrap">{product.validFor?.startDateTime || 'N/A'}</td>
                             <td className="px-3 py-3 whitespace-nowrap">{product.validFor?.endDateTime || 'N/A'}</td>
                             <td className="px-3 py-3 whitespace-nowrap">
+
+                                <Popconfirm
+                                    title={`${getStatusAction(product.status).action} Product offering`}
+                                    description={`Are you sure you want to ${getStatusAction(product.status).action.toLowerCase()} this product offering?`}
+                                    icon={<i className="ri-error-warning-line text-yellow-600 text-md mr-2"></i>}
+                                    onConfirm={() => handleUpdateStatus(product.id, getStatusAction(product.status).newStatus)}
+                                >
+                                    <button className="text-gray-500 hover:text-green-600">
+                                        <i className="ri-loop-right-line text-2xl"></i>
+                                    </button>
+                                </Popconfirm>
                                 <button
                                     className="mr-2 text-gray-500 hover:text-blue-600 "
                                     onClick={() => changeData(product)}

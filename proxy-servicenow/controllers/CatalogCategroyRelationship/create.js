@@ -1,6 +1,6 @@
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
-const ProductOffering = require('../../models/ProductOffering');
+const CatalogCategoryRelationship = require('../../models/CatalogCategoryRelationship');
 const handleMongoError = require('../../utils/handleMongoError');
 
 module.exports = async (req, res)=>{
@@ -15,7 +15,7 @@ module.exports = async (req, res)=>{
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
   
       // Validate allowed fields
-      const allowedFields = ['sys_id', 'status'];
+      const allowedFields = ['category', 'catalog'];
       
       const updates = Object.keys(req.body);
       const isValidOperation = updates.every(update => allowedFields.includes(update));
@@ -23,11 +23,16 @@ module.exports = async (req, res)=>{
       if (!isValidOperation) {
         return res.status(400).json({ error: 'Only two fields allowed: sys_id & status!' });
       }
+      const CCrelationship = {
+        source: req.body.catalog,
+        target: req.body.category
+      }
+
      
   
-      const snResponse = await axios.patch(
-        `${process.env.SERVICE_NOW_URL}/api/sn_prd_pm/product_offering_api/po_pub`,
-        req.body,
+      const snResponse = await axios.post(
+        `${process.env.SERVICE_NOW_URL}/api/now/table/sn_prd_pm_catalog_category_relationship`,
+        CCrelationship,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -35,21 +40,22 @@ module.exports = async (req, res)=>{
           }
         }
       );
+
       
+      let mongoDoc;
       try {
-        await ProductOffering.updateOne(
-          { id: req.body.sys_id },
-          { $set: snResponse.data},
-          { runValidators: true }
-        );
+        mongoDoc = new CatalogCategoryRelationship(snResponse.data.result);
+        await mongoDoc.save();
       } catch (mongoError) {
-        return handleMongoError(res, snResponse.data, mongoError, 'update');
+        return handleMongoError(res, snResponse.data, mongoError, 'creation');
       }
   
-      res.json(snResponse.data);
+
+  
+      res.json(snResponse.data.result);
       
     } catch (error) {
-      console.error('Error update product offering\'s state: ', error);
+      console.error('Error update product offering category \'s state: ', error);
       const status = error.response?.status || 500;
       const message = error.response?.data?.error?.message || error.message;
       res.status(status).json({ error: message });
