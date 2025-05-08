@@ -36,14 +36,14 @@ export default defineConfig(({ mode }) => {
     build: {
       // Ensure frontend uses correct API endpoint in production
       sourcemap: true,
-      rollupOptions: {
-        external: ['react'], // Keep this if you need it
-        output: {
-          manualChunks: {
-            react: ['react', 'react-dom'],
-          }
-        }
-      }
+      //rollupOptions: {
+        //external: ['react'], // Keep this if you need it
+        //output: {
+          //manualChunks: {
+            //react: ['react', 'react-dom'],
+          //}
+        //}
+      //}
     }
   }
 })
