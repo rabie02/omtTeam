@@ -1,27 +1,31 @@
 // server/api/ai-search.js
 const express = require('express');
 const axios = require('axios');
+const jwt = require('jsonwebtoken');
 const router = express.Router();
+require('dotenv').config();
 
 
-//user and pass for now are in here till we agree on an instance to use for every thing!
-const AI_SEARCH_ENDPOINT = "https://dev268291.service-now.com/api/sn_prd_pm/ai_search_proxy2/search";
-const AUTH_HEADERS = {
-  "Authorization": "Basic " + Buffer.from("admin:K5F/Uj/lDbo9").toString('base64'),
-  "Accept": "application/json",
-  "Content-Type": "application/json"
-};
 
-router.get('/', async (req, res) => {
+router.get('/ai-search', async (req, res) => {
   try {
+
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+
     const { term } = req.query;
+    
     if (!term) {
       return res.status(400).json({ error: 'Search term is required' });
     }
 
-    const response = await axios.get(`${AI_SEARCH_ENDPOINT}?term=${encodeURIComponent(term)}`, {
-      headers: AUTH_HEADERS
+    const response = await axios.get(`${process.env.SERVICE_NOW_URL}/api/sn_prd_pm/ai_search_proxy2/search?term=${encodeURIComponent(term)}`, {
+      headers:  {
+        'Authorization': `Bearer ${decodedToken.sn_access_token}`,
+        'Content-Type': 'application/json'
+      }
     });
+
 
     const data = response.data;
     const results = data.result?.result?.items || data.result?.items || data.result || [];

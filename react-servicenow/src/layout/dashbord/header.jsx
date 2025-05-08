@@ -77,6 +77,11 @@ function Header() {
   return (
     <header className="p-5 pb-2 sticky top-0 shadow-md flex justify-end bg-white z-50">
       <div className="space-x-5 flex items-center">
+      <div>
+          <Link to='/dashboard/help'>
+            <i class="ri-questionnaire-line text-3xl"></i>
+          </Link>
+        </div>
         <div>
           <Badge count={5}>
             <i className="ri-notification-3-line text-3xl"></i>
