@@ -4,12 +4,12 @@ import axios from 'axios';
 // Async Thunks
 export const getall = createAsyncThunk(
   'ProductOfferingCategory/getall',
-  async ({ page = 1, limit = 6 }, { rejectWithValue }) => {
+  async ({ page = 1, limit = 6, search = '' }, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
       const response = await axios.get("/api/product-offering-category", {
         headers: { authorization: access_token },
-        params: { page, limit }
+        params: { page, limit, search } // Ajout du paramètre search
       });
       return response.data;
     } catch (error) {
@@ -57,8 +57,9 @@ export const updatecategoryStatus = createAsyncThunk(
                       : currentStatus === 'published' ? 'retired'
                       : currentStatus;
 
+      // Modification de l'URL pour pointer vers l'endpoint correct
       const response = await axios.patch(
-        `/api/product-offering-category/${id}`, 
+        `/api/product-offering-category-status/${id}`, 
         { status: newStatus },
         { headers: { authorization: access_token } }
       );
@@ -74,13 +75,10 @@ export const updateCategory = createAsyncThunk(
   async ({ id, ...productData }, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-
-      console.log(productData);
       
       const response = await axios.patch(`/api/product-offering-category/${id}`, productData, {
          headers: { authorization: access_token, 'Content-Type': 'multipart/form-data'  } 
       });
-      console.log(response);
       
       return response.data.result;
     } catch (error) {
@@ -115,9 +113,15 @@ const ProductOfferingCategorySlice = createSlice({
     totalItems: 0,
     limit: 6,
     loading: true,
-    error: null
+    error: null,
+    searchTerm: '', // Ajout du terme de recherche
   },
-  reducers: {},
+  reducers: {
+    // Ajout d'un reducer pour suivre les changements du terme de recherche
+    setSearchTerm: (state, action) => {
+      state.searchTerm = action.payload;
+    }
+  },
   extraReducers: (builder) => {
     builder
       // Get All
@@ -132,6 +136,10 @@ const ProductOfferingCategorySlice = createSlice({
         state.totalItems = action.payload.total;
         state.limit = action.meta.arg?.limit || 6;
         state.loading = false;
+        // Mise à jour du terme de recherche si nécessaire
+        if (action.meta.arg?.search !== undefined) {
+          state.searchTerm = action.meta.arg.search;
+        }
       })
       .addCase(getall.rejected, (state, action) => {
         state.error = action.payload;
@@ -219,3 +227,4 @@ const ProductOfferingCategorySlice = createSlice({
 });
 
 export default ProductOfferingCategorySlice.reducer;
+export const { setSearchTerm } = ProductOfferingCategorySlice.actions;

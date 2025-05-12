@@ -1,11 +1,27 @@
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
 import Table from '../../components/dashbord/ProductOfferingCategory/Table';
 import Form from '../../components/dashbord/ProductOfferingCategory/Form';
-
+import { getall } from '../../features/servicenow/product-offering/productOfferingCategorySlice';
 
 function ProductOfferingCategory() {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState(null); 
+  const [searchTerm, setSearchTerm] = useState('');
+  const dispatch = useDispatch();
+  
+  // Handle search input changes
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    // Fetch data with search term - adding a slight delay to avoid too many requests
+    const delayDebounceFn = setTimeout(() => {
+      dispatch(getall({ page: 1, limit: 6, search: value }));
+    }, 300);
+    
+    return () => clearTimeout(delayDebounceFn);
+  };
 
   return (
     <>
@@ -18,6 +34,8 @@ function ProductOfferingCategory() {
                 type="text"
                 placeholder="Search..."
                 id="searchInput"
+                value={searchTerm}
+                onChange={handleSearchChange}
                 className="w-full py-2 pl-10 pr-4 text-gray-700 bg-white border outline-none transition-all border-gray-300"
               />
               <div className="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -45,11 +63,10 @@ function ProductOfferingCategory() {
         </div>
 
         <div className='flex justify-center items-center py-5'>
-          <Table setData={setData} setOpen={setOpen} ></Table>
+          <Table setData={setData} setOpen={setOpen} searchTerm={searchTerm} />
         </div>
          
-         <Form open={open} setOpen={setOpen} initialData={data} ></Form>
-
+         <Form open={open} setOpen={setOpen} initialData={data} />
 
       </div>
     </>
