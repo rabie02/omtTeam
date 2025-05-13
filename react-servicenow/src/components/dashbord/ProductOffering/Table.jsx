@@ -105,7 +105,7 @@ function Table({setData , setOpen, searchQuery}) {
                                     </button>
                                 </Popconfirm>
                                 <button
-                                    className="mr-2 text-gray-500 hover:text-blue-600 "
+                                    className="mx-2 text-gray-500 hover:text-blue-600 "
                                     onClick={() => changeData(product)}
                                 >
                                     <i className="ri-pencil-line text-2xl"></i>

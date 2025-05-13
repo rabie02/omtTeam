@@ -17,7 +17,7 @@ const ProductOffering = require('./api/ProductOffering/index')
 const channel = require('./api/channel/index')
 const ProductSpecification = require('./api/ProductSpecification/index');
 const AiSearch = require('./api/ai-search/index')
-
+const measurmentUnit = require('./api/unit-of-measurment/index')
 
 require('dotenv').config();
 
@@ -80,7 +80,8 @@ app.use('/api', authjwt , [
   ProductOffering,
   channel,
   ProductSpecification,
-  AiSearch
+  AiSearch,
+  measurmentUnit
 ]);
 
 
