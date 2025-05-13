@@ -16,6 +16,7 @@ const ProductOfferingCategory = require('./api/ProductOfferingCategory/index')
 const ProductOffering = require('./api/ProductOffering/index')
 const channel = require('./api/channel/index')
 const ProductSpecification = require('./api/ProductSpecification/index');
+const createAccount = require('./api/createAccount')
 
 require('dotenv').config();
 
@@ -79,7 +80,7 @@ if (process.env.NODE_ENV === 'development') {
 app.use('/api', [
   authRoutes,    // Login
   signupRoutes,  // Registration + confirmation
-    ProductSpecification,
+  createAccount,
 ]);
 
 // Protected routes
@@ -91,8 +92,7 @@ app.use('/api', authjwt , [
   ProductOfferingCategory,
   ProductOffering,
   channel,
-
-
+  ProductSpecification,
 ]);
 
 
