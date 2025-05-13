@@ -1,11 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Modal } from 'antd';
-import { useDispatch } from 'react-redux';
+import { Modal, Select } from 'antd';
+import { useDispatch, useSelector } from 'react-redux';
 import {formatDateForInput} from '@/utils/formatDateForInput.js'
 import {handleFileChange} from '@/utils/validationfileUploader.js'
 import { updateCategory, createCategory } from '../../../features/servicenow/product-offering/productOfferingCategorySlice';
+import { getall as getCatalogs } from '../../../features/servicenow/product-offering/productOfferingCatalogSlice';
 
 const generateCodeFromName = (name) => {
   if (!name || typeof name !== 'string' || name.trim() === '') return '';
@@ -26,13 +27,27 @@ const validationSchema = Yup.object().shape({
   start_date: Yup.string().required('Start date is required'),
   status: Yup.string().required('Status is required'),
   code: Yup.string().required('Code is required'),
+  catalog: Yup.string().when('status', {
+    is: (val) => val === 'published',
+    then: () => Yup.string().required('Catalog is required when publishing'),
+    otherwise: () => Yup.string()
+  }),
 });
 
 function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
   const dispatch = useDispatch();
   const isEditMode = Boolean(initialData);
-
   
+  // Use the catalog data from the Redux store
+  const { 
+    data: catalogs, 
+    loading: loadingCatalogs 
+  } = useSelector((state) => state.productOfferingCatalog);
+
+  // Fetch catalogs on component mount
+  useEffect(() => {
+    dispatch(getCatalogs({ page: 1, limit: 100 }));
+  }, [dispatch]);  
 
   const formik = useFormik({
     initialValues: {
@@ -45,6 +60,7 @@ function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
       is_leaf: true,
       image: initialData?.image || '',
       thumbnail: initialData?.thumbnail || '',
+      catalog: initialData?.catalog || '',
     },
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
@@ -63,8 +79,6 @@ function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
     },
     enableReinitialize: true,
   });
-
-
 
   useEffect(() => {
     if (!isEditMode) {
@@ -146,7 +160,7 @@ function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
         </div>
 
         {/* Status */}
-        {/* <div>
+        <div>
           <label className="block font-medium mb-1">Status</label>
           <select
             name="status"
@@ -164,7 +178,31 @@ function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
           {formik.touched.status && formik.errors.status && (
             <p className="text-red-500 text-sm mt-1">{formik.errors.status}</p>
           )}
-        </div> */}
+        </div>
+
+        {/* Catalog Selection - Show when status is published */}
+        {formik.values.status === 'published' && (
+          <div>
+            <label className="block font-medium mb-1">Catalog</label>
+            <Select
+              className="w-full"
+              name="catalog"
+              value={formik.values.catalog}
+              onChange={(value) => formik.setFieldValue('catalog', value)}
+              onBlur={() => formik.setFieldTouched('catalog', true)}
+              disabled={formik.isSubmitting || loadingCatalogs}
+              loading={loadingCatalogs}
+              placeholder="Select a catalog"
+              options={catalogs.map(catalog => ({
+                value: catalog.sys_id,
+                label: catalog.name
+              }))}
+            />
+            {formik.touched.catalog && formik.errors.catalog && (
+              <p className="text-red-500 text-sm mt-1">{formik.errors.catalog}</p>
+            )}
+          </div>
+        )}
 
         {/* Image Upload (Edit mode only) */}
         {isEditMode && (

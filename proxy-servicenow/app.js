@@ -18,7 +18,10 @@ const channel = require('./api/channel/index')
 const ProductSpecification = require('./api/ProductSpecification/index');
 const AiSearch = require('./api/ai-search/index')
 
+// Add this import at the top of your app.js file
+const CatalogCategoryRelationship = require('./models/CatalogCategoryRelationship');
 
+// The rest of your app.js code should remain the same
 require('dotenv').config();
 
 const app = express();
@@ -80,7 +83,9 @@ app.use('/api', authjwt , [
   ProductOffering,
   channel,
   ProductSpecification,
-  AiSearch
+  AiSearch,
+  CatalogCategoryRelationship
+
 ]);
 
 
