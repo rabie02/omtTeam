@@ -83,10 +83,10 @@ export const createCatalogCategoryRelationship = createAsyncThunk(
       const access_token = localStorage.getItem('access_token');
       
       
-      console.log('Creating relationship with:', {
-        catalog: catalogId,
-        category: categoryId
-      });
+      // console.log('Creating relationship with:', {
+      //   catalog: catalogId,
+      //   category: categoryId
+      // });
       
       const response = await axios.post(
         "/api/category-catalog-relation",
@@ -102,7 +102,7 @@ export const createCatalogCategoryRelationship = createAsyncThunk(
         }
       );
       
-      console.log('Relationship API response:', response.data);
+      // console.log('Relationship API response:', response.data);
       return response.data.result || response.data;
     } catch (error) {
       console.error('Relationship API error:', error);
@@ -120,10 +120,10 @@ export const updatecategoryStatus = createAsyncThunk(
                       : currentStatus === 'published' ? 'retired'
                       : currentStatus;
 
-      console.log('Sending status update request with:', {
-        sys_id: id,
-        status: newStatus
-      });
+      // console.log('Sending status update request with:', {
+      //   sys_id: id,
+      //   status: newStatus
+      // });
 
       // Update the status using the correct endpoint
       const response = await axios.patch(
@@ -140,7 +140,7 @@ export const updatecategoryStatus = createAsyncThunk(
         }
       );
       
-      console.log('Status update API response:', response.data);
+      //console.log('Status update API response:', response.data);
       return response.data.result || response.data;
     } catch (err) {
       console.error('Status update API error:', err);

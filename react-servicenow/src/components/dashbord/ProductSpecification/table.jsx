@@ -35,7 +35,7 @@ function Table({ setData, setOpen, searchQuery }) {
         setOpen(true);
     };
 
-    console.log(data);
+    //console.log(data);
 
     if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
     if (error) return <div className="text-red-500 p-4">Error: {error}</div>;

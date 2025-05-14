@@ -65,7 +65,7 @@ function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
       try {
-        console.log(values);
+        //console.log(values);
         
         const action = isEditMode
           ? updateCategory({ id: initialData.sys_id, ...values })

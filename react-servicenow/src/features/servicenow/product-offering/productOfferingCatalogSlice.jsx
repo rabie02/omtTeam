@@ -53,14 +53,14 @@ export const updateCatalogStatus = createAsyncThunk(
   async ({ id, status }, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      console.log(status);
+      //console.log(status);
 
       const response = await axios.patch(
         `/api/product-offering-catalog-status/${id}`, 
         { status: status },
         { headers: { authorization: access_token } }
       );
-      console.log(response.data);
+      //console.log(response.data);
       return response.data.result;
       
       
