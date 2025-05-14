@@ -16,6 +16,13 @@ const ProductOfferingCategory = require('./api/ProductOfferingCategory/index')
 const ProductOffering = require('./api/ProductOffering/index')
 const channel = require('./api/channel/index')
 const productSpecificationRoutes = require('./routes/productSpecificationRoutes');
+const opportunity = require("./api/opportunity/index");
+const ProductOfferingPrice = require("./api/productOfferingPrice/index")
+const opportunityLine = require("./api/OpportunityLine/index")
+const priceList = require("./api/PriceList/index")
+
+
+
 
 require('dotenv').config();
 
@@ -83,6 +90,7 @@ app.use('/api', [
 ]);
 
 app.use('/api', productSpecificationRoutes);
+
 // Protected routes
 app.use('/api', authjwt , [
   // logout
@@ -92,9 +100,10 @@ app.use('/api', authjwt , [
   ProductOfferingCategory,
   ProductOffering,
   channel,
-  
-  
-
+  priceList,
+  opportunity,
+  opportunityLine,
+  ProductOfferingPrice
 ]);
 
 

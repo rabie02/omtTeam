@@ -18,7 +18,7 @@ function Table({ setData, setOpen, searchQuery }) {
         dispatch(getPublished({ 
             page: 1, 
             limit: 6, 
-            search: searchQuery 
+            q: searchQuery 
         }));
     }, [dispatch, searchQuery]);
 
@@ -26,16 +26,17 @@ function Table({ setData, setOpen, searchQuery }) {
         dispatch(getPublished({ 
             page, 
             limit: pageSize,
-            search: searchQuery 
+            q: searchQuery 
         }));
     };
 
-    const changeData = (newData) => {
+    const seeData = (newData) => {
         setData(newData);
         setOpen(true);
     };
 
-    console.log(data);
+ 
+    
 
     if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
     if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
@@ -80,7 +81,7 @@ function Table({ setData, setOpen, searchQuery }) {
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         <button
                                             className="mx-2 text-gray-500 hover:text-yellow-400"
-                                            onClick={() => changeData(product)}
+                                            onClick={() => seeData(product)}
                                         >
                                             <i className="ri-eye-line text-2xl"></i>
                                         </button>

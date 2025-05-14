@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
 import Sidebar from "./dashbord/sidebar";
 import Header from "./dashbord/header";
-import Chatbot from '../components/dashbord/ProductSpecification/Chatbot'
+import Chatbot from '../components/dashbord/spec/Chatbot'
 
 function Dashboard() {
     return (
