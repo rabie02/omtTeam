@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Table from '../../components/dashbord/ProductOffering/Table';
-import Form from '../../components/dashbord/ProductOffering/Form';
+import Table from '../../components/dashboard/ProductOffering/Table';
+import Form from '../../components/dashboard/ProductOffering/Form';
 import { getPublished as getSpecs } from '../../features/servicenow/product-specification/productSpecificationSlice';
 import { getall as getCats } from '../../features/servicenow/product-offering/productOfferingCategorySlice';
 import { getall as getChannels } from '../../features/servicenow/channel/channelSlice';

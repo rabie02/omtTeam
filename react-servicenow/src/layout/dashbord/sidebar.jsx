@@ -8,8 +8,7 @@ const Sidebar = () => {
 
   const handleLogout = async (e) => {
     e.preventDefault();
-    // Your logout logic here
-    // console.log('Logging out...');
+    console.log('Logging out...');
   };
 
   const toggleExpand = (path) => {
@@ -28,6 +27,7 @@ const Sidebar = () => {
       location.pathname.toLowerCase().startsWith(child.path.toLowerCase())
     );
   };
+
 
   const navItems = [
     { 

@@ -1,13 +1,15 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
 // Async Thunks
 export const getall = createAsyncThunk(
   'ProductOfferingCategory/getall',
   async ({ page = 1, limit = 6, search = '' }, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      const response = await axios.get("/api/product-offering-category", {
+      const response = await axios.get(`${backendUrl}/api/product-offering-category`, {
         headers: { authorization: access_token },
         params: { page, limit, search }
       });
@@ -23,7 +25,7 @@ export const getOne = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      const response = await axios.get(`/api/product-offering-category/${id}`, {
+      const response = await axios.get(`${backendUrl}/api/product-offering-category/${id}`, {
         headers: { authorization: access_token },
       });
       return response.data;
@@ -43,7 +45,7 @@ export const createCategory = createAsyncThunk(
       const { catalog, ...categoryData } = productData;
       
       // Create the category
-      const response = await axios.post("/api/product-offering-category", categoryData, {
+      const response = await axios.post(`${backendUrl}/api/product-offering-category`, categoryData, {
         headers: { authorization: access_token },
       });
       
@@ -127,7 +129,7 @@ export const updatecategoryStatus = createAsyncThunk(
 
       // Update the status using the correct endpoint
       const response = await axios.patch(
-        `/api/product-offering-category-status`, 
+        `${backendUrl}/api/product-offering-category-status`, 
         { 
           sys_id: id,
           status: newStatus 
@@ -138,6 +140,7 @@ export const updatecategoryStatus = createAsyncThunk(
             authorization: access_token  // Changez 'Authorization' en 'authorization' avec un 'a' minuscule
           }
         }
+      
       );
       
       //console.log('Status update API response:', response.data);
@@ -154,13 +157,13 @@ export const updateCategory = createAsyncThunk(
   async ({ id, ...productData }, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      
+
       // Extract catalog if it exists
       const { catalog, ...categoryData } = productData;
       
       // Update the category
       const response = await axios.patch(
-        `/api/product-offering-category/${id}`, 
+        `${backendUrl}/api/product-offering-category/${id}`, 
         categoryData, 
         {
           headers: { 
@@ -174,7 +177,7 @@ export const updateCategory = createAsyncThunk(
       if (catalog && productData.status === 'published') {
         try {
           await axios.post(
-            "/api/catalog-category-relationship",
+            `${backendUrl}/api/catalog-category-relationship`,
             {
               catalog: catalog,
               category: id
@@ -204,7 +207,7 @@ export const deleteCategory = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      await axios.delete(`/api/product-offering-category/${id}`, {
+      await axios.delete(`${backendUrl}/api/product-offering-category/${id}`, {
         headers: { authorization: access_token },
       });
       return id;
@@ -366,3 +369,4 @@ const ProductOfferingCategorySlice = createSlice({
 
 export default ProductOfferingCategorySlice.reducer;
 export const { setSearchTerm, resetRelationshipStatus } = ProductOfferingCategorySlice.actions;
+

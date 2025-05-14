@@ -1,0 +1,34 @@
+import { createAsyncThunk } from '@reduxjs/toolkit';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_BACKEND_URL;
+
+export const userLogin = createAsyncThunk(
+  'auth/login',
+  async ({ username, password }, { rejectWithValue }) => {
+    try {
+      const { data } = await axios.post(
+        `${API_URL}/api/get-token`,
+        { username, password },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 8000,
+          withCredentials: true
+        }
+      );
+      return data;
+    } catch (error) {
+      if (!error.response) {
+        return rejectWithValue({
+          type: 'network_error',
+          message: 'Network error. Please check your connection.'
+        });
+      }
+
+      return rejectWithValue({
+        type: error.response.data?.error || 'authentication_failed',
+        message: error.response.data?.error_description || 'Login failed'
+      });
+    }
+  }
+);

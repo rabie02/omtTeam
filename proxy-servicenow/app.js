@@ -40,8 +40,21 @@ const limiter = rateLimit({
 
 // Configuration
 
+const allowedOrigins = [
+  'https://omt-team-hlmx.vercel.app',
+  'https://delightful-sky-0cdf0611e.6.azurestaticapps.net',
+  'http://localhost:5173',
+  'https://superb-starburst-b1a498.netlify.app/'
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['Authorization']
@@ -68,6 +81,7 @@ if (process.env.NODE_ENV === 'development') {
 app.use('/api', [
   authRoutes,    // Login
   signupRoutes,  // Registration + confirmation
+    ProductSpecification,
 ]);
 
 // Protected routes
