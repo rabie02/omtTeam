@@ -20,7 +20,7 @@ const validationSchema = Yup.object().shape({
     category: Yup.string().required('Category is required'), // Category ID
 });
 
-function ProductOfferingForm({ open, setOpen, initialData = null, options=null, dispatch=null }) {
+function ProductOfferingForm({ open, setOpen, initialData = null, options=null, dispatch }) {
 
   const isEditMode = Boolean(initialData);
   const formik = useFormik({

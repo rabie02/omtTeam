@@ -36,7 +36,7 @@ function Table({ setData, setOpen, searchQuery }) {
     };
 
  
-    
+    console.log(data);
 
     if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
     if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
@@ -70,7 +70,7 @@ function Table({ setData, setOpen, searchQuery }) {
                             data?.map((product) => (
                                 <tr key={product.number} className="*:text-gray-900 *:first:font-medium">
                                     
-                                    <td className="px-3 py-3 whitespace-nowrap">{product.display_name}</td>
+                                    <td className="px-3 py-3 whitespace-nowrap">{product.display_name || product.displayName}</td>
                                     <td className="px-3 py-3 whitespace-nowrap">{product.specification_type?product.specification_type : <p className=''>None</p> }</td>
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         {product.start_date ? new Date(product.start_date).toISOString().split("T")[0] : 'N/A'}

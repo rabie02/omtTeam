@@ -26,7 +26,7 @@ module.exports = async (req, res)=>{
      
   
       const snResponse = await axios.patch(
-        `${process.env.SERVICE_NOW_URL}/api/1598581/product_offering_api/po_pub`,
+        `${process.env.SERVICE_NOW_URL}/api/sn_prd_pm/product_offering_api/po_pub`,
         req.body,
         {
           headers: {
