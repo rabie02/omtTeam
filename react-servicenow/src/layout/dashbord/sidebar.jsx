@@ -54,7 +54,7 @@ const Sidebar = () => {
 
   return (
     <>
-      <aside className="z-30 h-screen fixed bg-[#007B98] inset-y-0 pt-4 px-4 shadow-lg overflow-hidden w-64  flex flex-col">
+      <aside className="z-30 h-screen fixed bg-cyan-700 inset-y-0 pt-4 px-4 shadow-lg overflow-hidden w-64  flex flex-col">
         {/* Logo Section */}
         <div className="mb-8 mt-2 h-12 flex items-center px-2 text-white font-bold text-xl">
           <i className="ri-admin-line mr-2 text-blue-200" />
