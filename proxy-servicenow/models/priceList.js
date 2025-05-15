@@ -10,8 +10,8 @@ const priceListSchema = new mongoose.Schema({
   name: String,
   description: String,
   state: String,
-  defaultflag: Boolean,
-  currency: String,
+  defaultflag: String,
+  currency:String,
   validFor: {
     startDateTime: Date,
     endDateTime: Date
