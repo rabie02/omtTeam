@@ -5,18 +5,28 @@ const handleMongoError = require('../../utils/handleMongoError');
 
 module.exports = async (req, res) => {
   try {
-    // Utiliser le token d'authentification de l'utilisateur
+    // Mettre à jour dans ServiceNow
     const connection = snConnection.getConnection(req.user.sn_access_token);
-    
-    // Récupérer les données de ServiceNow
-    const snResponse = await axios.get(
-      `${connection.baseURL}/api/now/table/sn_opty_mgmt_core_opportunity`,
+    const snResponse = await axios.delete(
+      `${connection.baseURL}/api/now/table/sn_opty_mgmt_core_opportunity/${req.params.id}`,
+      req.body,
       { headers: connection.headers }
     );
- 
-    res.json(snResponse.data.result);
+    
+    //Mettre à jour dans MongoDB
+    try {
+      await Opportunity.findOneAndDelete(
+        { sys_id: req.params.id },
+        req.body,
+        { new: true }
+      );
+    } catch (mongoError) {
+      return handleMongoError(res, snResponse.data, mongoError, 'delete');
+    }
+    
+    res.json(snResponse.data);
   } catch (error) {
-    console.error('Error fetching opportunities:', error);
+    console.error('Error deleting opportunity:', error);
     const status = error.response?.status || 500;
     const message = error.response?.data?.error?.message || error.message;
     res.status(status).json({ error: message });

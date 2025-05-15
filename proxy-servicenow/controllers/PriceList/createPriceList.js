@@ -12,10 +12,11 @@ module.exports = async (req, res) => {
       { headers: connection.headers }
     );
     
+
     // Créer dans MongoDB
     try {
       const price = new priceList({
-        sys_id: snResponse.data.id,
+        sys_id: snResponse.data.result.sys_id,
         ...req.body
       });
       await price.save();

@@ -1,5 +1,5 @@
 const axios = require('axios');
-const ProductOfferingPrice = require('../../models/ProductOfferingPrice');
+const ProductOfferingPrice = require('../../models/productOfferingPrice');
 const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 
