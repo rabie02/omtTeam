@@ -7,6 +7,7 @@ import productSpecificationReducer from '../features/servicenow/product-specific
 import channelReducer from '../features/servicenow/channel/channelSlice';
 import aiSearchReducer from '../features/servicenow/ai-search/aiSearchSlice';
 import opportunityReducer from '../features/servicenow/opportunity/opportunitySlice';
+import priceListReducer from '../features/servicenow/price-list/priceListSlice';
 
 const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ const store = configureStore({
     channel: channelReducer,
     aiSearch: aiSearchReducer,
     opportunity: opportunityReducer,
+    priceList: priceListReducer,
   },
 });
 

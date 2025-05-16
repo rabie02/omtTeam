@@ -54,6 +54,11 @@ const Sidebar = () => {
       path:'/dashboard/opportunity',
       icon: 'shining-line',
       text: 'Opportunity'
+    },
+    {
+      path:'/dashboard/price-list',
+      icon: 'price-tag-3-line',
+      text: 'Price List'
     }
   ];
 

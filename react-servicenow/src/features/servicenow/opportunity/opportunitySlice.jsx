@@ -91,6 +91,21 @@ export const createPriceList = createAsyncThunk(
   }
 );
 
+export const getPriceList = createAsyncThunk(
+  'opportunity/getPriceList',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(
+        `${backendUrl}/api/price-list`,
+        { headers: getHeaders() }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 // 3. Product Offering Price CRUD operations
 export const createProductOfferingPrice = createAsyncThunk(
   'opportunity/createProductOfferingPrice',
@@ -209,6 +224,7 @@ const initialState = {
   accounts: [],
   unitOfMeasures: [],
   productOfferings: [],
+  priceLists:[],
   loading: false,
   error: null,
   currentPage: 1,
@@ -299,6 +315,19 @@ const opportunitySlice = createSlice({
       .addCase(createPriceList.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.error?.message || 'Failed to create price list';
+      })
+
+      // Get Price List
+      .addCase(getPriceList.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getPriceList.fulfilled, (state, action) => {
+        state.loading = false;
+        state.priceLists = action.payload;
+      })
+      .addCase(getPriceList.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.error?.message || 'Failed to fetch Price List';
       })
 
       // Create Product Offering Price

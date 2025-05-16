@@ -9,6 +9,7 @@ import PO from '../views/dashbord/ProductOffering';
 import PS from '../views/dashbord/ProductSpec';
 import AiSearch from '../views/dashbord/ai-search';
 import Opportunity from '../views/dashbord/Opportunity';
+import PriceList from '../views/dashbord/PriceList';
 const dashboardRoutes = {
   path: '/dashboard',
   element: (
@@ -23,7 +24,8 @@ const dashboardRoutes = {
     { path: 'product-offering', element:<PO/>},
     { path: 'product-specification', element:<PS/>},
     { path: 'Help', element:<AiSearch/>,},
-    { path: 'opportunity', element: <Opportunity />}
+    { path: 'opportunity', element: <Opportunity />},
+    { path: 'price-list', element: <PriceList />}
     // ... other dashboard sub-routes
   ],
 };
