@@ -1,7 +1,7 @@
 const axios = require('axios');
 const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
-const ProductOfferingPrice = require('../../models/ProductOfferingPrice');
+
 
 module.exports = async (req, res) => {
   try {

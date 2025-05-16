@@ -1,7 +1,6 @@
 const axios = require('axios');
 const snConnection = require('../../utils/servicenowConnection');
-const handleMongoError = require('../../utils/handleMongoError');
-const priceList = require('../../models/priceList');
+
 
 module.exports = async (req, res) => {
   try {
@@ -14,22 +13,9 @@ module.exports = async (req, res) => {
       { headers: connection.headers }
     );
     
-    // Synchroniser avec MongoDB
-    try {
-      // Mise à jour ou insertion des données dans MongoDB
-      const priceLists = snResponse.data.result;
-      for (const opp of priceLists) {
-        await priceList.findOneAndUpdate(
-          { sys_id: opp.sys_id },
-          opp,
-          { upsert: true, new: true }
-        );
-      }
-    } catch (mongoError) {
-      return handleMongoError(res, snResponse.data, mongoError, 'synchronization');
-    }
+  
     
-    res.json(snResponse.data);
+    res.json(snResponse.data.result);
   } catch (error) {
     console.error('Error fetching price Lists:', error);
     const status = error.response?.status || 500;

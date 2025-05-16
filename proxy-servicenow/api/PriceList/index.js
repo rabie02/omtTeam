@@ -4,12 +4,11 @@ const router = express.Router();
 // Import controllers
 const getAll = require('../../controllers/PriceList/getAllPriceList');
 const create = require('../../controllers/PriceList/createPriceList');
-const update = require('../../controllers/PriceList/updatePriceList');
-
+const deletePrice = require('../../controllers/PriceList/deletePriceList')
 
 // Define routes
 router.get('/price-list', getAll);
 router.post('/price-list', create);
-router.patch('/price-list/:id', update);
+router.delete('/price-list/:id', deletePrice);
 
 module.exports = router;

@@ -13,22 +13,7 @@ module.exports = async (req, res) => {
       `${connection.baseURL}/api/now/table/sn_opty_mgmt_core_opportunity`,
       { headers: connection.headers }
     );
-    
-    // Synchroniser avec MongoDB
-    // try {
-    //   // Mise à jour ou insertion des données dans MongoDB
-    //   const opportunities = snResponse.data.result;
-    //   for (const opp of opportunities) {
-    //     await Opportunity.findOneAndUpdate(
-    //       { sys_id: opp.sys_id },
-    //       opp,
-    //       { upsert: true, new: true }
-    //     );
-    //   }
-    // } catch (mongoError) {
-    //   return handleMongoError(res, snResponse.data, mongoError, 'synchronization');
-    // }
-    
+ 
     res.json(snResponse.data.result);
   } catch (error) {
     console.error('Error fetching opportunities:', error);
