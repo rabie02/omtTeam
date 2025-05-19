@@ -30,10 +30,11 @@ const quoteSchema = new mongoose.Schema({
     subscription_start_date: String,
     subscription_end_date: String,
     short_description: String,
+    account: String,
     active: {
         type: String,
         default: 'true'
     }
 }, { timestamps: false });
 
-module.exports = mongoose.model('Quote', quoteSchema);
+module.exports = mongoose.model('quotes', quoteSchema);
