@@ -20,7 +20,7 @@ function PriceListForm({ open, setOpen, initialData = null, dispatch }) {
       name: initialData?.name || '',
       start_date: formatDateForInput(initialData?.start_date) || '',
       end_date: initialData?.end_date ? formatDateForInput(initialData?.end_date) : '',
-      state: initialData?.state || 'draft',
+      state: initialData?.state || 'published',
       description: initialData?.description || '',
       sales_agreement: initialData?.sales_agreement || '',
       currency: initialData?.currency || 'USD',
@@ -122,7 +122,7 @@ function PriceListForm({ open, setOpen, initialData = null, dispatch }) {
           />
         </div>
 
-        {/* State */}
+        {/* State
         <div>
           <label className="block font-medium mb-1">State</label>
           <select
@@ -137,7 +137,7 @@ function PriceListForm({ open, setOpen, initialData = null, dispatch }) {
             <option value="published">Published</option>
             <option value="archived">Archived</option>
           </select>
-        </div>
+        </div> */}
 
         {/* Default Flag */}
         <div>
