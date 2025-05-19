@@ -8,11 +8,10 @@ module.exports = async (req, res) => {
     // Mettre à jour dans ServiceNow
     const connection = snConnection.getConnection(req.user.sn_access_token);
     const snResponse = await axios.patch(
-      `${connection.baseURL}/api/sn_tmf_api/catalogmanagement/productOfferingPrice/${req.params.id}`,
+      `${connection.baseURL}api/sn_tmf_api/catalogmanagement/productOfferingPrice/${req.params.id}`,
       req.body,
       { headers: connection.headers }
-    );
-    
+    );    
     // Mettre à jour dans MongoDB
     try {
       await ProductOfferingPrice.findOneAndUpdate(

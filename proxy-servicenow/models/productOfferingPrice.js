@@ -10,19 +10,32 @@ const productOfferingPriceSchema = new mongoose.Schema({
   name: String,
   price: {
     unit: String,
-    value: Number
+    value: String
   },
   lifecycleStatus: String,
   validFor: {
     startDateTime: Date,
     endDateTime: Date
   },
-  productOffering: { type: mongoose.Schema.Types.ObjectId, ref: 'ProductOffering'},
+  productOffering: {
+    id: String,
+    name: String
+  },
   priceType: String,
   recurringChargePeriodType: String,
-  unitOfMeasure: String,
-  priceList: { type: mongoose.Schema.Types.ObjectId, ref: 'PriceList'},
-  "@type": String
+  unitOfMeasure: {
+    id: String,
+    amount: Number,
+    units: String
+  },  
+  priceList: {
+    id: String,
+    name: String,
+    "@type": String
+  },
+  
+  "@type": { type: String, default: "ProductOfferingPrice"}
+
 }, {
   timestamps: true,
   strict: false

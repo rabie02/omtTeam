@@ -86,7 +86,7 @@ if (process.env.NODE_ENV === 'development') {
 app.use('/api', [
   authRoutes,    // Login
   signupRoutes,  // Registration + confirmation
-    ProductSpecification,
+    
 ]);
 
 // Protected routes
