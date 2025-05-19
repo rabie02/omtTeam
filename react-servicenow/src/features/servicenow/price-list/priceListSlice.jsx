@@ -41,6 +41,22 @@ export const getPriceList = createAsyncThunk(
   }
 );
 
+export const deletePriceList = createAsyncThunk(
+  'opportunity/deletePriceList',
+  async (id, { rejectWithValue }) => {
+    try {
+      
+      const response = await axios.delete(
+        `${backendUrl}/api/price-list/${id}`,
+        { headers: getHeaders() }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 const initialState = {
   priceLists:[],
   loading: false,
@@ -84,6 +100,20 @@ const priceListSlice = createSlice({
       .addCase(getPriceList.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.error?.message || 'Failed to fetch Price List';
+      })
+      
+      // Delete Price List
+      .addCase(deletePriceList.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(deletePriceList.fulfilled, (state, action) => {
+        state.loading = false;
+        
+      })
+      .addCase(deletePriceList.rejected, (state, action) => {
+        console.log(action.payload);
+        state.loading = false;
+        state.error = action.payload?.error?.message || 'Failed to delete Price List';
       });
   },
 });
