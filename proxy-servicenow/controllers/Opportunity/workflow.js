@@ -45,10 +45,6 @@ module.exports =  async (req, res) => {
       
     });
 
-
-    
-
-
     res.status(201);
   } catch (error) {
     console.error('Error creating opportunity:', error);

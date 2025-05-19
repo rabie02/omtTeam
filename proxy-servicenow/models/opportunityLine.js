@@ -7,11 +7,21 @@ const opportunityLineSchema = new mongoose.Schema({
     unique: true,
     index: true
   },
-  price_list: { type: mongoose.Schema.Types.ObjectId, ref: 'PriceList' },
-  product_offering: { type: mongoose.Schema.Types.ObjectId, ref: 'ProductOffering' },
-  term_month: Number,
-  opportunity: { type: mongoose.Schema.Types.ObjectId, ref: 'Opportunity' },
-  quantity: Number
+  priceList: {
+    value: String,
+    "@type": String
+  },
+  product_offering: {
+    value: String
+  },
+  opportunity: {
+    value: String
+  },
+  unit_of_measurement: {
+    value: String
+  }, 
+  term_month: String,
+  quantity: String
 }, {
   timestamps: true,
   strict: false

@@ -1,7 +1,7 @@
 const axios = require('axios');
 const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
-const OpportunityLine = require('../../models/opportunityLine.js');
+const OpportunityLine = require('../../models/opportunityLine');
 
 async function createOpportunityLine(req, res = null) {
   try {
@@ -22,7 +22,7 @@ async function createOpportunityLine(req, res = null) {
       await opportunityLine.save();
     } catch (mongoError) {
       if (res) {
-        return handleMongoError(res, snResponse.data, mongoError, 'creation');
+        return handleMongoError(res, snResponse.data.result, mongoError, 'creation');
       }
       throw mongoError;
     }
