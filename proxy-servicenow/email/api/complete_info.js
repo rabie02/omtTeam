@@ -15,14 +15,17 @@ const transporter = nodemailer.createTransport({
 // Route 1: Generate token and send email
 const sendVerificationToken = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { id, account } = req.body;
 
-    if (!email) {
+    // console.log(id);
+    // console.log(account);
+
+    if (!account) {
       return res.status(400).json({ error: 'Email is required in the request body' });
     }
 
     const token = jwt.sign(
-      { email },
+      { account },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRE }
     );
@@ -31,8 +34,8 @@ const sendVerificationToken = async (req, res) => {
 
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Verify Your Token',
+      to: account,
+      subject: 'Complet infomation of your account',
       html: complete_info.template(verificationLink) ,
     });
 
