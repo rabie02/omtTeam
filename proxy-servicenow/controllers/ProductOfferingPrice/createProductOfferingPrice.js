@@ -69,3 +69,13 @@ async function createProductOfferingPrice(req, res = null) {
     });
   }
 };
+
+
+
+// Original Express route handler for backward compatibility
+module.exports = async (req, res) => {
+  return createProductOfferingPrice(req, res);
+};
+
+// Export the function directly as well
+module.exports.createProductOfferingPrice = createProductOfferingPrice;
