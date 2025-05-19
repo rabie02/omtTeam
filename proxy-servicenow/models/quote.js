@@ -1,18 +1,40 @@
 const mongoose = require('mongoose');
 
 const quoteSchema = new mongoose.Schema({
-  sys_id: { type: String, required: true, unique: true, index: true },
-  number: String,
-  short_description: String,
-  total_amount: String,
-  account: String,
-  valid_until: String,
-  status: String
-}, {
-  timestamps: true,
-  strict: false
-});
+    number: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    sys_id: {
+        type: String,
+        required: true,
+        unique: true,
+        index: true
+    },
+    channel: {
+        type: String,
+        required: true,
+    },
+    state: {
+        type: String,
+    },
+    version: {
+        type: String,
+        required: true
+    },
+    total_amount: String,
+    currency: String,
+    assigned_to: String,
+    assignment_group: String,
+    subscription_start_date: String,
+    subscription_end_date: String,
+    short_description: String,
+    account: String,
+    active: {
+        type: String,
+        default: 'true'
+    }
+}, { timestamps: false });
 
-const Quote = mongoose.model('Quote', quoteSchema, 'quotes');
-
-module.exports = Quote;
+module.exports = mongoose.model('quotes', quoteSchema);

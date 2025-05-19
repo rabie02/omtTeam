@@ -84,6 +84,8 @@ app.use('/api', [
   signupRoutes,  // Registration + confirmation
     ProductSpecification,
     emailroutes,
+    createAccount,
+    quote,
 ]);
 
 // Protected routes
@@ -96,7 +98,6 @@ app.use('/api', authjwt , [
   ProductOffering,
   channel,
   ProductSpecification,
-  quote,
 ]);
 
 

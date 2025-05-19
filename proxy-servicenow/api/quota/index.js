@@ -3,10 +3,12 @@ const express = require('express');
 const router = express.Router();
 
 // Import controllers
-const getAll = require('../../controllers/quota/getall')
-const create = require('../../controllers/quota/create')
+const getAll = require('../../controllers/quote/getall')
+const create = require('../../controllers/quote/create')
+const deleteQuote = require('../../controllers/quote/delete')
 
-router.get('/quota', getAll);
-router.post('/quota', create);
+router.get('/quote', getAll);
+router.post('/quote', create);
+router.delete('/quote/:sysId', deleteQuote);
 
 module.exports = router;
