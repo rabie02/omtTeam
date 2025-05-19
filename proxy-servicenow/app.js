@@ -18,6 +18,7 @@ const channel = require('./api/channel/index')
 const ProductSpecification = require('./api/ProductSpecification/index');
 const createAccount = require('./api/createAccount')
 const emailroutes = require('./email/router');
+const quote = require('./api/quota/index');
 
 require('dotenv').config();
 
@@ -84,6 +85,7 @@ app.use('/api', [
   createAccount,
   ProductSpecification,
   emailroutes,
+  quote,
 ]);
 
 // Protected routes
@@ -96,6 +98,7 @@ app.use('/api', authjwt , [
   ProductOffering,
   channel,
   ProductSpecification,
+  quote,
 ]);
 
 

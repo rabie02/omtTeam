@@ -25,7 +25,7 @@ const {
   getErrorHtml,
   getWelcomeEmail
 } = require('../../controllers/createAccount/emailTemplates');
-const config = require('./config');
+const config = require('../../controllers/createAccount/config');
 
 // Reverse geocode endpoint
 router.get('/reverse-geocode', async (req, res) => {
