@@ -17,6 +17,7 @@ const FormInput = ({ formik, name, label, type = 'text', ...props }) => {
         className="w-full border rounded px-3 py-2"
         {...props}
       />
+      {props.description && <p className="text-gray-400 text-sm">{props.description}</p>}
       {touched && error && (
         <p className="text-red-500 text-sm mt-1">{error}</p>
       )}

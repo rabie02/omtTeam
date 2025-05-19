@@ -13,7 +13,7 @@ const OpportunityStep4 = ({ formik }) => {
     opportunityLineItem
   } = formik.values;
 
-  const { productOfferings: allOfferings, unitOfMeasures, priceLists } = useSelector(
+  const { productOfferings: allOfferings, unitOfMeasures, priceLists, accounts } = useSelector(
     (state) => state.opportunity
   );
 
@@ -33,12 +33,17 @@ const OpportunityStep4 = ({ formik }) => {
   };
 
   const currentPriceList = getSelectedPriceList();
-  console.log(formik.values);
+
+  const getAccountName = (id) => {
+     const account = accounts.find(u => u.sys_id === id);
+    return account ? account.name : 'Not found';
+  }
+  
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-medium">Opportunity Summary</h3>
       
-      <Card title="Opportunity Details" bordered={false}>
+      <Card title="Opportunity Details" variant>
         <Descriptions column={1}>
           <Descriptions.Item label="Short Description">
             {opportunity.short_description}
@@ -47,7 +52,7 @@ const OpportunityStep4 = ({ formik }) => {
             {format(new Date(opportunity.estimated_closed_date), 'MMM dd, yyyy')}
           </Descriptions.Item>
           <Descriptions.Item label="Account">
-            {opportunity.account}
+            {getAccountName(opportunity.account)}
           </Descriptions.Item>
           <Descriptions.Item label="Probability">
             {opportunity.probability}%
@@ -58,7 +63,7 @@ const OpportunityStep4 = ({ formik }) => {
         </Descriptions>
       </Card>
 
-      <Card title="Price List" bordered={false}>
+      <Card title="Price List" variant>
         <Descriptions column={1}>
           <Descriptions.Item label="Name">
             {currentPriceList?.name || 'N/A'}
@@ -82,7 +87,7 @@ const OpportunityStep4 = ({ formik }) => {
         </Descriptions>
       </Card>
 
-      <Card title="Product Offerings" bordered={false}>
+      <Card title="Product Offerings" variant>
         {productOfferings.map((offering, index) => (
           <div key={index} className="mb-6 last:mb-0">
             <Descriptions 
@@ -113,7 +118,7 @@ const OpportunityStep4 = ({ formik }) => {
               <Descriptions.Item label="Valid From">
                 {format(new Date(offering.validFor.startDateTime), 'MMM dd, yyyy HH:mm')}
               </Descriptions.Item>
-              {offering.validFor.endDateTime && (
+              {offering.validFor.endDateTime!="" && (
                 <Descriptions.Item label="Valid Until">
                   {format(new Date(offering.validFor.endDateTime), 'MMM dd, yyyy HH:mm')}
                 </Descriptions.Item>
@@ -123,7 +128,7 @@ const OpportunityStep4 = ({ formik }) => {
         ))}
       </Card>
 
-      <Card title="Line Item Details" bordered={false}>
+      <Card title="Line Item Details" variant>
         <Descriptions column={1}>
           <Descriptions.Item label="Quantity">
             {opportunityLineItem.quantity}

@@ -17,11 +17,11 @@ const productOfferingPriceSchema = new mongoose.Schema({
     startDateTime: Date,
     endDateTime: Date
   },
-  productOffering: { type: mongoose.Schema.Types.ObjectId, ref: 'ProductOffering'},
+  productOffering: { type: mongoose.Schema.Types.Mixed, ref: 'ProductOffering'},
   priceType: String,
   recurringChargePeriodType: String,
   unitOfMeasure: String,
-  priceList: { type: mongoose.Schema.Types.ObjectId, ref: 'PriceList'},
+  priceList: { type: mongoose.Schema.Types.Mixed, ref: 'PriceList'},
   "@type": String
 }, {
   timestamps: true,

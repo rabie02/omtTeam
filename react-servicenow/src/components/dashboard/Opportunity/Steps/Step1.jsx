@@ -29,7 +29,7 @@ const OpportunityStep1 = ({ formik }) => {
         label="Sales Cycle Type*"
         options={salesCycleTypes.map(type => ({
           value: type.sys_id,
-          label: type.name
+          label: type.sys_name
         }))}
         onChange={formik.handleChange}
         onBlur={formik.handleBlur}

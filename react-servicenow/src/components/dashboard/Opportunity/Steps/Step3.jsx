@@ -8,7 +8,7 @@ import { formatDateForInput } from '@/utils/formatDateForInput.js';
 
 const OpportunityStep3 = ({ formik }) => {
   const { productOfferings: allOfferings, unitOfMeasures } = useSelector((state) => state.opportunity);
-
+  
   const addProductOffering = () => {
     console.log("we here")
     formik.setFieldValue('productOfferings', [
@@ -81,7 +81,7 @@ const OpportunityStep3 = ({ formik }) => {
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   className="w-full rounded py-2 px-2 border-1"
-                  noLabel
+                  //noLabel
                 />
                 <FormSelect
                   name={`productOfferings[${index}].price.unit`}
@@ -95,7 +95,7 @@ const OpportunityStep3 = ({ formik }) => {
                     { value: 'GBP', label: 'GBP' }
                   ]}
                   className="ml-7 mt-1"
-                  noLabel
+                  //noLabel
                 />
               </Space.Compact>
               {formik.touched.productOfferings?.[index]?.price?.value && 
@@ -116,7 +116,7 @@ const OpportunityStep3 = ({ formik }) => {
               options={allOfferings
                 .filter(po => po.status === "published")
                 .map(po => ({
-                  value: po.id,
+                  value: po.sys_id,
                   label: po.name
                 }))}
               
@@ -174,6 +174,7 @@ const OpportunityStep3 = ({ formik }) => {
               value={offering.validFor.startDateTime}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
+              description="must be within the price list start/end date"
             />
 
             <FormInput

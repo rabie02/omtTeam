@@ -17,7 +17,8 @@ import {
   getStages,
   getAccounts,
   getUnitOfMeasures,
-  getProductOfferings
+  getProductOfferings,
+  workflow
 } from '../../../features/servicenow/opportunity/opportunitySlice';
 import { getPriceList } from '../../../features/servicenow/price-list/priceListSlice';
 
@@ -115,6 +116,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
         sales_cycle_type: '',
         probability: '50',
         stage: '',
+        industry: "telecommunications",
         account: ''
       },
       priceList: {
@@ -169,7 +171,8 @@ function OpportunityForm({ open, setOpen, dispatch }) {
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
       try {
-        console.log("here")
+        
+        dispatch(workflow(values));
         // // Step 1: Create opportunity
         // const opportunityResponse = await dispatch(createOpportunity(values.opportunity)).unwrap();
         
@@ -223,11 +226,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
     },
   });
 
-  // Helper function to get value from ServiceNow objects
-  const getValue = (field) => {
-    if (!field) return '';
-    return typeof field === 'object' ? field.value : field;
-  };
+  
 
   // Add a new product offering to the list
   const addProductOffering = () => {
@@ -387,7 +386,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
         <Step title="Summary" />
       </Steps>
 
-      <form onSubmit={formik.handleSubmit} className="space-y-4">
+      <form onSubmit={(e)=>{e.preventDefault()}}className="space-y-4">
         {currentStep === 0 && (
           <OpportunityStep1 formik={formik} />
         )}

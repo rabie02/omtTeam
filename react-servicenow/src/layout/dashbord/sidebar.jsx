@@ -147,7 +147,7 @@ const Sidebar = () => {
       <div className="ml-64" />
       
       {/* Custom scrollbar styles */}
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
         }

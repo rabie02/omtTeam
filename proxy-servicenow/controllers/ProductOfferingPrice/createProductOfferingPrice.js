@@ -3,9 +3,9 @@ const ProductOfferingPrice = require('../../models/productOfferingPrice');
 const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 
-module.exports = async (req, res) => {
+async function createProductOfferingPrice(req, res = null) {
   try {
-    // Créer dans ServiceNow TMF API
+    // Create in ServiceNow TMF API
     const connection = snConnection.getConnection(req.user.sn_access_token);
     const snResponse = await axios.post(
       `${connection.baseURL}/api/sn_tmf_api/catalogmanagement/productOfferingPrice`,
@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
       { headers: connection.headers }
     );
     
-    // Créer dans MongoDB
+    // Create in MongoDB
     try {
       const price = new ProductOfferingPrice({
         sys_id: snResponse.data.id,
@@ -21,14 +21,32 @@ module.exports = async (req, res) => {
       });
       await price.save();
     } catch (mongoError) {
-      return handleMongoError(res, snResponse.data, mongoError, 'creation');
+      if (res) {
+        return handleMongoError(res, snResponse.data, mongoError, 'creation');
+      }
+      throw mongoError;
     }
     
-    res.status(201).json(snResponse.data);
+    if (res) {
+      return res.status(201).json(snResponse.data);
+    }
+    return snResponse.data;
   } catch (error) {
     console.error('Error creating product offering price:', error);
-    const status = error.response?.status || 500;
-    const message = error.response?.data?.error?.message || error.message;
-    res.status(status).json({ error: message });
+    
+    if (res) {
+      const status = error.response?.status || 500;
+      const message = error.response?.data?.error?.message || error.message;
+      return res.status(status).json({ error: message });
+    }
+    throw error;
   }
+}
+
+// Original Express route handler for backward compatibility
+module.exports = async (req, res) => {
+  return createProductOfferingPrice(req, res);
 };
+
+// Export the function directly as well
+module.exports.createProductOfferingPrice = createProductOfferingPrice;

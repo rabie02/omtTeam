@@ -6,9 +6,10 @@ const getAll = require('../../controllers/Opportunity/getAllOpportunity');
 const create = require('../../controllers/Opportunity/createOpportunity');
 const update = require('../../controllers/Opportunity/updateOpportunity');
 const deleteOpportunity = require('../../controllers/Opportunity/deleteOpportunity');
+const workflow = require('../../controllers/Opportunity/workflow');
 
-const getStages = require('../../controllers/Opportunity/SalesCycleType/getAll');
-const getCycles = require('../../controllers/Opportunity/Stages/getAll');
+const getCycles = require('../../controllers/Opportunity/SalesCycleType/getAll');
+const getStages = require('../../controllers/Opportunity/Stages/getAll');
 
 
 // Define routes
@@ -16,6 +17,9 @@ router.get('/opportunity', getAll);
 router.post('/opportunity', create);
 router.patch('/opportunity/:id', update);
 router.delete('/opportunity/:id', deleteOpportunity);
+
+//workflow
+router.post('/opportunity-workflow', workflow);
 
 //stages
 router.get('/opportunity-stage', getStages);

@@ -16,7 +16,7 @@ const FormSelect = ({
   const value = getNestedValue(formik.values, name);
   const touched = getNestedValue(formik.touched, name);
   const error = getNestedValue(formik.errors, name);
-
+  
   return (
     <div className={`mb-4 ${className}`}>
       {!noLabel && label && <label className="block font-medium mb-1">{label}</label>}
@@ -28,7 +28,7 @@ const FormSelect = ({
         className={`w-full border rounded px-3 py-2 ${error ? 'border-red-500' : 'border-gray-300'}`}
         {...props}
       >
-        <option value="">Select {label}</option>
+        <option key="" value="">Select {label}</option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}

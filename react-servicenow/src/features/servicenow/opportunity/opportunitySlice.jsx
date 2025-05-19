@@ -10,6 +10,23 @@ const getHeaders = () => ({
 
 // Async Thunks for each operation in the workflow
 
+//workflow request call
+export const workflow = createAsyncThunk(
+  'opportunity/workflow',
+  async (opportunityData, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/opportunity-workflow`,
+        opportunityData,
+        { headers: getHeaders() }
+      );
+      return response.data.result;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 // 1. Opportunity CRUD operations
 export const createOpportunity = createAsyncThunk(
   'opportunity/createOpportunity',
@@ -207,10 +224,10 @@ export const getProductOfferings = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axios.get(
-        `${backendUrl}/api/product-offering`,
+        `${backendUrl}/api/product-offering-sn`,
         { headers: getHeaders() }
       );
-      return response.data;
+      return response.data.result;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -245,6 +262,19 @@ const opportunitySlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+
+      //workflow
+      .addCase(workflow.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(workflow.fulfilled, (state, action) => {
+        state.loading = false;
+        state.opportunities.unshift(action.payload);
+      })
+      .addCase(workflow.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.error?.message || 'Failed to create opportunity';
+      })
       // Create Opportunity
       .addCase(createOpportunity.pending, (state) => {
         state.loading = true;
