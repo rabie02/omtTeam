@@ -16,9 +16,10 @@ const ProductOfferingCategory = require('./api/ProductOfferingCategory/index')
 const ProductOffering = require('./api/ProductOffering/index')
 const channel = require('./api/channel/index')
 const ProductSpecification = require('./api/ProductSpecification/index');
+
 const Quote = require('./api/quote/index');
 const emailroutes = require('./email/router');
-
+const createAccount = require('./api/createAccount')
 require('dotenv').config();
 
 const app = express();
@@ -83,6 +84,7 @@ app.use('/api', [
   signupRoutes,  // Registration + confirmation
     ProductSpecification,
     emailroutes,
+    createAccount,
     Quote
 ]);
 
@@ -95,8 +97,7 @@ app.use('/api', authjwt , [
   ProductOfferingCategory,
   ProductOffering,
   channel,
-
-
+  ProductSpecification,
 ]);
 
 

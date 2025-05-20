@@ -92,3 +92,29 @@ export const userLogout = createAsyncThunk(
     }
   }
 );
+
+export const createAccount = createAsyncThunk(
+  'auth/createAccount',
+  async (userData, { rejectWithValue }) => {
+    try {
+      const response = await axios.post('/api/request-creation', userData, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 10000
+      });
+      
+      if (response.data.error === 'email_exists') {
+        return rejectWithValue('email_exists');
+      }
+      
+      return response.data;
+    } catch (err) {
+      if (err.response) {
+        return rejectWithValue(err.response.data.message || 'Registration failed');
+      } else if (err.request) {
+        return rejectWithValue('Network error. Please check your connection.');
+      } else {
+        return rejectWithValue('An error occurred while registering. Please try again.');
+      }
+    }
+  }
+);
