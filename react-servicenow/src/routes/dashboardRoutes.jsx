@@ -8,6 +8,7 @@ import POCategory from '../views/dashbord/ProductOfferingCategory';
 import PO from '../views/dashbord/ProductOffering';
 import PS from '../views/dashbord/ProductSpec';
 import AiSearch from '../views/dashbord/ai-search';
+import Quote from '../views/dashbord/quote'
 const dashboardRoutes = {
   path: '/dashboard',
   element: (
@@ -21,7 +22,8 @@ const dashboardRoutes = {
     { path: 'category', element:<POCategory/>},
     { path: 'product-offering', element:<PO/>},
     { path: 'product-specification', element:<PS/>},
-    { path: 'Help', element:<AiSearch/>},
+    { path: 'help', element:<AiSearch/>},
+    { path: 'quote', element:<Quote/>},
     // ... other dashboard sub-routes
   ],
 };

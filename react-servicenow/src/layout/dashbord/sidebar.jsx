@@ -49,6 +49,11 @@ const Sidebar = () => {
       path: '/dashboard/product-specification', 
       icon: 'file-list-line', 
       text: 'Product Specification' 
+    },
+    { 
+      path: '/dashboard/quote', 
+      icon: 'contract-line', 
+      text: 'Quote' 
     }
   ];
 
@@ -86,7 +91,7 @@ const Sidebar = () => {
                           : 'text-white hover:bg-[#006080] hover:text-white'
                       }`}
                     >
-                      <i className={`ri-${item.icon} mr-3 text-lg`} />
+                      <i className={`ri-${item.icon} mr-3 text-2xl`} />
                       <span className="font-medium flex-1">{item.text}</span>
                       {hasChildren && (
                         <i className={`ri-arrow-right-s-line transition-transform duration-200 ${
