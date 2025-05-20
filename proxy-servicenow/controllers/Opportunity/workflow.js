@@ -16,39 +16,38 @@ module.exports =  async (req, res) => {
   const pos = req.body.productOfferings; // product offerings price list items
   const opli = req.body.opportunityLineItem; //opportunity line item
   const payload = req;
-  const priceList = "";
+  var priceList = null;
   try {
     payload.body = op;
-    const opportunity = await createOpportunity(payload);
-    if(payload.createNewPriceList){
-      payload.body = pl;
-      priceList = await createPriceList(payload);
+    const opportunity = await createOpportunity(payload);//creating opportunity
+    
+    if(createNewPriceList){//check if we need a new price list or not
+      payload.body = {...pl, "account":op.account};
+      priceList = await createPriceList(payload);//creating price list
     }
     const priceListID = createNewPriceList ? priceList.sys_id : selectedPriceList;
     const pops = [];
     pos.map((po)=> {
-      payload.body = {
+      payload.body = {//prepare product offering price JSON body
         ...po,
         priceList: { id: priceListID },
         "lifecycleStatus": "Active",
         '@type': 'ProductOfferingPrice'
       };
-      const pricing = createPOPrice(payload);
-      payload.body = {
+      const pricing = createPOPrice(payload);//create Product Offering price
+      payload.body = {//prepare opportunity line item JSON body
         ...opli,
         price_list: priceListID,
         product_offering: po.productOffering.id,
-        opportunity: opportunity.result.sys_id,
+        opportunity: opportunity.sys_id,
         unit_of_measurement: po.unitOfMeasure.id,
       }
-      const poLineItem = createOpportunityLineItem(payload);
-      
+      const opLineItem = createOpportunityLineItem(payload); //create opportunity line item
+      pop.push({"product offering price":pricing, "opportunity line item":opLineItem});
     });
-
-
     
-
-
+    const result = {pop, opportunity, priceList}
+    console.log(result);
     res.status(201);
   } catch (error) {
     console.error('Error creating opportunity:', error);

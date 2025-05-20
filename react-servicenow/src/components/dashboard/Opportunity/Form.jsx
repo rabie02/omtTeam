@@ -315,7 +315,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
         formik.setFieldTouched(`productOfferings[${index}].unitOfMeasure.id`, true);
         formik.setFieldTouched(`productOfferings[${index}].priceType`, true);
       });
-      
+        
       errors = formik.errors.productOfferings ? { productOfferings: formik.errors.productOfferings } : {};
       currentStepValid = !formik.errors.productOfferings;
     }

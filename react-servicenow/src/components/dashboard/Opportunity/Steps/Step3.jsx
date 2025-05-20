@@ -10,7 +10,7 @@ const OpportunityStep3 = ({ formik }) => {
   const { productOfferings: allOfferings, unitOfMeasures } = useSelector((state) => state.opportunity);
   
   const addProductOffering = () => {
-    console.log("we here")
+    
     formik.setFieldValue('productOfferings', [
       ...formik.values.productOfferings,
       {

@@ -30,7 +30,7 @@ async function createOpportunity(req, res = null) {
     if (res) {
       return res.status(201).json(snResponse.data);
     }
-    return snResponse.data;
+    return snResponse.data.result;
   } catch (error) {
     console.error('Error creating opportunity:', error);
     
