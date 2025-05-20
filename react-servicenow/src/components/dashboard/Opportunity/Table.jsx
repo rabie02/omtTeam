@@ -128,7 +128,7 @@ function OpportunityTable({ setOpenForm }) {
           emptyText: <Empty description="No opportunities found" />,
         }}
         pagination={{
-          pageSize: 10,
+          pageSize: 6,
           showSizeChanger: false,
         }}
       />

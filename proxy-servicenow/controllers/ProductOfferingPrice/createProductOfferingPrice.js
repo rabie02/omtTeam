@@ -15,38 +15,19 @@ async function createProductOfferingPrice(req, res = null) {
 
     // 2. Prepare MongoDB document from ServiceNow response
     const snData = snResponse.data;
-    const mongoPrice = new ProductOfferingPrice({
-      sys_id: snData.id,
-      name: snData.name,
-      price: {
-        unit: snData.price?.units,
-        value: snData.price?.value
-      },
-      lifecycleStatus: snData.lifecycleStatus,
-      validFor: {
-        startDateTime: snData.validFor?.startDateTime ? new Date(snData.validFor.startDateTime) : null,
-        endDateTime: snData.validFor?.endDateTime ? new Date(snData.validFor.endDateTime) : null
-      },
-      productOffering: {
-        id: snData.productOffering?.id,
-        name: snData.productOffering?.name
-      },
-      priceType: snData.priceType,
-      recurringChargePeriodType: snData.recurringChargePeriodType,
-      unitOfMeasure: snData.unitOfMeasure,
-      priceList: snData.priceList,
-      "@type": snData["@type"] || "ProductOfferingPrice"
-    });
+    const mongoPrice = new ProductOfferingPrice({sys_id: snData.id, ...snData});
 
     // 3. Save to MongoDB
     try {
       await mongoPrice.save();
       
-      // 4. Return success response
-      res.status(201).json({
-        serviceNow: snData,
-        mongoDB: mongoPrice.toObject()
-      });
+      if(res){
+        // 4. Return success response
+        res.status(201).json({
+          serviceNow: snData,
+          mongoDB: mongoPrice.toObject()
+        });
+      }
       
     } catch (mongoError) {
       return handleMongoError(res, snData, mongoError, 'creation');

@@ -15,10 +15,7 @@ async function createOpportunityLine(req, res = null) {
     
     // Create in MongoDB
     try {
-      const opportunityLine = new OpportunityLine({
-        sys_id: snResponse.data.result.sys_id,
-        ...req.body
-      });
+      const opportunityLine = new OpportunityLine(snResponse.data.result);
       await opportunityLine.save();
     } catch (mongoError) {
       if (res) {
@@ -30,7 +27,8 @@ async function createOpportunityLine(req, res = null) {
     if (res) {
       return res.status(201).json(snResponse.data);
     }
-    return snResponse.data;
+
+    return snResponse;
   } catch (error) {
     console.error('Error creating opportunity line:', error);
     
