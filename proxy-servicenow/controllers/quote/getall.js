@@ -12,8 +12,10 @@ module.exports = async (req, res) => {
       const searchTerm = searchQuery.toLowerCase();
       query = {
         $or: [
-          { name: { $regex: searchTerm, $options: 'i' } },
-          { status: { $regex: searchTerm, $options: 'i' } }
+          { account: { $regex: `.*${searchQuery}.*`, $options: 'i' } },
+          { assigned_to: { $regex: `.*${searchQuery}.*`, $options: 'i' } },
+          { short_description: { $regex: `.*${searchQuery}.*`, $options: 'i' } },
+          { version: { $regex: `.*${searchQuery}.*`, $options: 'i' } }
         ]
       };
     }
@@ -24,15 +26,15 @@ module.exports = async (req, res) => {
     ]);
 
     // Explicitly send as JSON
-    res.json({ 
-      data, 
-      total, 
-      page, 
-      totalPages: Math.ceil(total / limit) 
+    res.json({
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
     });
   } catch (err) {
     // Send error as JSON format
-    res.status(500).json({ 
+    res.status(500).json({
       error: err.message,
       stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });

@@ -13,6 +13,7 @@ function QuoteInfoForm({ open, setOpen, initialData = {} }) {
       footer={null}
       destroyOnClose
       style={{ top: 20 }}
+      width={900}
     >
       <form className="grid grid-cols-2 gap-4">
         {/* Quote Number */}
