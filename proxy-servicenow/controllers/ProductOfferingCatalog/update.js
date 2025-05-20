@@ -56,7 +56,7 @@ module.exports = async (req, res) => {
         );
 
         try {
-            await ProductOfferingCatalog.findByIdAndUpdate(
+           let updatedCatalog = await ProductOfferingCatalog.findByIdAndUpdate(
                 id,
                 { $set: snResponse.data.result },
                 { runValidators: true }
@@ -65,7 +65,7 @@ module.exports = async (req, res) => {
             return handleMongoError(res, snResponse.data, mongoError, 'update');
         }
 
-        res.json(snResponse.data);
+        res.json({ _id : id,...snResponse.data.result});
     } catch (error) {
         if (axios.isAxiosError(error)) {
             const status = error.response?.status || 500;
