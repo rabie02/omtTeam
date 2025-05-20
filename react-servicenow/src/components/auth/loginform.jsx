@@ -32,7 +32,6 @@ function LoginForm() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,11 +39,12 @@ function LoginForm() {
 
     if (!formData.username.trim() || !formData.password.trim()) {
       setMessageContent({
-        text: MESSAGE_MAPPINGS.validation_error,
+        text: 'Please enter both username and password',
         type: 'error'
       });
       return;
     }
+    
     setLoading(true);
     try {
       const result = await dispatch(userLogin(formData));
@@ -61,8 +61,8 @@ function LoginForm() {
       } else if (userLogin.rejected.match(result)) {
         const errorPayload = result.payload;
         const errorMessage = typeof errorPayload === 'object' 
-          ? errorPayload.message || MESSAGE_MAPPINGS[errorPayload.type] || MESSAGE_MAPPINGS.default_error
-          : errorPayload || MESSAGE_MAPPINGS.default_error;
+          ? errorPayload.message || MESSAGE_MAPPINGS[errorPayload.type] || MESSAGE_MAPPINGS.unknown_error
+          : errorPayload || MESSAGE_MAPPINGS.unknown_error;
         
         setMessageContent({
           text: errorMessage,
@@ -70,13 +70,17 @@ function LoginForm() {
         });
       }
     } catch (err) {
-      console.error('Login error:', err); // Now we're using the err variable
+      console.error('Login error:', err);
       setMessageContent({
-        text: MESSAGE_MAPPINGS.default_error,
+        text: MESSAGE_MAPPINGS.unknown_error,
         type: 'error'
       });
+    } finally {
+      setLoading(false); // This ensures loading is always reset
     }
   };
+
+  
   return (
     <div className="max-w-md mx-auto">
       <form onSubmit={handleSubmit} className="mb-4">
