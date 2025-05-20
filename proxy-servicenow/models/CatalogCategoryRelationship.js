@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const CatalogCategoryRelationshipSchema = new mongoose.Schema({
+const CatalogCategoryRelationSchema = new mongoose.Schema({
   sys_id: {
     type: String,
     required: true,
@@ -64,6 +64,6 @@ const CatalogCategoryRelationshipSchema = new mongoose.Schema({
 });
 
 // Indexes for fast querying
-CatalogCategoryRelationshipSchema.index({ catalog: 1, category: 1 }, { unique: true });
+CatalogCategoryRelationSchema.index({ catalog: 1, category: 1 }, { unique: true });
 
 module.exports = mongoose.model('CatalogCategoryRelations', CatalogCategoryRelationSchema);
