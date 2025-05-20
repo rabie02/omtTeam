@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { notification } from 'antd';
 import { Popconfirm, Empty, Spin, Pagination } from 'antd';
 import {
     getall,
@@ -23,24 +24,52 @@ function Table({ setData, setOpen, searchQuery }) {
     }, [dispatch, searchQuery]);
 
     const handleDelete = async (productId) => {
-        await dispatch(deleteCatalog(productId));
-        dispatch(getall({
-            page: currentPage,
-            limit,
-            q: searchQuery
-        }));
+        try {
+            await dispatch(deleteCatalog(productId)).unwrap();
+
+            notification.success({
+                message: 'Catalog Deleted',
+                description: 'Catalog has been deleted successfully',
+            });
+
+            dispatch(getall({
+                page: currentPage,
+                limit,
+                q: searchQuery
+            }));
+        } catch (error) {
+            console.error('Deletion failed:', error);
+            notification.error({
+                message: 'Deletion Failed',
+                description: error.message || 'Failed to delete catalog. Please try again.',
+            });
+        }
     };
 
     const handleUpdateStatus = async (productId, newStatus) => {
-        await dispatch(updateCatalogStatus({
-            id: productId,
-            status: newStatus
-        }));
-        dispatch(getall({
-            page: currentPage,
-            limit,
-            q: searchQuery
-        }));
+        try {
+            const result = await dispatch(updateCatalogStatus({
+                id: productId,
+                status: newStatus
+            })).unwrap();
+
+            notification.success({
+                message: 'Status Updated',
+                description: `Catalog has been ${newStatus} successfully`,
+            });
+
+            dispatch(getall({
+                page: currentPage,
+                limit,
+                q: searchQuery
+            }));
+        } catch (error) {
+            console.error('Status update failed:', error);
+            notification.error({
+                message: 'Update Failed',
+                description: error.message || 'Failed to update catalog status. Please try again.',
+            });
+        }
     };
 
     const handlePageChange = (page) => {

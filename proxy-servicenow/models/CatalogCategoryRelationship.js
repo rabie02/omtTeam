@@ -50,7 +50,20 @@ const CatalogCategoryRelationshipSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true
-  }
+  },
+    catalog: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ProductOfferingCatalog',
+    required: true
+  },
+  category: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ProductOfferingCategory',
+    required: true
+  },
 });
 
-module.exports = mongoose.model('CatalogCategoryRelationship', CatalogCategoryRelationshipSchema);
+// Indexes for fast querying
+CatalogCategoryRelationshipSchema.index({ catalog: 1, category: 1 }, { unique: true });
+
+module.exports = mongoose.model('CatalogCategoryRelations', CatalogCategoryRelationSchema);
