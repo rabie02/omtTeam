@@ -76,7 +76,7 @@ export const updateProductOffering = createAsyncThunk(
       const response = await axios.patch(`${backendUrl}/api/product-offering/${id}`, productData, {
         headers: { authorization: access_token },
       });
-      return response;
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
@@ -166,11 +166,11 @@ const ProductOfferingSlice = createSlice({
         state.error = null;
       })
       .addCase(updateProductOffering.fulfilled, (state, action) => {
-        const index = state.data.findIndex(p => p.id === action.payload.id);
+        const index = state.data.findIndex(p => p._id === action.payload._id);
         if (index !== -1) {
           state.data[index] = action.payload;
         }
-        if (state.selectedProduct?.id === action.payload.id) {
+        if (state.selectedProduct?._id === action.payload._id) {
           state.selectedProduct = action.payload;
         }
         state.loading = false;

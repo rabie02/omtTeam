@@ -1,5 +1,5 @@
 
-import { createPriceList } from '../../../features/servicenow/opportunity/opportunitySlice';
+import { createPriceList } from '../../../features/servicenow/price-list/priceListSlice';
 import { useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -33,7 +33,7 @@ function PriceListForm({ open, setOpen, initialData = null, dispatch }) {
         const action = isEditMode
           ? updatePriceList({ id: initialData._id, ...values })
           : createPriceList(values);
-        await dispatch(action).unwrap();
+        setTimeout(await dispatch(action).unwrap(), 3000);
         setOpen(false);
         resetForm();
       } catch (error) {
