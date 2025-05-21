@@ -45,14 +45,14 @@ function ProductOfferingCatalogForm({ open, setOpen, initialData = null, dispatc
           ? updateCatalog({ id: initialData._id, ...values })
           : createCatalog(values);
         await dispatch(action).unwrap();
-        
+
         notification.success({
           message: isEditMode ? 'Catalog Updated' : 'Catalog Created',
-          description: isEditMode 
+          description: isEditMode
             ? 'Catalog has been updated successfully'
             : 'New catalog has been created successfully',
         });
-        
+
         setOpen(false);
         resetForm();
       } catch (error) {
@@ -82,6 +82,7 @@ function ProductOfferingCatalogForm({ open, setOpen, initialData = null, dispatc
       onCancel={handleCancel}
       footer={null}
       destroyOnClose
+      style={{ top: 20 }}
     >
       <form onSubmit={formik.handleSubmit} className="space-y-4">
         {/* Name */}

@@ -20,6 +20,26 @@ export const getall = createAsyncThunk(
   }
 );
 
+export const getPublish = createAsyncThunk(
+  'productOfferingCatalog/getPublish',
+  async ({ q }, { rejectWithValue }) => {
+    try {
+      console.log(q);
+
+      const access_token = localStorage.getItem('access_token');
+      const response = await axios.get(`${backendUrl}/api/product-offering-catalog-publish`, {
+        headers: { authorization: access_token },
+        params: { q }
+      });
+      console.log(response.data);
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
 export const getOne = createAsyncThunk(
   'productOfferingCatalog/getOne',
   async (id, { rejectWithValue }) => {
@@ -56,11 +76,11 @@ export const updateCatalogStatus = createAsyncThunk(
     try {
       const access_token = localStorage.getItem('access_token');
       const response = await axios.patch(
-        `${backendUrl}/api/product-offering-catalog-status/${id}`, 
+        `${backendUrl}/api/product-offering-catalog-status/${id}`,
         { status },
         { headers: { authorization: access_token } }
       );
-      return response.data;
+      return response.data.result;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
     }
@@ -76,9 +96,8 @@ export const updateCatalog = createAsyncThunk(
         `${backendUrl}/api/product-offering-catalog/${id}`,
         productData,
         { headers: { authorization: access_token } }
-      );      
-      return response.data;
-      
+      );
+      return response.data.result;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
@@ -103,7 +122,7 @@ export const deleteCatalog = createAsyncThunk(
 // Slice
 const productOfferingCatalogSlice = createSlice({
   name: 'productOfferingCatalog',
-  initialState: { 
+  initialState: {
     data: [],
     selectedProduct: null,
     currentPage: 1,
@@ -130,6 +149,24 @@ const productOfferingCatalogSlice = createSlice({
         state.loading = false;
       })
       .addCase(getall.rejected, (state, action) => {
+        state.error = action.payload;
+        state.loading = false;
+      })
+
+      // Get Publish
+      .addCase(getPublish.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getPublish.fulfilled, (state, action) => {
+        state.data = action.payload.data;
+        state.currentPage = action.payload.page;
+        state.totalPages = action.payload.totalPages;
+        state.totalItems = action.payload.total;
+        state.limit = action.meta.arg?.limit || 6;
+        state.loading = false;
+      })
+      .addCase(getPublish.rejected, (state, action) => {
         state.error = action.payload;
         state.loading = false;
       })
@@ -170,9 +207,7 @@ const productOfferingCatalogSlice = createSlice({
       })
       .addCase(updateCatalogStatus.fulfilled, (state, action) => {
         const updatedProduct = action.payload;
-        console.log(action.payload);
-        
-        state.data = state.data.map(product => 
+        state.data = state.data.map(product =>
           product._id === updatedProduct._id ? updatedProduct : product
         );
         if (state.selectedProduct?._id === updatedProduct._id) {
@@ -192,7 +227,7 @@ const productOfferingCatalogSlice = createSlice({
       })
       .addCase(updateCatalog.fulfilled, (state, action) => {
         const updatedProduct = action.payload;
-        state.data = state.data.map(product => 
+        state.data = state.data.map(product =>
           product._id === updatedProduct._id ? updatedProduct : product
         );
         if (state.selectedProduct?._id === updatedProduct._id) {

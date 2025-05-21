@@ -2,79 +2,82 @@ const express = require('express');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const ProductOfferingCategory = require('../../models/ProductOfferingCategory');
-const upload = require('../../utils/uplaod');
-const deleteOldFiles = require('../../utils/deletefiles');
+const ProductOfferingCatalog = require('../../models/ProductOfferingCatalog');
+const handleMongoError = require('../../utils/handleMongoError');
+const updateCatalogCategoryRelationship = require('../CatalogCategroyRelationship/update');
+const getone = require('./getone')
 
-const router = express.Router();
-require('dotenv').config();
+module.exports = async (req, res) => {
+  try {
+    // 1. Authentication
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'Authorization required' });
+    }
 
-// Error handling helper
-const handleMongoError = (res, serviceNowData, error, operation) => {
-  console.error(`MongoDB ${operation} error:`, error);
-  return res.status(500).json({
-    error: `Operation partially failed - Success in ServiceNow but failed in MongoDB (${operation})`,
-    serviceNowSuccess: serviceNowData,
-    mongoError: error.message
-  });
-};
-
-router.patch(
-  '/product-offering-category/:sys_id',
-  upload.fields([
-    { name: 'image', maxCount: 1 },
-    { name: 'thumbnail', maxCount: 1 }
-  ]),
-  async (req, res) => {
+    let decodedToken;
     try {
-      // Authentication
-      const token = req.headers.authorization?.split(' ')[1];
-      if (!token) return res.status(401).json({ error: 'Authorization required' });
-      const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-      const { sys_id } = req.params;
+      decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
 
-      // Fetch existing category to get old file paths
-      const existingCategory = await ProductOfferingCategory.findOne({ sys_id });
-      if (!existingCategory) {
-        return res.status(404).json({ error: 'Category not found' });
+    // 2. Validate category ID
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'Category ID is required' });
+    }
+
+    const { catalog } = req.body;
+
+    // 3. Find existing category and catalog
+    let existingCategory;
+    try {
+      existingCategory = await ProductOfferingCategory.findById(id);
+    } catch (error) {
+      if (error.name === 'CastError') {
+        return res.status(400).json({ error: 'Invalid category ID format' });
       }
-      const oldImage = existingCategory.image;
-      const oldThumbnail = existingCategory.thumbnail;
+      throw error;
+    }
 
-      // Process uploaded files
-      const filePaths = {};
-      if (req.files) {
-        ['image', 'thumbnail'].forEach(field => {
-          if (req.files[field]) {
-            const file = req.files[field][0];
-            filePaths[field] = `${file.filename}`; // No leading slash    
-          }
-        });
+    if (!existingCategory) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+
+    let catalogDoc;
+    try {
+      catalogDoc = await ProductOfferingCatalog.findById(catalog);
+    } catch (error) {
+      if (error.name === 'CastError') {
+        return res.status(400).json({ error: 'Invalid catalog ID format' });
       }
+      throw error;
+    }
 
-      // Prepare update body
-      const updateBody = {
-        ...req.body,
-        ...filePaths
-      };
+    if (!catalogDoc) {
+      return res.status(404).json({ error: 'Catalog not found' });
+    }
 
-      // Field Filtering
-      const allowedFields = [
-        'name', 'code', 'is_leaf', 'start_date',
-        'end_date', 'description', 'image', 'thumbnail'
-      ];
+    const allowedFields = [
+      'end_date', 'image', 'thumbnail', 'description', 'external_id',
+      'is_default', 'external_source', 'status', 'name', 'hierarchy_json', 'leaf_categories'
+    ];
 
-      // Filter and clean fields
-      const filteredUpdate = {};
-      allowedFields.forEach(field => {
-        if (updateBody[field] !== undefined) {
-          filteredUpdate[field] = updateBody[field] === "" ? null : updateBody[field];
-        }
-      });
+    const updateBody = {};
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        updateBody[field] = req.body[field] === "" ? null : req.body[field];
+      }
+    });
 
-      // ServiceNow Update
-      const snResponse = await axios.patch(
-        `${process.env.SERVICE_NOW_URL}/api/now/table/sn_prd_pm_product_offering_category/${sys_id}`,
-        filteredUpdate,
+    // 4. Update ServiceNow record
+    let snResponse;
+    try {
+      snResponse = await axios.patch(
+        `${process.env.SERVICE_NOW_URL}/api/now/table/sn_prd_pm_product_offering_category/${existingCategory.sys_id}`,
+        updateBody,
         {
           headers: {
             'Authorization': `Bearer ${decodedToken.sn_access_token}`,
@@ -82,34 +85,49 @@ router.patch(
           }
         }
       );
-
-      // MongoDB Update
-      try {
-        await ProductOfferingCategory.updateOne(
-          { sys_id: sys_id },
-          { $set: snResponse.data.result },
-          { runValidators: true }
-        );
-      } catch (mongoError) {
-        return handleMongoError(res, snResponse.data, mongoError, 'update');
-      }
-
-      // Delete old files after successful updates
-      deleteOldFiles(oldImage, oldThumbnail);
-
-      res.json(snResponse.data);
-
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status || 500;
-        return res.status(status).json({
-          error: status === 404 ? 'Not found' : 'ServiceNow update failed',
-          details: error.response?.data || error.message
-        });
-      }
-      res.status(500).json({ error: 'Server error', details: error.message });
+      return res.status(error.response?.status || 500).json({
+        error: 'ServiceNow API failed',
+        details: error.response?.data || error.message
+      });
     }
-  }
-);
 
-module.exports = router;
+    // 5. Update MongoDB
+    let updatedCategory;
+    try {
+      updatedCategory = await ProductOfferingCategory.findByIdAndUpdate(
+        id,
+        { $set: snResponse.data.result },
+        { new: true, runValidators: true }
+      );
+    } catch (mongoError) {
+      return handleMongoError(res, snResponse.data, mongoError, 'update');
+    }
+
+    // 6. Handle catalog relationship update
+
+    try {
+      await updateCatalogCategoryRelationship(
+        catalogDoc._id,
+        updatedCategory,
+        decodedToken.sn_access_token
+      );
+    } catch (error) {
+      return res.status(500).json({
+        error: 'Failed to create catalog-category relationship',
+        details: error.message
+      });
+    }
+
+    // 7. Prepare response
+    const result = await getone(updatedCategory._id)
+    const responseData = {
+      result
+    };
+
+    return res.status(200).json(responseData);
+
+  } catch (error) {
+    return res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};

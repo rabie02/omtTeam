@@ -1,17 +1,38 @@
-const express = require('express');
 const ProductOfferingCategory = require('../../models/ProductOfferingCategory');
 
-const router = express.Router();
-
 // GET BY ID
-router.get('/product-offering-category/:sys_id', async (req, res) => {
-  try {
-    const data = await ProductOfferingCategory.findOne({ sys_id: req.params.sys_id });
-    if (!data) return res.status(404).send({ message: 'Category not found' });
-    res.send(data);
-  } catch (err) {
-    res.status(500).send(err);
-  }
-});
+module.exports = async (categoryId) => {
+ 
+    const result = await ProductOfferingCategory.aggregate([
+      { $match: { _id:categoryId } },
+      {
+        $lookup: {
+          from: 'catalogcategoryrelations',
+          let: { categoryId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$category', '$$categoryId'] }
+              }
+            },
+            {
+              $lookup: {
+                from: 'productofferingcatalogs',
+                localField: 'catalog',
+                foreignField: '_id',
+                as: 'catalogDetails'
+              }
+            },
+            { $unwind: '$catalogDetails' },
+            { $replaceRoot: { newRoot: '$catalogDetails' } }
+          ],
+          as: 'catalogs'
+        }
+      }
+    ]);
 
-module.exports = router;
+  
+     return result[0]
+    
+ 
+};

@@ -2,6 +2,7 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const ProductOfferingCatalog = require('../../models/ProductOfferingCatalog');
 const handleMongoError = require('../../utils/handleMongoError');
+const getone = require('./getone')
 
 module.exports = async (req, res) => {
     try {
@@ -12,7 +13,7 @@ module.exports = async (req, res) => {
         }
         const token = authHeader.split(' ')[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
+
         if (!decoded.sn_access_token) {
             return res.status(401).json({ error: 'Missing ServiceNow access token in JWT' });
         }
@@ -54,7 +55,7 @@ module.exports = async (req, res) => {
             }
         });
 
-         updateBody = {sys_id: catalog.sys_id, ...updateBody };
+        updateBody = { sys_id: catalog.sys_id, ...updateBody };
 
 
         // ServiceNow update
@@ -72,23 +73,27 @@ module.exports = async (req, res) => {
 
         // MongoDB update
         const updateData = { status: snResponse.data.result.status.toLowerCase() };
-        let updatedCatalog;
+        let mongoDoc;
         try {
-            updatedCatalog = await ProductOfferingCatalog.findByIdAndUpdate(
+            mongoDoc = await ProductOfferingCatalog.findByIdAndUpdate(
                 id,
                 { $set: updateData },
                 { new: true, runValidators: true }
             );
         } catch (mongoError) {
-           return handleMongoError(res, snResponse.data, mongoError, 'update');
+            return handleMongoError(res, snResponse.data, mongoError, 'update');
         }
 
         // Final response
-        res.json({ _id : id,...snResponse.data.result});
+        const result = await getone(mongoDoc._id)
+        const responseData = {
+            result
+        };
+        res.status(201).json(responseData);
 
     } catch (error) {
         console.error('Error updating product offering state:', error);
-        
+
         if (axios.isAxiosError(error)) {
             const status = error.response?.status || 500;
             const errorData = error.response?.data || {};
@@ -105,13 +110,13 @@ module.exports = async (req, res) => {
         }
 
         if (error.message === 'Invalid response structure from ServiceNow') {
-            return res.status(500).json({ 
+            return res.status(500).json({
                 error: 'ServiceNow returned an invalid response format',
                 details: error.message
             });
         }
 
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Internal server error',
             details: error.message
         });

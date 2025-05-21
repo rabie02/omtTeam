@@ -1,11 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Modal } from 'antd';
-import { useDispatch } from 'react-redux';
-import {formatDateForInput} from '@/utils/formatDateForInput.js'
-import {handleFileChange} from '@/utils/validationfileUploader.js'
+import { Modal, Select } from 'antd';
+import { useDispatch, useSelector } from 'react-redux';
+
+import { formatDateForInput } from '@/utils/formatDateForInput.js';
 import { updateCategory, createCategory } from '../../../features/servicenow/product-offering/productOfferingCategorySlice';
+import { getPublish } from '../../../features/servicenow/product-offering/productOfferingCatalogSlice';
 
 const generateCodeFromName = (name) => {
   if (!name || typeof name !== 'string' || name.trim() === '') return '';
@@ -25,34 +26,35 @@ const validationSchema = Yup.object().shape({
   name: Yup.string().required('Name is required'),
   start_date: Yup.string().required('Start date is required'),
   status: Yup.string().required('Status is required'),
-  code: Yup.string().required('Code is required'),
+  catalog: Yup.string().required('Status is required'),
 });
 
 function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
   const dispatch = useDispatch();
+  const { data, loading, error } = useSelector((state) => state.productOfferingCatalog);
+  const [searchTerm, setSearchTerm] = useState('');
   const isEditMode = Boolean(initialData);
 
-  
+  useEffect(() => {
+    dispatch(getPublish({ q: searchTerm }));
+  }, [dispatch, searchTerm, open]);
 
   const formik = useFormik({
     initialValues: {
       name: initialData?.name || '',
-      start_date: formatDateForInput(initialData?.start_date)  || '',
-      end_date: initialData?.end_date ? formatDateForInput(initialData?.end_date):'',
+      start_date: formatDateForInput(initialData?.start_date) || '',
+      end_date: initialData?.end_date ? formatDateForInput(initialData?.end_date) : '',
       status: initialData?.status || 'draft',
       description: initialData?.description || '',
       code: initialData?.code || '',
+      catalog: initialData?.catalogs[0]?._id || '',
       is_leaf: true,
-      image: initialData?.image || '',
-      thumbnail: initialData?.thumbnail || '',
     },
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
       try {
-        console.log(values);
-        
         const action = isEditMode
-          ? updateCategory({ id: initialData.sys_id, ...values })
+          ? updateCategory({ id: initialData._id, ...values })
           : createCategory(values);
         await dispatch(action).unwrap();
         setOpen(false);
@@ -63,8 +65,6 @@ function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
     },
     enableReinitialize: true,
   });
-
-
 
   useEffect(() => {
     if (!isEditMode) {
@@ -82,9 +82,10 @@ function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
       onCancel={handleCancel}
       footer={null}
       destroyOnClose
-      width={isEditMode ? 900 : 500} 
+      style={{ top: 20 }}
+
     >
-      <form onSubmit={formik.handleSubmit} className={`space-y-4 ${isEditMode ? 'grid grid-cols-2 gap-6 ' : ''}`}>
+      <form onSubmit={formik.handleSubmit} className={`space-y-4`}>
         {/* Name */}
         <div>
           <label className="block font-medium mb-1">Name</label>
@@ -145,69 +146,27 @@ function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
           />
         </div>
 
-        {/* Status */}
-        {/* <div>
-          <label className="block font-medium mb-1">Status</label>
-          <select
-            name="status"
-            value={formik.values.status}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            disabled={formik.isSubmitting}
+        {/* Catalog Select */}
+        <div className="col-span-2">
+          <label className="block font-medium mb-1">Catalogs</label>
+          <Select
+            showSearch
+            placeholder="Select catalogs"
+            value={formik.values.catalog}
+            onChange={(value) => formik.setFieldValue('catalog', value)}
+            onSearch={(value) => setSearchTerm(value)}
+            options={data?.map(catalog => ({
+              value: catalog._id,
+              label: catalog.name
+            }))}
             className="w-full border rounded px-3 py-2"
-          >
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
-            <option value="archived">Archived</option>
-            <option value="retired">Retired</option>
-          </select>
-          {formik.touched.status && formik.errors.status && (
-            <p className="text-red-500 text-sm mt-1">{formik.errors.status}</p>
+            loading={loading}
+            filterOption={false}
+          />
+          {formik.touched.catalog && formik.errors.catalog && (
+            <p className="text-red-500 text-sm mt-1">{formik.errors.catalog}</p>
           )}
-        </div> */}
-
-        {/* Image Upload (Edit mode only) */}
-        {isEditMode && (
-          <>
-            <div>
-              <label className="block font-medium mb-1">Category Image</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange('image', formik.setFieldValue, formik.setFieldError)}
-                className="w-full border rounded px-3 py-2"
-              />
-              {formik.values.image && (
-                <div className="mt-2">
-                  <img 
-                    src={formik.values.image} 
-                    alt="Category preview" 
-                    className="h-20 w-20 object-cover rounded"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label className="block font-medium mb-1">Thumbnail Image</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange('thumbnail', formik.setFieldValue, formik.setFieldError)}
-                className="w-full border rounded px-3 py-2"
-              />
-              {formik.values.thumbnail && (
-                <div className="mt-2">
-                  <img 
-                    src={formik.values.thumbnail} 
-                    alt="Thumbnail preview" 
-                    className="h-20 w-20 object-cover rounded"
-                  />
-                </div>
-              )}
-            </div>
-          </>
-        )}
+        </div>
 
         {/* Description */}
         <div className='col-span-2'>
@@ -243,8 +202,8 @@ function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
                 ? 'Updating...'
                 : 'Creating...'
               : isEditMode
-              ? 'Update Category'
-              : 'Create Category'}
+                ? 'Update Category'
+                : 'Create Category'}
           </button>
         </div>
       </form>

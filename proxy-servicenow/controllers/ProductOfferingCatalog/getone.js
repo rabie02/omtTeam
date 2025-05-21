@@ -1,11 +1,41 @@
+
 const ProductOfferingCatalog = require('../../models/ProductOfferingCatalog');
 
-module.exports = async (req, res) => {
-  try {
-    const data = await ProductOfferingCatalog.findOne({ _id: req.params.id });
-    if (!data) return res.status(404).send({ message: 'Catalog not found' });
-    res.send(data);
-  } catch (err) {
-    res.status(500).send(err);
-  }
+module.exports = async (catalogId) => {
+
+
+    const result = await ProductOfferingCatalog.aggregate([
+      { $match: { _id: catalogId } },
+      {
+        $lookup: {
+          from: 'catalogcategoryrelations',
+          let: { catalogId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$catalog', '$$catalogId'] }
+              }
+            },
+            {
+              $lookup: {
+                from: 'productofferingcategories',
+                localField: 'category',
+                foreignField: '_id',
+                as: 'categoryDetails'
+              }
+            },
+            { $unwind: '$categoryDetails' },
+            { $replaceRoot: { newRoot: '$categoryDetails' } }
+          ],
+          as: 'categories'
+        }
+      }
+    ]);
+
+    if (!result.length) {
+      throw new Error('Catalog not found');
+    }
+
+    return result[0];
+ 
 };

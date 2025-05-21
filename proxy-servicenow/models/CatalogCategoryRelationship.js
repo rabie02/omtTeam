@@ -26,7 +26,11 @@ const CatalogCategoryRelationSchema = new mongoose.Schema({
   source: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    set: function(v) {
+      // Extract 'value' property if the input is an object
+      return v && typeof v === 'object' ? v.value : v;
+    }
   },
   sys_updated_on: {
     type: String,
@@ -49,9 +53,13 @@ const CatalogCategoryRelationSchema = new mongoose.Schema({
   target: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    set: function(v) {
+      // Extract 'value' property if the input is an object
+      return v && typeof v === 'object' ? v.value : v;
+    }
   },
-    catalog: {
+  catalog: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ProductOfferingCatalog',
     required: true
