@@ -80,7 +80,7 @@ function OpportunityTable({ setOpenForm }) {
     {
       title: 'Actions',
       key: 'actions',
-      render: (_, record) => (
+      render: (_, record) => ( record!==undefined &&
         <div className="flex space-x-2">
           <Popconfirm
             title="Change Status"

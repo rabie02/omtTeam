@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Modal } from 'antd';
-import { updateProductOffering, createProductOffering,  } from '../../../features/servicenow/product-offering/productOfferingSlice';
+import { Modal, notification } from 'antd';
+import { updateProductOffering, createProductOffering } from '../../../features/servicenow/product-offering/productOfferingSlice';
 
 
 
@@ -44,6 +44,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         const selectedSpec = options.specifications.find(spec => 
           (spec.id || spec.sys_id) === values.p_spec
         );
+        
 
         if (!selectedSpec) {
           throw new Error('Selected Product Specification not found');
@@ -64,7 +65,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
               productSpecCharacteristicValue: valueToUse,
               productSpecification: {
                   id: selectedSpec.id || selectedSpec.sys_id,
-                  name: selectedSpec.name,
+                  name: selectedSpec.display_name || selectedSpec.name,
                   version: selectedSpec.version,
                   internalVersion: selectedSpec.internalVersion,
                   internalId: selectedSpec.internalId || selectedSpec.id || selectedSpec.sys_id
@@ -107,7 +108,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           ],
           productSpecification: {
             id: values.p_spec,
-            name: options.specifications.find(s => (s.id || s.sys_id) === values.p_spec)?.name || "",
+            name: options.specifications.find(s => (s.id || s.sys_id) === values.p_spec)?.display_name || "",
             version: "",
             internalVersion: "1",
             internalId: values.p_spec
@@ -130,17 +131,27 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         // Dispatch the appropriate Redux action
         const action = isEditMode
           ? updateProductOffering({ 
-              id: initialData.id, 
+              id: initialData._id, 
               ...productOfferingDataPayload 
             })
           : createProductOffering(productOfferingDataPayload);
         
           await dispatch(action).unwrap();
+
+          notification.success({
+            message: isEditMode ? 'Product Offering Updated' : 'Product Offering Created',
+            description: isEditMode 
+              ? 'Product Offering has been updated successfully'
+              : 'New Product Offering has been created successfully',
+          });
           setOpen(false);
           resetForm();
       } catch (error) {
         console.error('Submission error:', error);
-        // You might want to show a notification to the user here
+        notification.error({
+          message: 'Operation Failed',
+          description: error.message || 'Something went wrong. Please try again.',
+        });
       }
     },
     enableReinitialize: true,

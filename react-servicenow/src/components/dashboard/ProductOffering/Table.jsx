@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Popconfirm, Pagination, Spin, Empty } from 'antd';
+import { Popconfirm, Pagination, Spin, Empty, notification } from 'antd';
 import { getall, deleteProductOffering, updateProductOfferingStatus } from '../../../features/servicenow/product-offering/productOfferingSlice';
 
 function Table({setData , setOpen, searchQuery}) {
@@ -20,21 +20,49 @@ function Table({setData , setOpen, searchQuery}) {
     
 
     const handleDelete = async (productId) => {
-        await dispatch(deleteProductOffering(productId));
-        // Refresh current page after deletion
-        dispatch(getall({ page: currentPage, limit, q:searchQuery }));
+        try{
+            await dispatch(deleteProductOffering(productId));
+
+            notification.success({
+                    message: 'Product Offering Deleted',
+                    description: 'Product Offering has been deleted successfully',
+                });
+
+            dispatch(getall({ page: currentPage, limit, q:searchQuery }));
+        }catch(error){
+            console.error('Deletion failed:', error);
+            notification.error({
+                message: 'Deletion Failed',
+                description: error.message || 'Failed to delete Product Offering. Please try again.',
+            });
+        }
+        
     };
 
      const handleUpdateStatus = async (productId, newStatus) => {     
-        await dispatch(updateProductOfferingStatus({ 
-            sys_id: productId, 
-            status: newStatus 
-        }));
-        dispatch(getall({ 
-            page: currentPage, 
-            limit,
-            q: searchQuery 
-        }));
+        try{
+            await dispatch(updateProductOfferingStatus({ 
+                id: productId, 
+                status: newStatus 
+            }));
+
+            notification.success({
+                    message: 'Status Updated',
+                    description: `Product Offering has been ${newStatus} successfully`,
+                });
+
+            dispatch(getall({ 
+                page: currentPage, 
+                limit,
+                q: searchQuery 
+            }));
+        }catch(error){
+            console.error('Status update failed:', error);
+            notification.error({
+                message: 'Update Failed',
+                description: error.message || 'Failed to update Product Offering status. Please try again.',
+            });
+        }
     };
 
     function changeData(newData) {
@@ -60,6 +88,7 @@ function Table({setData , setOpen, searchQuery}) {
         }
     };
     
+    
 
     if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
     if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
@@ -80,7 +109,7 @@ function Table({setData , setOpen, searchQuery}) {
                 </thead>
 
                 <tbody className="divide-y divide-gray-200">
-                    {products.length > 0 ? products?.map((product) => ( product !== undefined ?
+                    {products.length > 0 ? products?.map((product) => ( product !== undefined &&
                         <tr key={product.id} className="*:text-gray-900 *:first:font-medium">
                             
                             <td className="px-3 py-3 whitespace-nowrap">{product.name}</td>
@@ -98,40 +127,40 @@ function Table({setData , setOpen, searchQuery}) {
                                     title={`${getStatusAction(product.status).action} Product offering`}
                                     description={`Are you sure you want to ${getStatusAction(product.status).action.toLowerCase()} this product offering?`}
                                     icon={<i className="ri-error-warning-line text-yellow-600 text-md mr-2"></i>}
-                                    onConfirm={() => handleUpdateStatus(product.id, getStatusAction(product.status).newStatus)}
+                                    onConfirm={() => handleUpdateStatus(product._id, getStatusAction(product.status).newStatus)}
                                 >
-                                    <button className="text-gray-500 hover:text-green-600">
+                                    <button className="mr-1 text-gray-500 hover:text-green-600">
                                         <i className="ri-loop-right-line text-2xl"></i>
                                     </button>
                                 </Popconfirm>
-                                <button
-                                    className="mx-2 text-gray-500 hover:text-blue-600 "
+                                {product.status === "draft" && <button
+                                    className="text-gray-500 hover:text-blue-600 "
                                     onClick={() => changeData(product)}
                                 >
                                     <i className="ri-pencil-line text-2xl"></i>
-                                </button>
+                                </button>}
 
 
                                 <Popconfirm
-                                    title="Delete the catalog"
-                                    description="Are you sure to delete this catalog?"
+                                    title="Delete the Product Offering"
+                                    description="Are you sure to delete this Product Offering?"
                                     icon={<i className="ri-error-warning-line text-red-600 mr-2"></i>}
-                                    onConfirm={() => handleDelete(product.id)}
+                                    onConfirm={() => handleDelete(product._id)}
                                 >
                                     <button
-                                        className="text-gray-500 hover:text-red-600 "
+                                        className="ml-1 text-gray-500 hover:text-red-600 "
                                     >
                                         <i className="ri-delete-bin-6-line text-2xl"></i>
                                     </button>
                                 </Popconfirm>
 
                             </td>
-                        </tr> : ""
+                        </tr> 
                     )) : <tr>
                     <td colSpan="6" className="py-8 text-center">
                         <Empty
                             image={Empty.PRESENTED_IMAGE_SIMPLE}
-                            description="No catalogs found"
+                            description="No Product Offerings found"
                         />
                     </td>
                 </tr>}

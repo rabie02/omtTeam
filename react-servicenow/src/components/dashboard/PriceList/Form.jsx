@@ -33,7 +33,7 @@ function PriceListForm({ open, setOpen, initialData = null, dispatch }) {
         const action = isEditMode
           ? updatePriceList({ id: initialData._id, ...values })
           : createPriceList(values);
-        await dispatch(action).unwrap();
+        setTimeout(await dispatch(action).unwrap(), 3000);
         setOpen(false);
         resetForm();
       } catch (error) {
