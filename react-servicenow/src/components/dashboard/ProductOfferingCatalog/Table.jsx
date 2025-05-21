@@ -184,7 +184,7 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
 
     if (loading) return <div className="h-full flex justify-center items-center"><Spin size="large" /></div>;
     if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
-
+    
     return (
         <div className='w-full justify-center flex'>
             <div className="w-10/12 ">

@@ -5,12 +5,12 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL;
 // Async Thunks
 export const getall = createAsyncThunk(
   'ProductOffering/getall',
-  async ({ page = 1, limit = 6 }, { rejectWithValue }) => {
+  async ({ page = 1, limit = 6, q }, { rejectWithValue }) => {
     try {      
       const access_token = localStorage.getItem('access_token');
       const response = await axios.get(`${backendUrl}/api/product-offering`, {
         headers: { authorization: access_token },
-        params: { page, limit }
+        params: { page, limit, q }
       }); 
       
       return response.data || [];
@@ -54,6 +54,7 @@ export const updateProductOfferingStatus = createAsyncThunk(
   'ProductOffering/updateStatus',
   async (data , { rejectWithValue }) => {
     try {
+      
       const access_token = localStorage.getItem('access_token');
       const response = await axios.patch(
         `${backendUrl}/api/product-offering-status`,
@@ -75,7 +76,7 @@ export const updateProductOffering = createAsyncThunk(
       const response = await axios.patch(`${backendUrl}/api/product-offering/${id}`, productData, {
         headers: { authorization: access_token },
       });
-      return response;
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
@@ -165,11 +166,11 @@ const ProductOfferingSlice = createSlice({
         state.error = null;
       })
       .addCase(updateProductOffering.fulfilled, (state, action) => {
-        const index = state.data.findIndex(p => p.id === action.payload.id);
+        const index = state.data.findIndex(p => p._id === action.payload._id);
         if (index !== -1) {
           state.data[index] = action.payload;
         }
-        if (state.selectedProduct?.id === action.payload.id) {
+        if (state.selectedProduct?._id === action.payload._id) {
           state.selectedProduct = action.payload;
         }
         state.loading = false;
@@ -185,12 +186,12 @@ const ProductOfferingSlice = createSlice({
         state.error = null;
       })
       .addCase(updateProductOfferingStatus.fulfilled, (state, action) => {
-        const index = state.data.findIndex(p => p.id === action.payload.id);
+        
+        if(action.payload !== undefined){
+          const index = state.data.findIndex(p => p.sys_id === action.payload.sys_id);
         if (index !== -1) {
           state.data[index] = action.payload;
         }
-        if (state.selectedProduct?.id === action.payload.id) {
-          state.selectedProduct = action.payload;
         }
         state.loading = false;
       })

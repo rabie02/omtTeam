@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Table from '../../components/dashbord/spec/table'; // Import du composant existant
-import Form from '../../components/dashbord/spec/Form';
+import Table from '../../components/dashboard/spec/table'; // Import du composant existant
+import Form from '../../components/dashboard/spec/Form';
 
 const ProductSpec = () => {
   const [open, setOpen] = useState(false);
@@ -11,7 +11,7 @@ const ProductSpec = () => {
     <>
 
       <div className='h-svh'>
-        <div className='h-36 bg-cyan-700/40 flex items-end py-3 px-20'>
+        <div className='h-36 bg-gradient-to-b from-cyan-700  from-10% to-cyan-700/40  to-90%  flex items-end py-3 px-20'>
           <div className='flex w-full justify-between'>
 
             <div className="relative w-48 transition-all focus-within:w-64 ">

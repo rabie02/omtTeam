@@ -8,7 +8,6 @@ const Sidebar = () => {
 
   const handleLogout = async (e) => {
     e.preventDefault();
-    // Your logout logic here
     console.log('Logging out...');
   };
 
@@ -28,6 +27,7 @@ const Sidebar = () => {
       location.pathname.toLowerCase().startsWith(child.path.toLowerCase())
     );
   };
+
 
   const navItems = [
     { 
@@ -142,7 +142,7 @@ const Sidebar = () => {
       <div className="ml-64" />
       
       {/* Custom scrollbar styles */}
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
         }

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Modal } from 'antd';
-import { updateProductOffering, createProductOffering,  } from '../../../features/servicenow/product-offering/productOfferingSlice';
+import { Modal, notification } from 'antd';
+import { updateProductOffering, createProductOffering } from '../../../features/servicenow/product-offering/productOfferingSlice';
 
 
 
@@ -11,7 +11,7 @@ const validationSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     start_date: Yup.string().required('Start date is required'),
     end_date: Yup.string(),
-    description: Yup.string(),
+    description: Yup.string().required('Description is required'),
     recurring_price: Yup.string(), // Initialize as string for input control
     non_recurring_price: Yup.string(), // Initialize as string
     po_term: Yup.string(), // Default value
@@ -20,7 +20,7 @@ const validationSchema = Yup.object().shape({
     category: Yup.string().required('Category is required'), // Category ID
 });
 
-function ProductOfferingForm({ open, setOpen, initialData = null, options=null, dispatch=null }) {
+function ProductOfferingForm({ open, setOpen, initialData = null, options=null, dispatch }) {
 
   const isEditMode = Boolean(initialData);
   const formik = useFormik({
@@ -44,6 +44,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         const selectedSpec = options.specifications.find(spec => 
           (spec.id || spec.sys_id) === values.p_spec
         );
+        
 
         if (!selectedSpec) {
           throw new Error('Selected Product Specification not found');
@@ -64,7 +65,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
               productSpecCharacteristicValue: valueToUse,
               productSpecification: {
                   id: selectedSpec.id || selectedSpec.sys_id,
-                  name: selectedSpec.name,
+                  name: selectedSpec.display_name || selectedSpec.name,
                   version: selectedSpec.version,
                   internalVersion: selectedSpec.internalVersion,
                   internalId: selectedSpec.internalId || selectedSpec.id || selectedSpec.sys_id
@@ -107,7 +108,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           ],
           productSpecification: {
             id: values.p_spec,
-            name: options.specifications.find(s => (s.id || s.sys_id) === values.p_spec)?.name || "",
+            name: options.specifications.find(s => (s.id || s.sys_id) === values.p_spec)?.display_name || "",
             version: "",
             internalVersion: "1",
             internalId: values.p_spec
@@ -130,17 +131,27 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         // Dispatch the appropriate Redux action
         const action = isEditMode
           ? updateProductOffering({ 
-              id: initialData.id, 
+              id: initialData._id, 
               ...productOfferingDataPayload 
             })
           : createProductOffering(productOfferingDataPayload);
         
           await dispatch(action).unwrap();
+
+          notification.success({
+            message: isEditMode ? 'Product Offering Updated' : 'Product Offering Created',
+            description: isEditMode 
+              ? 'Product Offering has been updated successfully'
+              : 'New Product Offering has been created successfully',
+          });
           setOpen(false);
           resetForm();
       } catch (error) {
         console.error('Submission error:', error);
-        // You might want to show a notification to the user here
+        notification.error({
+          message: 'Operation Failed',
+          description: error.message || 'Something went wrong. Please try again.',
+        });
       }
     },
     enableReinitialize: true,
@@ -275,14 +286,14 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           value={formik.values.p_spec}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
-          disabled={formik.isSubmitting}
-          className="w-full border rounded px-3 py-2"
+          disabled={formik.isSubmitting || isEditMode}
+          className="w-full border rounded px-3 py-2 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500"
         >
-          <option disabled>Select a product specification</option>
+          <option value="">Select a product specification</option>
           {/* Map over the specs passed via props */}
           {options.specifications.map(spec => ( spec.status ==="published"?
                 <option key={spec.id || spec.sys_id} value={spec.id || spec.sys_id}> {/* Use correct ID field */}
-                    {spec.name} {/* Use correct Name field */}
+                    {spec.display_name} {/* Use correct Name field */}
                 </option> : ""
                 ))}
           </select>
@@ -301,12 +312,12 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           value={formik.values.category}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
-          disabled={formik.isSubmitting}
-          className="w-full border rounded px-3 py-2"
+          disabled={formik.isSubmitting || isEditMode}
+          className="w-full border rounded px-3 py-2 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500"
         >
-          <option disabled>Select a Category</option>
+          <option value="">Select a Category</option>
           {/* Map over the categories passed via props */}
-          {options.categories.map(cat => ( cat.status ==="published" || "draft" ?
+          {options.categories.map(cat => ( cat.status ==="published" ?
                 <option key={cat.id || cat.sys_id} value={cat.id || cat.sys_id}> {/* Use correct ID field */}
                     {cat.name} {/* Use correct Name field */}
                 </option> : ""
@@ -327,8 +338,9 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           value={formik.values.channel}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
-          disabled={formik.isSubmitting}
-          className="w-full border rounded px-3 py-2"
+          disabled={formik.isSubmitting || isEditMode}
+          
+          className="w-full border rounded px-3 py-2 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500"
           
         >
           <option value="">Select the Web Channel</option>
@@ -357,6 +369,9 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
             disabled={formik.isSubmitting}
             className="w-full border rounded px-3 py-2"
           />
+          {formik.touched.description && formik.errors.description && (
+        <p className="text-red-500 text-sm mt-1">{formik.errors.description}</p>
+     )}
         </div>
 
         {/* Actions */}

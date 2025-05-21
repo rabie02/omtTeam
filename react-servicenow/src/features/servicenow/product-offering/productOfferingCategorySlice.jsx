@@ -6,12 +6,12 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL;
 // Async Thunks
 export const getall = createAsyncThunk(
   'ProductOfferingCategory/getall',
-  async ({ page = 1, limit = 6 }, { rejectWithValue }) => {
+  async ({ page = 1, limit = 6, search = '' }, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
       const response = await axios.get(`${backendUrl}/api/product-offering-category`, {
         headers: { authorization: access_token },
-        params: { page, limit }
+        params: { page, limit, search }
       });
       console.log(response.data);
       
@@ -42,11 +42,74 @@ export const createCategory = createAsyncThunk(
   async (productData, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      const response = await axios.post(`${backendUrl}/api/product-offering-category`, productData, {
+      
+      // Extract catalog if it exists in the productData
+      const { catalog, ...categoryData } = productData;
+      
+      // Create the category
+      const response = await axios.post(`${backendUrl}/api/product-offering-category`, categoryData, {
         headers: { authorization: access_token },
       });
+      
+      // If catalog is provided and status is published, create the relationship
+      if (catalog && productData.status === 'published') {
+        try {
+          await axios.post(
+            "/api/catalog-category-relationship",
+            {
+              catalog: catalog,
+              category: response.data.result.sys_id
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': access_token
+              }
+            }
+          );
+        } catch (relationshipError) {
+          console.error('Failed to create relationship:', relationshipError);
+          // Continue without failing the whole operation
+        }
+      }
+      
       return response.data.result;
     } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+export const createCatalogCategoryRelationship = createAsyncThunk(
+  'ProductOfferingCategory/createRelationship',
+  async ({ catalogId, categoryId }, { rejectWithValue }) => {
+    try {
+      const access_token = localStorage.getItem('access_token');
+      
+      
+      // console.log('Creating relationship with:', {
+      //   catalog: catalogId,
+      //   category: categoryId
+      // });
+      
+      const response = await axios.post(
+        "/api/category-catalog-relation",
+        {
+          catalog: catalogId,
+          category: categoryId
+        },
+        {
+          headers: { 
+            'Content-Type': 'application/json',
+            authorization: access_token  // Changez 'Authorization' en 'authorization' avec un 'a' minuscule
+          }
+        }
+      );
+      
+      // console.log('Relationship API response:', response.data);
+      return response.data.result || response.data;
+    } catch (error) {
+      console.error('Relationship API error:', error);
       return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
@@ -61,13 +124,31 @@ export const updatecategoryStatus = createAsyncThunk(
                       : currentStatus === 'published' ? 'retired'
                       : currentStatus;
 
+      // console.log('Sending status update request with:', {
+      //   sys_id: id,
+      //   status: newStatus
+      // });
+
+      // Update the status using the correct endpoint
       const response = await axios.patch(
-        `${backendUrl}/api/product-offering-category/${id}`, 
-        { status: newStatus },
-        { headers: { authorization: access_token } }
+        `${backendUrl}/api/product-offering-category-status`, 
+        { 
+          sys_id: id,
+          status: newStatus 
+        },
+        { 
+          headers: { 
+            'Content-Type': 'application/json',
+            authorization: access_token  // Changez 'Authorization' en 'authorization' avec un 'a' minuscule
+          }
+        }
+      
       );
-      return response.data.result;
+      
+      //console.log('Status update API response:', response.data);
+      return response.data.result || response.data;
     } catch (err) {
+      console.error('Status update API error:', err);
       return rejectWithValue(err.response?.data?.message || err.message);
     }
   }
@@ -114,9 +195,26 @@ const ProductOfferingCategorySlice = createSlice({
     totalItems: 0,
     limit: 6,
     loading: true,
-    error: null
+    error: null,
+    searchTerm: '',
+    relationshipStatus: {
+      loading: false,
+      error: null,
+      success: false
+    }
   },
-  reducers: {},
+  reducers: {
+    setSearchTerm: (state, action) => {
+      state.searchTerm = action.payload;
+    },
+    resetRelationshipStatus: (state) => {
+      state.relationshipStatus = {
+        loading: false,
+        error: null,
+        success: false
+      };
+    }
+  },
   extraReducers: (builder) => {
     builder
       // Get All
@@ -131,6 +229,10 @@ const ProductOfferingCategorySlice = createSlice({
         state.totalItems = action.payload.total;
         state.limit = action.meta.arg?.limit || 6;
         state.loading = false;
+        // Update search term if necessary
+        if (action.meta.arg?.search !== undefined) {
+          state.searchTerm = action.meta.arg.search;
+        }
       })
       .addCase(getall.rejected, (state, action) => {
         state.error = action.payload;
@@ -164,6 +266,21 @@ const ProductOfferingCategorySlice = createSlice({
       .addCase(createCategory.rejected, (state, action) => {
         state.error = action.payload;
         state.loading = false;
+      })
+
+      // Create Relationship
+      .addCase(createCatalogCategoryRelationship.pending, (state) => {
+        state.relationshipStatus.loading = true;
+        state.relationshipStatus.error = null;
+        state.relationshipStatus.success = false;
+      })
+      .addCase(createCatalogCategoryRelationship.fulfilled, (state) => {
+        state.relationshipStatus.loading = false;
+        state.relationshipStatus.success = true;
+      })
+      .addCase(createCatalogCategoryRelationship.rejected, (state, action) => {
+        state.relationshipStatus.loading = false;
+        state.relationshipStatus.error = action.payload;
       })
 
       // Update Status
@@ -218,3 +335,5 @@ const ProductOfferingCategorySlice = createSlice({
 });
 
 export default ProductOfferingCategorySlice.reducer;
+export const { setSearchTerm, resetRelationshipStatus } = ProductOfferingCategorySlice.actions;
+

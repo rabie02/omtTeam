@@ -45,7 +45,7 @@ module.exports = async (req, res) => {
       lifecycleStatus: req.body.lifecycleStatus,
       status: req.body.status
     };
-
+    
     // ServiceNow API Call
     const snResponse = await axios.post(
       `${process.env.SERVICE_NOW_URL}/api/sn_tmf_api/catalogmanagement/productOffering`,
@@ -59,19 +59,25 @@ module.exports = async (req, res) => {
     );
 
     //console.log(JSON.stringify(snResponse.data.result, null, 2));
-
+    let mongoDoc;
      // MongoDB Create
         try {
           const snRecord = snResponse.data;
-          const mongoDoc = new ProductOffering({    
+          mongoDoc = new ProductOffering({    
             ...snRecord
           });
           await mongoDoc.save();
         } catch (mongoError) {
           return handleMongoError(res, snResponse.data, mongoError, 'creation');
         }
+    const responseData = {
+      result: {
+        ...snResponse.data,
+        _id: mongoDoc._id,  // Add MongoDB _id to the result
+      },
+    };
 
-    res.status(201).json(snResponse.data);
+    res.status(201).json(responseData);
 
   } catch (error) {
     console.error('Error creating product offering:', error);
