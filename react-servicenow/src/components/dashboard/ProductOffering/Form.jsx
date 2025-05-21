@@ -11,7 +11,7 @@ const validationSchema = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     start_date: Yup.string().required('Start date is required'),
     end_date: Yup.string(),
-    description: Yup.string(),
+    description: Yup.string().required('Description is required'),
     recurring_price: Yup.string(), // Initialize as string for input control
     non_recurring_price: Yup.string(), // Initialize as string
     po_term: Yup.string(), // Default value
@@ -286,8 +286,8 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           value={formik.values.p_spec}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
-          disabled={formik.isSubmitting}
-          className="w-full border rounded px-3 py-2"
+          disabled={formik.isSubmitting || isEditMode}
+          className="w-full border rounded px-3 py-2 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500"
         >
           <option value="">Select a product specification</option>
           {/* Map over the specs passed via props */}
@@ -312,8 +312,8 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           value={formik.values.category}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
-          disabled={formik.isSubmitting}
-          className="w-full border rounded px-3 py-2"
+          disabled={formik.isSubmitting || isEditMode}
+          className="w-full border rounded px-3 py-2 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500"
         >
           <option value="">Select a Category</option>
           {/* Map over the categories passed via props */}
@@ -338,8 +338,9 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           value={formik.values.channel}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
-          disabled={formik.isSubmitting}
-          className="w-full border rounded px-3 py-2"
+          disabled={formik.isSubmitting || isEditMode}
+          
+          className="w-full border rounded px-3 py-2 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500"
           
         >
           <option value="">Select the Web Channel</option>
@@ -368,6 +369,9 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
             disabled={formik.isSubmitting}
             className="w-full border rounded px-3 py-2"
           />
+          {formik.touched.description && formik.errors.description && (
+        <p className="text-red-500 text-sm mt-1">{formik.errors.description}</p>
+     )}
         </div>
 
         {/* Actions */}
