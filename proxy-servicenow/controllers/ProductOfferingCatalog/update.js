@@ -34,7 +34,7 @@ module.exports = async (req, res) => {
 
 
         const allowedFields = [
-            'end_date', 'image', 'thumbnail', 'description', 'external_id',
+            'end_date', 'image', 'thumbnail', 'description', 'external_id','start_date',
             'is_default', 'external_source', 'status', 'name', 'hierarchy_json', 'leaf_categories'
         ];
 

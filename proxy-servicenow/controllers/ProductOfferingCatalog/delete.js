@@ -2,6 +2,7 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const ProductOfferingCatalog = require('../../models/ProductOfferingCatalog');
 const handleMongoError = require('../../utils/handleMongoError');
+const deleteCatalogCategoryRelationship = require('../CatalogCategroyRelationship/delete');
 
 
 module.exports = async (req, res) => {
@@ -45,6 +46,20 @@ module.exports = async (req, res) => {
         } catch (mongoError) {
             return handleMongoError(res, snResponse.data, mongoError, 'deletion');
         }
+
+        try {
+            await deleteCatalogCategoryRelationship(
+                catalog,
+                null,
+                decodedToken.sn_access_token
+            );
+        } catch (error) {
+            return res.status(500).json({
+                error: 'Failed to create catalog-category relationship',
+                details: error.message
+            });
+        }
+
 
         res.status(204).end();
     } catch (error) {
