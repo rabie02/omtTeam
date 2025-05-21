@@ -118,3 +118,24 @@ export const createAccount = createAsyncThunk(
     }
   }
 );
+export const fetchUserInfo = createAsyncThunk(
+  'auth/fetchUserInfo',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const { data } = await axios.get(`${API_URL}/api/me`, {
+        headers: {
+          Authorization: token,
+        },
+        withCredentials: true // Optional: Only if you rely on cookies too
+      });
+      console.log(data);
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || {
+        error: 'fetch_failed',
+        error_description: 'Could not fetch user information'
+      });
+    }
+  }
+);
