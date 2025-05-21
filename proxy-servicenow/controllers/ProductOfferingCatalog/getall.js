@@ -1,4 +1,5 @@
 const ProductOfferingCatalog = require('../../models/ProductOfferingCatalog');
+const CatalogCategoryRelation = require('../../models/CatalogCategoryRelationship');
 
 module.exports = async (req, res) => {
   try {
@@ -7,20 +8,51 @@ module.exports = async (req, res) => {
     const skip = (page - 1) * limit;
     const searchQuery = req.query.q;
 
-    let query = {};
+    // Build search query
+    let matchStage = {};
     if (searchQuery) {
       const searchTerm = searchQuery.toLowerCase();
-      query = {
+      matchStage = {
         $or: [
-          { name: { $regex: `.*${searchQuery}.*`, $options: 'i' } },
-          { status: { $regex: `${searchTerm}`, $options: 'i' } }
+          { name: { $regex: searchTerm, $options: 'i' } },
+          { status: { $regex: searchTerm, $options: 'i' } }
         ]
       };
     }
 
+    const aggregationPipeline = [
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: 'catalogcategoryrelations', // Collection name for relations
+          let: { catalogId: '$_id' },
+          pipeline: [
+            { 
+              $match: { 
+                $expr: { $eq: ['$catalog', '$$catalogId'] }
+              }
+            },
+            {
+              $lookup: {
+                from: 'productofferingcategories', // Collection name for categories
+                localField: 'category',
+                foreignField: '_id',
+                as: 'categoryDetails'
+              }
+            },
+            { $unwind: '$categoryDetails' },
+            { $replaceRoot: { newRoot: '$categoryDetails' } }
+          ],
+          as: 'categories'
+        }
+      },
+      { $skip: skip },
+      { $limit: limit }
+    ];
+
     const [data, total] = await Promise.all([
-      ProductOfferingCatalog.find(query).skip(skip).limit(limit),
-      ProductOfferingCatalog.countDocuments(query)
+      ProductOfferingCatalog.aggregate(aggregationPipeline),
+      ProductOfferingCatalog.countDocuments(matchStage)
     ]);
 
     res.send({ 

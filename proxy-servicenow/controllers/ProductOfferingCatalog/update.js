@@ -2,6 +2,7 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const ProductOfferingCatalog = require('../../models/ProductOfferingCatalog');
 const handleMongoError = require('../../utils/handleMongoError');
+const getone = require('./getone')
 
 module.exports = async (req, res) => {
     try {
@@ -55,8 +56,9 @@ module.exports = async (req, res) => {
             }
         );
 
+        let mongoDoc;
         try {
-           let updatedCatalog = await ProductOfferingCatalog.findByIdAndUpdate(
+            mongoDoc = await ProductOfferingCatalog.findByIdAndUpdate(
                 id,
                 { $set: snResponse.data.result },
                 { runValidators: true }
@@ -65,7 +67,11 @@ module.exports = async (req, res) => {
             return handleMongoError(res, snResponse.data, mongoError, 'update');
         }
 
-        res.json({ _id : id,...snResponse.data.result});
+        const result = await getone(mongoDoc._id)
+        const responseData = {
+            result
+        };
+        res.status(201).json(responseData);
     } catch (error) {
         if (axios.isAxiosError(error)) {
             const status = error.response?.status || 500;

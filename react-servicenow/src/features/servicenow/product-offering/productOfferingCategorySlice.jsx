@@ -13,6 +13,8 @@ export const getall = createAsyncThunk(
         headers: { authorization: access_token },
         params: { page, limit }
       });
+      console.log(response.data);
+      
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -74,16 +76,11 @@ export const updatecategoryStatus = createAsyncThunk(
 export const updateCategory = createAsyncThunk(
   'ProductOfferingCategory/update',
   async ({ id, ...productData }, { rejectWithValue }) => {
-    try {
+    try {   
       const access_token = localStorage.getItem('access_token');
-
-      console.log(productData);
-      
       const response = await axios.patch(`${backendUrl}/api/product-offering-category/${id}`, productData, {
-         headers: { authorization: access_token, 'Content-Type': 'multipart/form-data'  } 
-      });
-      console.log(response);
-      
+         headers: { authorization: access_token } 
+      });      
       return response.data.result;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
