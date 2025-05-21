@@ -24,6 +24,9 @@ const ProductOfferingPrice = require("./api/productOfferingPrice/index")
 const opportunityLine = require("./api/OpportunityLine/index")
 const priceList = require("./api/PriceList/index")
 
+const Quote = require('./api/quote/index');
+const emailroutes = require('./email/router');
+const createAccount = require('./api/createAccount')
 require('dotenv').config();
 
 const app = express();
@@ -87,6 +90,10 @@ app.use('/api', [
   authRoutes,    // Login
   signupRoutes,  // Registration + confirmation
     
+    ProductSpecification,
+    emailroutes,
+    createAccount,
+    Quote
 ]);
 
 // Protected routes

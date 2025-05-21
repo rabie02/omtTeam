@@ -27,14 +27,6 @@ const productOfferingCatalogSchema = new mongoose.Schema({
      enum: ['published', 'draft', 'archived', 'retired'], // Match JSON casing
     default: 'draft'
   },
-  image: {
-    type: String,
-    default: ''
-  },
-  thumbnail: {
-    type: String,
-    default: ''
-  },
   hierarchy_json: {
     type: String,
     default: ''
@@ -92,13 +84,6 @@ const productOfferingCatalogSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  leaf_categories: [{
-    type: String // Array of category IDs (as strings)
-  }],
-  categories: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'ProductOfferingCategory'
-  }]
 }, {
   timestamps: true
 });

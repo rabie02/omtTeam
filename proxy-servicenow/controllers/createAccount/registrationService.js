@@ -1,0 +1,92 @@
+const crypto = require('crypto');
+const bcrypt = require('bcrypt');
+const nodemailer = require('nodemailer');
+const config = require('./config');
+const emailTemplates = require('./emailTemplates');
+
+// In-memory store with email tracking
+const pendingRegistrations = new Map();
+const emailToTokenMap = new Map(); // New map to track email->token
+
+const transporter = nodemailer.createTransport({
+  service: config.email.service,
+  auth: {
+    user: config.email.user,
+    pass: config.email.pass
+  }
+});
+const sendWelcomeEmail = async (email, firstName, lastName, password) => {
+    const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
+    return transporter.sendMail({
+      from: `"${config.app.name}" <${config.email.user}>`,
+      to: email,
+      subject: `Welcome to ${config.app.name}`,
+      html: emailTemplates.getWelcomeEmail(firstName, lastName, email, password)
+    });
+  };
+
+const generateToken = () => crypto.randomBytes(32).toString('hex');
+
+const sendConfirmationEmail = async (email, firstName, token) => {
+  const confirmationLink = `${config.app.backendUrl}/api/confirm-creation?token=${token}`;
+  
+  return transporter.sendMail({
+    from: `"${config.app.name}" <${config.email.user}>`,
+    to: email,
+    subject: `Confirm Your ${config.app.name} Registration`,
+    html: emailTemplates.getConfirmationEmail(firstName, confirmationLink)
+  });
+};
+
+// Check if email already has a pending registration
+const hasPendingRegistration = (email) => {
+  const token = emailToTokenMap.get(email);
+  if (!token) return false;
+  
+  const registration = pendingRegistrations.get(token);
+  if (!registration) {
+    emailToTokenMap.delete(email);
+    return false;
+  }
+  
+  // Check if token is still valid (not expired)
+  const isExpired = Date.now() > registration.expiresAt;
+  if (isExpired) {
+    pendingRegistrations.delete(token);
+    emailToTokenMap.delete(email);
+    return false;
+  }
+  
+  return true;
+};
+
+// Store registration data and track email
+const storeRegistration = (token, registrationData) => {
+  const expiresAt = Date.now() + config.registration.tokenExpiry;
+  
+  pendingRegistrations.set(token, {
+    userData: registrationData,
+    expiresAt
+  });
+  
+  emailToTokenMap.set(registrationData.email, token);
+  
+  // Set automatic cleanup
+  setTimeout(() => {
+    if (pendingRegistrations.has(token)) {
+      pendingRegistrations.delete(token);
+      emailToTokenMap.delete(registrationData.email);
+      console.log(`Cleaned up expired token: ${token}`);
+    }
+  }, config.registration.tokenExpiry + 5000);
+};
+
+module.exports = {
+  pendingRegistrations,
+  emailToTokenMap,
+  generateToken,
+  sendConfirmationEmail,
+  sendWelcomeEmail, // MUST be included here
+  hasPendingRegistration,
+  storeRegistration
+};

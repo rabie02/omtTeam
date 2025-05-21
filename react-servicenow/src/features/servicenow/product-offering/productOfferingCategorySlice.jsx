@@ -13,6 +13,8 @@ export const getall = createAsyncThunk(
         headers: { authorization: access_token },
         params: { page, limit, search }
       });
+      console.log(response.data);
+      
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -155,46 +157,11 @@ export const updatecategoryStatus = createAsyncThunk(
 export const updateCategory = createAsyncThunk(
   'ProductOfferingCategory/update',
   async ({ id, ...productData }, { rejectWithValue }) => {
-    try {
+    try {   
       const access_token = localStorage.getItem('access_token');
-
-      // Extract catalog if it exists
-      const { catalog, ...categoryData } = productData;
-      
-      // Update the category
-      const response = await axios.patch(
-        `${backendUrl}/api/product-offering-category/${id}`, 
-        categoryData, 
-        {
-          headers: { 
-            authorization: access_token, 
-            'Content-Type': 'multipart/form-data'  
-          } 
-        }
-      );
-      
-      // If catalog is provided and status is published, create/update the relationship
-      if (catalog && productData.status === 'published') {
-        try {
-          await axios.post(
-            `${backendUrl}/api/catalog-category-relationship`,
-            {
-              catalog: catalog,
-              category: id
-            },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': access_token
-              }
-            }
-          );
-        } catch (relationshipError) {
-          console.error('Failed to create relationship:', relationshipError);
-          // Continue without failing the whole operation
-        }
-      }
-      
+      const response = await axios.patch(`${backendUrl}/api/product-offering-category/${id}`, productData, {
+         headers: { authorization: access_token } 
+      });      
       return response.data.result;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);

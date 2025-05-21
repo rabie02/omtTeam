@@ -50,21 +50,16 @@ const Sidebar = () => {
       icon: 'file-list-line', 
       text: 'Product Specification' 
     },
-    // {
-    //   path:'/dashboard/opportunity',
-    //   icon: 'shining-line',
-    //   text: 'Opportunity'
-    // },
-    // {
-    //   path:'/dashboard/price-list',
-    //   icon: 'price-tag-3-line',
-    //   text: 'Price List'
-    // }
+    { 
+      path: '/dashboard/quote', 
+      icon: 'contract-line', 
+      text: 'Quote' 
+    }
   ];
 
   return (
     <>
-      <aside className="z-30 h-screen fixed bg-[#007B98] inset-y-0 pt-4 px-4 shadow-lg overflow-hidden w-64  flex flex-col">
+      <aside className="z-30 h-screen fixed bg-cyan-700 inset-y-0 pt-4 px-4 shadow-lg overflow-hidden w-64  flex flex-col">
         {/* Logo Section */}
         <div className="mb-8 mt-2 h-12 flex items-center px-2 text-white font-bold text-xl">
           <i className="ri-admin-line mr-2 text-blue-200" />
@@ -96,7 +91,7 @@ const Sidebar = () => {
                           : 'text-white hover:bg-[#006080] hover:text-white'
                       }`}
                     >
-                      <i className={`ri-${item.icon} mr-3 text-lg`} />
+                      <i className={`ri-${item.icon} mr-3 text-2xl`} />
                       <span className="font-medium flex-1">{item.text}</span>
                       {hasChildren && (
                         <i className={`ri-arrow-right-s-line transition-transform duration-200 ${

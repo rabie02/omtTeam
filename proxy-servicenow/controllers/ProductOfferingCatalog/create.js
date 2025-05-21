@@ -2,6 +2,7 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const ProductOfferingCatalog = require('../../models/ProductOfferingCatalog');
 const handleMongoError = require('../../utils/handleMongoError');
+const getone = require('./getone')
 
 
 module.exports = async (req, res) => {
@@ -37,14 +38,12 @@ module.exports = async (req, res) => {
       return handleMongoError(res, snResponse.data, mongoError, 'creation');
     }
 
-    // Merge ServiceNow data with MongoDB _id
-    const responseData = {
-      result: {
-        ...snResponse.data.result,
-        _id: mongoDoc._id,  // Add MongoDB _id to the result
-      },
-    };
+     const result = await getone( mongoDoc._id )
+        const responseData = {
+          result
+        };
 
+  
     res.status(201).json(responseData);
   } catch (error) {
     if (axios.isAxiosError(error)) {

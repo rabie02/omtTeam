@@ -92,3 +92,50 @@ export const userLogout = createAsyncThunk(
     }
   }
 );
+
+export const createAccount = createAsyncThunk(
+  'auth/createAccount',
+  async (userData, { rejectWithValue }) => {
+    try {
+      const response = await axios.post('/api/request-creation', userData, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 10000
+      });
+      
+      if (response.data.error === 'email_exists') {
+        return rejectWithValue('email_exists');
+      }
+      
+      return response.data;
+    } catch (err) {
+      if (err.response) {
+        return rejectWithValue(err.response.data.message || 'Registration failed');
+      } else if (err.request) {
+        return rejectWithValue('Network error. Please check your connection.');
+      } else {
+        return rejectWithValue('An error occurred while registering. Please try again.');
+      }
+    }
+  }
+);
+export const fetchUserInfo = createAsyncThunk(
+  'auth/fetchUserInfo',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const { data } = await axios.get(`${API_URL}/api/me`, {
+        headers: {
+          Authorization: token,
+        },
+        withCredentials: true // Optional: Only if you rely on cookies too
+      });
+      console.log(data);
+      return data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || {
+        error: 'fetch_failed',
+        error_description: 'Could not fetch user information'
+      });
+    }
+  }
+);

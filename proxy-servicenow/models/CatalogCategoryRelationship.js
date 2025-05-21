@@ -1,29 +1,8 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-// Sub-schema for source and target objects
-const referenceSchema = new Schema({
-  link: { 
-    type: String, 
-    required: true,
-    validate: {
-      validator: function(v) {
-        return /^https?:\/\/.+/i.test(v);
-      },
-      message: props => `${props.value} is not a valid URL!`
-    }
-  },
-  value: { 
-    type: String, 
-    required: true,
-    match: [/^[a-f0-9]{32}$/, 'Please provide a valid 32-character ID'] 
-  }
-}, { _id: false });
-
-// Main schema
-const serviceNowRecordSchema = new Schema({
-  sys_id: { 
-    type: String, 
+const CatalogCategoryRelationSchema = new mongoose.Schema({
+  sys_id: {
+    type: String,
     required: true,
     unique: true,
     match: [/^[a-f0-9]{32}$/, 'Please provide a valid 32-character sys_id']
@@ -55,9 +34,14 @@ const serviceNowRecordSchema = new Schema({
     type: String, 
     default: '' 
   },
-  source: { 
-    type: referenceSchema, 
-    required: true 
+  source: {
+    type: String,
+    required: true,
+    trim: true,
+    set: function(v) {
+      // Extract 'value' property if the input is an object
+      return v && typeof v === 'object' ? v.value : v;
+    }
   },
   sys_updated_on: { 
     type: Date, 
@@ -79,28 +63,28 @@ const serviceNowRecordSchema = new Schema({
     type: String, 
     default: '' 
   },
-  target: { 
-    type: referenceSchema, 
-    required: true 
-  }
-}, {
-  timestamps: false, // Using custom timestamp fields
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true }
+  target: {
+    type: String,
+    required: true,
+    trim: true,
+    set: function(v) {
+      // Extract 'value' property if the input is an object
+      return v && typeof v === 'object' ? v.value : v;
+    }
+  },
+  catalog: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ProductOfferingCatalog',
+    required: true
+  },
+  category: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ProductOfferingCategory',
+    required: true
+  },
 });
 
-// Add indexes for performance
-serviceNowRecordSchema.index({ sys_id: 1 });
+// Indexes for fast querying
+CatalogCategoryRelationSchema.index({ catalog: 1, category: 1 }, { unique: true });
 
-// Virtual for easy access to source and target IDs
-serviceNowRecordSchema.virtual('source_id').get(function() {
-  return this.source.value;
-});
-
-serviceNowRecordSchema.virtual('target_id').get(function() {
-  return this.target.value;
-});
-
-const ServiceNowRecord = mongoose.model('ServiceNowRecord', serviceNowRecordSchema);
-
-module.exports = ServiceNowRecord;
+module.exports = mongoose.model('CatalogCategoryRelations', CatalogCategoryRelationSchema);

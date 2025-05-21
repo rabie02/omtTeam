@@ -98,5 +98,34 @@ router.post('/get-token', async (req, res) => {
     });
   }
 });
+router.get('/me', async (req, res) => {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.replace('Bearer ', '');
+
+  if (!token) {
+    return res.status(401).json({ error: 'missing_token', error_description: 'Token is required' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const snToken = decoded.sn_access_token;
+
+    const response = await axios.get(
+      `${process.env.SERVICE_NOW_URL}/api/now/table/sys_user?sysparm_query=user_name=${decoded.sub}&sysparm_limit=1`,
+      {
+        headers: {
+          Authorization: `Bearer ${snToken}`,
+          Accept: 'application/json'
+        }
+      }
+    );
+    const userInfo = response.data.result[0];
+    res.json({ user: userInfo });
+  } catch (err) {
+    console.error('User info error:', err.message);
+    return res.status(401).json({ error: 'invalid_token', error_description: 'Token is invalid or expired' });
+  }
+});
+
 
 module.exports = router;

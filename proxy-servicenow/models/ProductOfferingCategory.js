@@ -12,7 +12,6 @@ const productOfferingCategorySchema = new mongoose.Schema({
     unique: true,
     uppercase: true,
     trim: true,
-    set: value => value.replace(/\s+/g, '_'),
   },
   is_leaf: {
     type: Boolean,
@@ -82,11 +81,6 @@ const productOfferingCategorySchema = new mongoose.Schema({
   sys_tags: String,
   leaf_categories: String,
   external_source: String,
-  // Catalog references
-  catalogs: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'ProductOfferingCatalog'
-  }]
 }, {
   timestamps: true,
   strict: false,

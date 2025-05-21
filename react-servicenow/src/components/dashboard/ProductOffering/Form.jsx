@@ -317,7 +317,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         >
           <option value="">Select a Category</option>
           {/* Map over the categories passed via props */}
-          {options.categories.map(cat => ( cat.status ==="published" || "draft" ?
+          {options.categories.map(cat => ( cat.status ==="published" ?
                 <option key={cat.id || cat.sys_id} value={cat.id || cat.sys_id}> {/* Use correct ID field */}
                     {cat.name} {/* Use correct Name field */}
                 </option> : ""
