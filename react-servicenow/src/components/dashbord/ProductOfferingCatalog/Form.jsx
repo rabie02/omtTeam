@@ -27,7 +27,6 @@ const validationSchema = Yup.object().shape({
       if (!value) return true;
       return new Date(value) >= new Date(this.parent.start_date);
     }),
-  status: Yup.string().required('Status is required'),
   code: Yup.string().required('Code is required'),
 });
 
@@ -144,7 +143,7 @@ function ProductOfferingCatalogForm({ open, setOpen, initialData = null, dispatc
 
         {/* End Date */}
         <div>
-          <label className="block font-medium mb-1">End Date (Optional)</label>
+          <label className="block font-medium mb-1">End Date </label>
           <input
             type="date"
             name="end_date"
@@ -156,27 +155,6 @@ function ProductOfferingCatalogForm({ open, setOpen, initialData = null, dispatc
           />
           {formik.touched.end_date && formik.errors.end_date && (
             <p className="text-red-500 text-sm mt-1">{formik.errors.end_date}</p>
-          )}
-        </div>
-
-        {/* Status */}
-        <div>
-          <label className="block font-medium mb-1">
-            Status <span className="text-red-500">*</span>
-          </label>
-          <select
-            name="status"
-            value={formik.values.status}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            disabled={formik.isSubmitting}
-            className="w-full border rounded px-3 py-2"
-          >
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-          </select>
-          {formik.touched.status && formik.errors.status && (
-            <p className="text-red-500 text-sm mt-1">{formik.errors.status}</p>
           )}
         </div>
 
