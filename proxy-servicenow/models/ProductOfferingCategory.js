@@ -89,6 +89,7 @@ const productOfferingCategorySchema = new mongoose.Schema({
   }]
 }, {
   timestamps: true,
+  strict: false,
   versionKey: false,
 });
 

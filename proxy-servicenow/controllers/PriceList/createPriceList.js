@@ -26,14 +26,12 @@ async function createPriceList(req, res = null) {
       }
       throw mongoError;
     }
-    
     if (res) {
       return res.status(201).json(snResponse.data.result);
     }
     return snResponse.data.result;
   } catch (error) {
     console.error('Error creating price list:', error);
-    
     if (res) {
       const status = error.response?.status || 500;
       const message = error.response?.data?.error?.message || error.message;
