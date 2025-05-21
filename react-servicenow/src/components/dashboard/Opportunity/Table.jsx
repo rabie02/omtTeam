@@ -6,7 +6,7 @@ import {
   deleteOpportunity,
   updateOpportunityStatus
 } from '../../../features/servicenow/opportunity/opportunitySlice';
-import './Table.css';
+
 
 function OpportunityTable({ setOpenForm }) {
   const dispatch = useDispatch();
@@ -67,16 +67,6 @@ function OpportunityTable({ setOpenForm }) {
       dataIndex: 'estimated_closed_date',
       key: 'estimated_closed_date',
       render: (date) => date ? new Date(date).toLocaleDateString() : 'N/A',
-    },
-    {
-      title: 'Status',
-      dataIndex: 'state',
-      key: 'state',
-      render: (status) => (
-        <Tag color={status === 'published' ? 'green' : 'orange'}>
-          {status?.toUpperCase()}
-        </Tag>
-      ),
     },
     {
       title: 'Actions',
