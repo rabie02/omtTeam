@@ -90,38 +90,7 @@ export const deleteOpportunity = createAsyncThunk(
   }
 );
 
-// 2. Price List CRUD operations
-export const createPriceList = createAsyncThunk(
-  'opportunity/createPriceList',
-  async (priceListData, { rejectWithValue }) => {
-    try {
-      const response = await axios.post(
-        `${backendUrl}/api/price-list`,
-        priceListData,
-        { headers: getHeaders() }
-      );
-      
-      return response.data.result;
-    } catch (error) {
-      return rejectWithValue(error.response.data);
-    }
-  }
-);
 
-export const getPriceList = createAsyncThunk(
-  'opportunity/getPriceList',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await axios.get(
-        `${backendUrl}/api/price-list`,
-        { headers: getHeaders() }
-      );
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response.data);
-    }
-  }
-);
 
 // 3. Product Offering Price CRUD operations
 export const createProductOfferingPrice = createAsyncThunk(
@@ -241,7 +210,6 @@ const initialState = {
   accounts: [],
   unitOfMeasures: [],
   productOfferings: [],
-  priceLists:[],
   loading: false,
   error: null,
   currentPage: 1,
@@ -333,31 +301,6 @@ const opportunitySlice = createSlice({
       .addCase(deleteOpportunity.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.error?.message || 'Failed to delete opportunity';
-      })
-
-      // Create Price List
-      .addCase(createPriceList.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(createPriceList.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(createPriceList.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload?.error?.message || 'Failed to create price list';
-      })
-
-      // Get Price List
-      .addCase(getPriceList.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(getPriceList.fulfilled, (state, action) => {
-        state.loading = false;
-        state.priceLists = action.payload;
-      })
-      .addCase(getPriceList.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload?.error?.message || 'Failed to fetch Price List';
       })
 
       // Create Product Offering Price

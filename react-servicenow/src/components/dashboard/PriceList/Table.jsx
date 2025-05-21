@@ -23,6 +23,8 @@ function PriceListTable({ setData, setOpen }) {
         dispatch(getPriceList());
     
     }
+
+
     
 
     if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
@@ -59,7 +61,7 @@ function PriceListTable({ setData, setOpen }) {
                                 
                                 
                                 return (
-                                    <tr key={getValue(priceList.sys_id)} className="*:text-gray-900 *:first:font-medium">
+                                    <tr key={getValue(priceList._id)} className="*:text-gray-900 *:first:font-medium">
                                         <td className="px-3 py-3 whitespace-nowrap">{getValue(priceList.name)}</td>
                                         <td className="px-3 py-3 whitespace-nowrap">{getValue(priceList.currency)}</td>
                                         
@@ -83,7 +85,7 @@ function PriceListTable({ setData, setOpen }) {
                                                 title="Delete the price list"
                                                 description="Are you sure to delete this price list?"
                                                 icon={<i className="ri-error-warning-line text-red-600 mr-2"></i>}
-                                                onConfirm={() => handleDelete(getValue(priceList.sys_id))}
+                                                onConfirm={() => handleDelete(getValue(priceList._id))}
                                                 
                                             >
                                                 <button className="text-gray-500 hover:text-red-600">

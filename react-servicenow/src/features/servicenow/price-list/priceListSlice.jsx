@@ -18,8 +18,7 @@ export const createPriceList = createAsyncThunk(
         priceListData,
         { headers: getHeaders() }
       );
-      
-      return response.data.result;
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -81,7 +80,9 @@ const priceListSlice = createSlice({
       .addCase(createPriceList.pending, (state) => {
         state.loading = true;
       })
-      .addCase(createPriceList.fulfilled, (state) => {
+      .addCase(createPriceList.fulfilled, (state, action) => {
+        console.log(action)
+        state.priceLists.unshift(action.payload);
         state.loading = false;
       })
       .addCase(createPriceList.rejected, (state, action) => {
@@ -111,7 +112,6 @@ const priceListSlice = createSlice({
         
       })
       .addCase(deletePriceList.rejected, (state, action) => {
-        console.log(action.payload);
         state.loading = false;
         state.error = action.payload?.error?.message || 'Failed to delete Price List';
       });

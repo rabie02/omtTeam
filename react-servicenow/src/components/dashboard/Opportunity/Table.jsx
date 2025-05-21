@@ -6,6 +6,7 @@ import {
   deleteOpportunity,
   updateOpportunityStatus
 } from '../../../features/servicenow/opportunity/opportunitySlice';
+import './Table.css';
 
 function OpportunityTable({ setOpenForm }) {
   const dispatch = useDispatch();
@@ -121,6 +122,7 @@ function OpportunityTable({ setOpenForm }) {
     <div className="space-y-4">
       
       <Table
+        headerColor="rgba(0, 117, 149, 1)"
         columns={columns}
         dataSource={opportunities}
         rowKey="sys_id"

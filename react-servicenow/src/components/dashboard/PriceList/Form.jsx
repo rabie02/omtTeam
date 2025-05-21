@@ -1,5 +1,5 @@
 
-import { createPriceList } from '../../../features/servicenow/opportunity/opportunitySlice';
+import { createPriceList } from '../../../features/servicenow/price-list/priceListSlice';
 import { useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';

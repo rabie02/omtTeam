@@ -14,22 +14,31 @@ async function createPriceList(req, res = null) {
     );
     
     // Create in MongoDB
+    let mongoDocument;
     try {
       const price = new PriceList({
         sys_id: snResponse.data.result.sys_id,
         ...req.body
       });
-      await price.save();
+      mongoDocument = await price.save();
     } catch (mongoError) {
       if (res) {
         return handleMongoError(res, snResponse.data.result, mongoError, 'creation');
       }
       throw mongoError;
     }
+    
+    // Prepare response with both ServiceNow and MongoDB IDs
+    const response = {
+      ...snResponse.data.result,
+      _id: mongoDocument._id.toString(), // Include MongoDB ID in the response
+      mongoId: mongoDocument._id.toString() // Alternative field name if preferred
+    };
+    
     if (res) {
-      return res.status(201).json(snResponse.data.result);
+      return res.status(201).json(response);
     }
-    return snResponse.data.result;
+    return response;
   } catch (error) {
     console.error('Error creating price list:', error);
     if (res) {
