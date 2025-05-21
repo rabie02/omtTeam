@@ -1,6 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { userLogin, registerUser, userLogout } from './authActions';
-
+import { userLogin, registerUser, userLogout, fetchUserInfo } from './authActions';
 const userToken = localStorage.getItem('access_token') || null;
 
 const initialState = {
@@ -64,7 +63,20 @@ const authSlice = createSlice({
       .addCase(userLogout.rejected, (state, { payload }) => {
         state.loading = false;
         state.error = payload;
-      });
+      })
+      .addCase(fetchUserInfo.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    })
+    .addCase(fetchUserInfo.fulfilled, (state, { payload }) => {
+      state.loading = false;
+      state.userInfo = payload.user; // Store the user data from /api/me
+      state.success = true;
+    })
+    .addCase(fetchUserInfo.rejected, (state, { payload }) => {
+      state.loading = false;
+      state.error = payload;
+    });
   },
 });
 
