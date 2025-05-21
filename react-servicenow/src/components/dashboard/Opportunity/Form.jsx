@@ -10,17 +10,14 @@ import OpportunityStep3 from './Steps/Step3';
 import OpportunityStep4 from './Steps/Step4';
 import { formatDateForInput } from '@/utils/formatDateForInput.js';
 import {
-  createOpportunity,
-  createProductOfferingPrice,
-  createOpportunityLineItem,
   getSalesCycleTypes,
   getStages,
   getAccounts,
   getUnitOfMeasures,
-  getProductOfferings,
   workflow
 } from '../../../features/servicenow/opportunity/opportunitySlice';
 import { getPriceList } from '../../../features/servicenow/price-list/priceListSlice';
+import {getall as getProductOfferings} from '../../../features/servicenow/product-offering/productOfferingSlice';
 
 const { Step } = Steps;
 
@@ -84,11 +81,12 @@ function OpportunityForm({ open, setOpen, dispatch }) {
     stages,
     accounts,
     unitOfMeasures,
-    productOfferings,
     loading,
+    productOfferings,
     priceLists
   } = useSelector((state) => ({
     ...state.opportunity,
+    productOfferings: state.productOffering.data || [],
     priceLists: state.priceList.priceLists || []
   }));
 

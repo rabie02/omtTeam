@@ -73,7 +73,7 @@ function OpportunityTable({ setOpenForm }) {
       key: 'actions',
       render: (_, record) => ( record!==undefined &&
         <div className="flex space-x-2">
-          <Popconfirm
+          {/* <Popconfirm
             title="Change Status"
             description={`Are you sure you want to ${record.state === 'published' ? 'retire' : 'publish'} this opportunity?`}
             onConfirm={() => handleUpdateStatus(
@@ -91,12 +91,12 @@ function OpportunityTable({ setOpenForm }) {
               // You would implement edit functionality here
               message.info('Edit functionality to be implemented');
             }}
-          />
+          /> */}
           
           <Popconfirm
             title="Delete Opportunity"
             description="Are you sure to delete this opportunity?"
-            onConfirm={() => handleDelete(record.sys_id)}
+            onConfirm={() => handleDelete(record._id)}
           >
             <Button type="text" danger icon={<i className="ri-delete-bin-6-line" />} />
           </Popconfirm>

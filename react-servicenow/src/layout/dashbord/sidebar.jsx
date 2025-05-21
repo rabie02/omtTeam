@@ -50,16 +50,16 @@ const Sidebar = () => {
       icon: 'file-list-line', 
       text: 'Product Specification' 
     },
-    {
-      path:'/dashboard/opportunity',
-      icon: 'shining-line',
-      text: 'Opportunity'
-    },
-    {
-      path:'/dashboard/price-list',
-      icon: 'price-tag-3-line',
-      text: 'Price List'
-    }
+    // {
+    //   path:'/dashboard/opportunity',
+    //   icon: 'shining-line',
+    //   text: 'Opportunity'
+    // },
+    // {
+    //   path:'/dashboard/price-list',
+    //   icon: 'price-tag-3-line',
+    //   text: 'Price List'
+    // }
   ];
 
   return (

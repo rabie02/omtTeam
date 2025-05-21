@@ -28,7 +28,7 @@ const OpportunityNavigation = ({
           <button
             type="button"
             onClick={nextStep}
-            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+            className="px-4 py-2 rounded bg-cyan-700 text-white hover:bg-cyan-800"
           >
             Next
           </button>
@@ -46,7 +46,7 @@ const OpportunityNavigation = ({
         <button
           type="button"
           onClick={handleCancel}
-          className="px-4 py-2 rounded border bg-gray-200 hover:bg-gray-300"
+          className="px-4 py-2 rounded border bg-gray-200 text-red-400 hover:bg-red-400 hover:text-white"
         >
           Cancel
         </button>
