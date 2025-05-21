@@ -1,8 +1,10 @@
 const mongoose = require('mongoose');
 
+
 const opportunitySchema = new mongoose.Schema({
   sys_id: {
     type: String,
+    required: true,
     unique: true,
     index: true
   },
@@ -23,7 +25,9 @@ const opportunitySchema = new mongoose.Schema({
   do_not_email: Boolean,
   do_not_call: Boolean,
   account: String,
-  opportunity_lines: [{ type: mongoose.Schema.Types.ObjectId, ref: 'OpportunityLine' }]
+  price_list: String,
+  number: String
+
 }, {
   timestamps: true,
   strict: false

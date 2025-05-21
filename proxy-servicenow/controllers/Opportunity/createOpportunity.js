@@ -14,23 +14,30 @@ async function createOpportunity(req, res = null) {
     );
     
     // Create in MongoDB
+    let mongoDocument;
     try {
       const opportunity = new Opportunity({
         sys_id: snResponse.data.result.sys_id,
+        number: snResponse.data.result.number,
         ...req.body
       });
-      await opportunity.save();
+      mongoDocument = await opportunity.save();
     } catch (mongoError) {
       if (res) {
-        return handleMongoError(res, snResponse.data, mongoError, 'creation');
+        return handleMongoError(res, snResponse.data.result, mongoError, 'creation');
       }
       throw mongoError;
     }
+    const response = {
+      ...snResponse.data.result,
+      _id: mongoDocument._id.toString(), // Include MongoDB ID in the response
+      mongoId: mongoDocument._id.toString() // Alternative field name if preferred
+    };
     
     if (res) {
-      return res.status(201).json(snResponse.data);
+      return res.status(201).json(response);
     }
-    return snResponse.data.result;
+    return response;
   } catch (error) {
     console.error('Error creating opportunity:', error);
     
