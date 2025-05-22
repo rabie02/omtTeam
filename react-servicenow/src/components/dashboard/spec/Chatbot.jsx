@@ -318,33 +318,48 @@ const Chatbot = () => {
 
   // Détection d'intention améliorée avec tolérance aux fautes
 const detectIntent = (text) => {
-  text = text.toLowerCase();
-  
-  if (/(bonjour|salut|coucou|hello|hi)/.test(text)) return 'greeting';
-  
-  if (/(liste|afficher|voir|donner|chercher|recherche|trouver|spécification|spec|fiche)/.test(text)) {
-    return 'search_specs';
+  text = text.toLowerCase().trim();
+
+  // Salutations
+  if (/(bonjour|salut|coucou|hello|hi)/.test(text)) {
+    return 'greeting';
   }
-  
-  // Amélioration de la détection pour les articles de connaissance
-  if (/(article|connaissance|kb|base de donnée|aide|faq|question|solution|problème|rechercher un article)/.test(text)) {
+
+  // Recherche article de connaissance (KB)
+  if (
+    /^rechercher un article( de connaissance)?$/.test(text) ||
+    /(article de connaissance|base de connaissance|faq|kb|question|solution|problème|connaissance)/.test(text)
+  ) {
     return 'search_kb';
   }
-  
-  if (/(produit|offre|service|forfait|abonnement)/.test(text)) {
-    return 'search_products';
-  }
-  
+
+  // Aide spécifique OMT
   if (/(omt|order management|template|commande)/.test(text)) {
     return 'omt_help';
   }
-  
-  if (/(ticket|incident|problème|bug|erreur|souci|demande|aide)/.test(text)) {
+
+  // Lister ou afficher les spécifications produits
+  if (
+    /^lister les spécifications( produits)?$/.test(text) ||
+    /(spécification|fiche produit|fiche technique|specification)/.test(text)
+  ) {
+    return 'search_specs';
+  }
+
+  // Produits et offres
+  if (/(produit|offre|service|forfait|abonnement)/.test(text)) {
+    return 'search_products';
+  }
+
+  // Création de ticket
+  if (/(ticket|incident|bug|erreur|souci|demande d'assistance|demande)/.test(text)) {
     return 'create_ticket';
   }
-  
+
+  // Par défaut
   return 'help';
 };
+
 
   // Fonctions ServiceNow
   const searchSpecifications = async (query = '') => {
