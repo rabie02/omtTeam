@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Table from '../../components/dashbord/quote/table'; // Import du composant existant
-import Form from '../../components/dashbord/quote/Form';
+import Table from '../../components/dashboard/quote/table'; // Import du composant existant
+import Form from '../../components/dashboard/quote/Form';
 
 const ProductSpec = () => {
   const [open, setOpen] = useState(false);
