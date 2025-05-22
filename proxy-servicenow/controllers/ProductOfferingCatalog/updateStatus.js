@@ -1,8 +1,8 @@
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
-const ProductOfferingCatalog = require('../../models/ProductOfferingCatalog');
+const ProductOfferingCategory = require('../../models/ProductOfferingCategory');
 const handleMongoError = require('../../utils/handleMongoError');
-const getone = require('./getone')
+const getone = require('./getone');
 
 module.exports = async (req, res) => {
     try {
@@ -28,39 +28,34 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: `Invalid fields provided: ${invalidFields.join(', ')}` });
         }
 
-        // Catalog validation
-        let catalog;
+        // Category validation
+        let category;
         try {
-            catalog = await ProductOfferingCatalog.findById(id);
+            category = await ProductOfferingCategory.findById(id);
         } catch (error) {
             if (error.name === 'CastError') {
-                return res.status(400).json({ error: 'Invalid catalog ID format' });
+                return res.status(400).json({ error: 'Invalid category ID format' });
             }
             throw error;
         }
 
-        if (!catalog) {
-            return res.status(404).json({ error: 'Catalog not found' });
+        if (!category) {
+            return res.status(404).json({ error: 'Category not found' });
         }
 
-        if (!catalog.sys_id) {
-            return res.status(400).json({ error: 'Catalog not synced with ServiceNow (missing sys_id)' });
+        if (!category.sys_id) {
+            return res.status(400).json({ error: 'Category not synced with ServiceNow (missing sys_id)' });
         }
 
         // Prepare update body
-        let updateBody = {};
-        allowedFields.forEach(field => {
-            if (req.body[field] !== undefined) {
-                updateBody[field] = req.body[field] === "" ? null : req.body[field];
-            }
-        });
-
-        updateBody = { sys_id: catalog.sys_id, ...updateBody };
-
+        const updateBody = {
+            sys_id: category.sys_id,
+            status: req.body.status
+        };
 
         // ServiceNow update
         const snResponse = await axios.patch(
-            `${process.env.SERVICE_NOW_URL}/api/sn_prd_pm/update_status/poc_pub`,
+            `${process.env.SERVICE_NOW_URL}/api/sn_prd_pm/product_offering_api/poc_pub`,
             updateBody,
             {
                 headers: {
@@ -70,12 +65,11 @@ module.exports = async (req, res) => {
             }
         );
 
-
         // MongoDB update
         const updateData = { status: snResponse.data.result.status.toLowerCase() };
         let mongoDoc;
         try {
-            mongoDoc = await ProductOfferingCatalog.findByIdAndUpdate(
+            mongoDoc = await ProductOfferingCategory.findByIdAndUpdate(
                 id,
                 { $set: updateData },
                 { new: true, runValidators: true }
@@ -85,14 +79,13 @@ module.exports = async (req, res) => {
         }
 
         // Final response
-        const result = await getone(mongoDoc._id)
-        const responseData = {
+        const result = await getone(mongoDoc._id);
+        res.status(201).json({
             result
-        };
-        res.status(201).json(responseData);
+        });
 
     } catch (error) {
-        console.error('Error updating product offering state:', error);
+        console.error('Error updating product offering category state:', error);
 
         if (axios.isAxiosError(error)) {
             const status = error.response?.status || 500;
@@ -107,13 +100,6 @@ module.exports = async (req, res) => {
 
         if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({ error: 'Invalid token' });
-        }
-
-        if (error.message === 'Invalid response structure from ServiceNow') {
-            return res.status(500).json({
-                error: 'ServiceNow returned an invalid response format',
-                details: error.message
-            });
         }
 
         res.status(500).json({

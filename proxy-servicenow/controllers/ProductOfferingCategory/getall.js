@@ -1,6 +1,7 @@
 const express = require('express');
 const ProductOfferingCategory = require('../../models/ProductOfferingCategory');
 const CatalogCategoryRelation = require('../../models/CatalogCategoryRelationship');
+const ProductSpecification = require('../../models/productSpecification');
 
 const router = express.Router();
 
@@ -25,13 +26,29 @@ module.exports = async (req, res) => {
 
     const aggregationPipeline = [
       { $match: matchStage },
+
+      // Pagination
+      { $skip: skip },
+      { $limit: limit },
+
+      // Lookup specifications
+      {
+        $lookup: {
+          from: 'productspecifications',
+          localField: '_id',
+          foreignField: 'category',
+          as: 'specifications'
+        }
+      },
+
+      // Lookup catalog relations and expand to include catalog details
       {
         $lookup: {
           from: 'catalogcategoryrelations',
           let: { categoryId: '$_id' },
           pipeline: [
-            { 
-              $match: { 
+            {
+              $match: {
                 $expr: { $eq: ['$category', '$$categoryId'] }
               }
             },
@@ -48,9 +65,7 @@ module.exports = async (req, res) => {
           ],
           as: 'catalogs'
         }
-      },
-      { $skip: skip },
-      { $limit: limit }
+      }
     ];
 
     const [data, total] = await Promise.all([
@@ -58,13 +73,14 @@ module.exports = async (req, res) => {
       ProductOfferingCategory.countDocuments(matchStage)
     ]);
 
-    res.send({ 
-      data, 
-      total, 
-      page, 
-      totalPages: Math.ceil(total / limit) 
+    res.send({
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
     });
   } catch (err) {
-    res.status(500).send(err);
+    console.error(err);
+    res.status(500).send({ error: 'Server error' });
   }
 };
