@@ -206,7 +206,7 @@ const Chatbot = () => {
       // Vérifie d'abord les requêtes spéciales
       if (input.toLowerCase().includes("omt")) {
         setCurrentStep(null);
-        addBotMessage("Voici des informations sur OMT:", [], [DEFAULT_ARTICLES.omt]);
+        addBotMessage("Voici des informations sur OMT:", [], DEFAULT_ARTICLES.omt);
         return;
       }
       
@@ -385,7 +385,7 @@ const detectIntent = (text) => {
           Accept: 'application/json'
         },
         params: {
-          sysparm_query: workflow=published^short_descriptionLIKE${query}^ORtextLIKE${query},
+          sysparm_query: `workflow=published^short_descriptionLIKE${query}^ORtextLIKE${query}`,
           sysparm_limit: 5,
           sysparm_fields: 'short_description,display_number,topic,text,url',
           sysparm_display_value: true,
