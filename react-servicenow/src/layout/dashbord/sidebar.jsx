@@ -168,7 +168,7 @@ const Sidebar = () => {
           0%, 100% { transform: scale(1); }
           50% { transform: scale(1.1); }
         }
-        .group-hover\:animate-pulse:hover {
+        .group-hover:animate-pulse:hover {
           animation: pulse 1s infinite;
         }
       `}</style>
