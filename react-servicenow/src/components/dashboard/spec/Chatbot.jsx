@@ -206,7 +206,7 @@ const Chatbot = () => {
       // Vérifie d'abord les requêtes spéciales
       if (input.toLowerCase().includes("omt")) {
         setCurrentStep(null);
-        addBotMessage("Voici des informations sur OMT:", [], [DEFAULT_ARTICLES.omt]);
+        addBotMessage("Voici des informations sur OMT:", [], DEFAULT_ARTICLES.omt);
         return;
       }
       
@@ -317,39 +317,49 @@ const Chatbot = () => {
   };
 
   // Détection d'intention améliorée avec tolérance aux fautes
-  const detectIntent = (text) => {
-    text = text.toLowerCase();
-    
-    // Salutations
-    if (/(bonjour|salut|coucou|hello|hi)/.test(text)) return 'greeting';
-    
-    // Spécifications produits
-    if (/(liste|afficher|voir|donner|chercher|recherche|trouver|spécification|spec|fiche)/.test(text)) {
-      return 'search_specs';
-    }
-    
-    // Base de connaissances
-    if (/(article|connaissance|kb|base de donnée|aide|faq|question|solution|problème)/.test(text)) {
-      return 'search_kb';
-    }
-    
-    // Produits
-    if (/(produit|offre|service|forfait|abonnement)/.test(text)) {
-      return 'search_products';
-    }
-    
-    // OMT
-    if (/(omt|order management|template|commande)/.test(text)) {
-      return 'omt_help';
-    }
-    
-    // Tickets
-    if (/(ticket|incident|problème|bug|erreur|souci|demande|aide)/.test(text)) {
-      return 'create_ticket';
-    }
-    
-    return 'help';
-  };
+const detectIntent = (text) => {
+  text = text.toLowerCase().trim();
+
+  // Salutations
+  if (/(bonjour|salut|coucou|hello|hi)/.test(text)) {
+    return 'greeting';
+  }
+
+  // Recherche article de connaissance (KB)
+  if (
+    /^rechercher un article( de connaissance)?$/.test(text) ||
+    /(article de connaissance|base de connaissance|faq|kb|question|solution|problème|connaissance)/.test(text)
+  ) {
+    return 'search_kb';
+  }
+
+  // Aide spécifique OMT
+  if (/(omt|order management|template|commande)/.test(text)) {
+    return 'omt_help';
+  }
+
+  // Lister ou afficher les spécifications produits
+  if (
+    /^lister les spécifications( produits)?$/.test(text) ||
+    /(spécification|fiche produit|fiche technique|specification)/.test(text)
+  ) {
+    return 'search_specs';
+  }
+
+  // Produits et offres
+  if (/(produit|offre|service|forfait|abonnement)/.test(text)) {
+    return 'search_products';
+  }
+
+  // Création de ticket
+  if (/(ticket|incident|bug|erreur|souci|demande d'assistance|demande)/.test(text)) {
+    return 'create_ticket';
+  }
+
+  // Par défaut
+  return 'help';
+};
+
 
   // Fonctions ServiceNow
   const searchSpecifications = async (query = '') => {
@@ -378,30 +388,39 @@ const Chatbot = () => {
   };
 
   const searchKnowledgeArticles = async (query = '') => {
-    try {
-      const response = await axios.get(SN_CONFIG.endpoints.searchKB, {
-        baseURL: SN_CONFIG.baseURL,
-        auth: SN_CONFIG.auth,
+  try {
+    const response = await axios.get(
+      'https://dev268291.service-now.com/api/now/table/kb_knowledge',
+      {
+        auth: {
+          username: 'group2',
+          password: 'K5F/Uj/lDbo9YAS'
+        },
+        headers: {
+          Accept: 'application/json'
+        },
         params: {
           sysparm_query: `workflow=published^short_descriptionLIKE${query}^ORtextLIKE${query}`,
           sysparm_limit: 5,
-          sysparm_fields: 'short_description,number,topic,text,url',
-          sysparm_display_value: true
+          sysparm_fields: 'short_description,display_number,topic,text,url',
+          sysparm_display_value: true,
+          sysparm_exclude_reference_link: true
         }
-      });
-      
-      return response.data.result.map(article => ({
-        name: article.short_description,
-        number: article.number,
-        topic: article.topic,
-        text: article.text,
-        url: article.url
-      }));
-    } catch (error) {
-      console.error("Erreur recherche KB:", error);
-      throw new Error("Impossible de récupérer les articles de connaissance.");
-    }
-  };
+      }
+    );
+    
+    return response.data.result.map(article => ({
+      short_description: article.short_description,
+      number: article.display_number,
+      topic: article.topic,
+      text: article.text,
+      url: article.url
+    }));
+  } catch (error) {
+    console.error("Erreur recherche KB:", error);
+    throw new Error("Impossible de récupérer les articles de connaissance.");
+  }
+};
   
   const searchProducts = async () => {
     try {
@@ -469,43 +488,50 @@ const Chatbot = () => {
   };
 
   const formatArticles = (articles) => {
-    if (!articles || !Array.isArray(articles)) {
-      return (
-        <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">
-          Aucun article trouvé.
-        </div>
-      );
-    }
-  
+  if (!articles || !Array.isArray(articles) || articles.length === 0) {
     return (
-      <div className="grid grid-cols-1 gap-3 mt-3">
-        {articles.map((article, index) => (
-          <div
-            key={index}
-            className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 text-sm"
-          >
-            <h4 className="font-semibold text-blue-700 mb-2">{article.name}</h4>
-            <div className="text-gray-600 mb-2">KB{article.number}</div>
-            {article.topic && (
-              <div className="text-gray-700 mb-2">
-                <span className="font-medium">Sujet:</span> {article.topic}
-              </div>
-            )}
-            {article.url && (
-              <a 
-                href={article.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline inline-block mt-2"
-              >
-                Voir l'article complet →
-              </a>
-            )}
-          </div>
-        ))}
+      <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">
+        Aucun article trouvé.
       </div>
     );
-  };
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-3 mt-3">
+      {articles.map((article, index) => (
+        <div
+          key={index}
+          className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 text-sm"
+        >
+          <h4 className="font-semibold text-blue-700 mb-2">{article.short_description}</h4>
+          <table className="table-auto text-left w-full text-gray-700 text-sm">
+            <tbody>
+              {article.number && (
+                <tr>
+                  <td className="font-medium pr-2 py-1">Numéro :</td>
+                  <td>{article.number}</td>
+                </tr>
+              )}
+              {article.topic && (
+                <tr>
+                  <td className="font-medium pr-2 py-1">Sujet :</td>
+                  <td>{article.topic}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          {article.text && (
+            <div className="mt-2 text-gray-800 leading-6">
+              <hr className="my-2" />
+              <div dangerouslySetInnerHTML={{ __html: article.text }} />
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
   
   const formatProducts = (products) => {
     if (!products || !Array.isArray(products)) {
