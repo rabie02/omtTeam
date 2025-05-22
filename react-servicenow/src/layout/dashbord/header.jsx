@@ -75,15 +75,15 @@ function Header() {
     }
   };
 
-  const markAsRead = (id) => {
-    setNotifications(notifications.map(n => 
-      n.id === id ? {...n, read: true} : n
-    ));
-  };
+  // const markAsRead = (id) => {
+  //   setNotifications(notifications.map(n => 
+  //     n.id === id ? {...n, read: true} : n
+  //   ));
+  // };
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({...n, read: true})));
-  };
+  // const markAllAsRead = () => {
+  //   setNotifications(notifications.map(n => ({...n, read: true})));
+  // };
 
   const quickAccessItems = [
     { label: 'Dashboard', path: '/dashboard' },
@@ -159,7 +159,7 @@ function Header() {
         <div className="flex items-center space-x-6">
           {/* Notification Dropdown */}
           <div className="relative">
-            <button 
+            {/* <button 
               onClick={() => setNotificationOpen(!notificationOpen)}
               className="p-2 rounded-full hover:bg-[#006080] text-blue-100 hover:text-white transition-colors relative"
             >
@@ -169,7 +169,7 @@ function Header() {
                   {unreadCount}
                 </span>
               )}
-            </button>
+            </button> */}
 
             {notificationOpen && (
               <div className="absolute right-0 mt-2 w-80 bg-[#007B98] rounded-lg shadow-xl border border-[#006080] z-50 overflow-hidden">
@@ -200,17 +200,17 @@ function Header() {
                 </div>
               </div>
               <Link 
-                to="/profile" 
+                to="/dashboard/profile" 
                 className="block px-4 py-2.5 text-white hover:bg-[#006080] hover:text-blue-200 transition-colors"
               >
                 <i className="ri-user-settings-line mr-2" /> My Profile
               </Link>
-              <Link 
+              {/* <Link 
                 to="/settings" 
                 className="block px-4 py-2.5 text-white hover:bg-[#006080] hover:text-blue-200 transition-colors"
               >
                 <i className="ri-shield-user-line mr-2" /> Settings
-              </Link>
+              </Link> */}
               <div className="border-t border-[#006080]"></div>
               <button 
                 onClick={handleLogout}
