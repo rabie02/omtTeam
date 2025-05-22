@@ -40,16 +40,16 @@ const Chatbot = () => {
   // Articles par défaut pour requêtes spéciales
   const DEFAULT_ARTICLES = {
     "omt": {
-      short_description: "Guide complet OMT (Order Management Template)",
+      name: "Guide complet OMT (Order Management Template)",
       number: "KB0012345",
       topic: "Order Management",
-      text: "<p>L'OMT est un template standard pour la gestion des commandes dans ServiceNow. Il inclut :</p><ul><li>Workflows prédéfinis</li><li>Bonnes pratiques</li><li>Processus de commande standardisé</li></ul><p>Pour accéder au template : <strong>OMT > Gestion des commandes</strong></p>"
+      text: "L'OMT est un template standard pour la gestion des commandes dans ServiceNow. Il inclut des workflows prédéfinis et des bonnes pratiques pour le processus de commande."
     },
     "produit": {
-      short_description: "Catalogue des produits disponibles",
+      name: "Catalogue des produits disponibles",
       number: "KB0023456",
       topic: "Produits",
-      text: "<p>Notre catalogue contient tous les produits disponibles avec leurs spécifications techniques :</p><ol><li>Connectivité</li><li>Forfaits</li><li>Matériel</li><li>Services</li></ol>"
+      text: "Notre catalogue contient tous les produits disponibles avec leurs spécifications techniques. Consultez la liste complète dans la section Produits."
     }
   };
 
@@ -80,38 +80,6 @@ const Chatbot = () => {
     }
   };
 
-  const advancedResponseLogic = (userInput, context) => {
-    const input = userInput.toLowerCase();
-    
-    // Détection d'urgence
-    if (/(urgent|important|critique|bloquant)/.test(input)) {
-      return {
-        priority: 'high',
-        response: "Je vois que votre demande semble urgente. Je vais prioriser cela."
-      };
-    }
-    
-    // Détection de problème technique
-    if (/(erreur|bug|problème|ne marche pas|planté)/.test(input)) {
-      return {
-        needsTicket: true,
-        response: "Il semble que vous rencontrez un problème technique. Voulez-vous créer un ticket?"
-      };
-    }
-    
-    // Détection de demande d'information
-    if (/(quoi|comment|pourquoi|quand|où|que faire)/.test(input)) {
-      return {
-        knowledgeSearch: true,
-        response: "Je vais chercher dans nos articles de connaissance pour vous."
-      };
-    }
-    
-    return {
-      response: "Je vais traiter votre demande."
-    };
-  };
-
   const handleSendMessage = async () => {
     if (!input.trim() || loading) return;
 
@@ -121,25 +89,6 @@ const Chatbot = () => {
     setLoading(true);
 
     try {
-      // Analyse avancée de la demande
-      const advancedAnalysis = advancedResponseLogic(input, context);
-      
-      if (advancedAnalysis.priority === 'high') {
-        addBotMessage(advancedAnalysis.response);
-      }
-      
-      if (advancedAnalysis.needsTicket && !currentStep) {
-        setCurrentStep('ticket_short_description');
-        addBotMessage(advancedAnalysis.response, ["Oui, créer un ticket", "Non, juste une question"]);
-        setLoading(false);
-        return;
-      }
-      
-      if (advancedAnalysis.knowledgeSearch && !currentStep) {
-        addBotMessage(advancedAnalysis.response);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-
       if (currentStep) {
         await processStepResponse(input);
       } else {
@@ -157,7 +106,7 @@ const Chatbot = () => {
       }
     } catch (error) {
       console.error("Erreur chatbot:", error);
-      addBotMessage("Désolé, je n'ai pas pu traiter votre demande. Veuillez réessayer.");
+      addBotMessage("Désolé, je n'ai pas compris. Pouvez-vous reformuler votre demande?");
     } finally {
       setLoading(false);
     }
@@ -195,11 +144,21 @@ const Chatbot = () => {
         break;
         
       case 'omt_help':
-        response = {
-          text: "Voici des informations sur OMT (Order Management Template):",
-          data: [DEFAULT_ARTICLES.omt],
-          intent: 'omt_help'
-        };
+        // Vérifie d'abord si on a un article par défaut
+        if (DEFAULT_ARTICLES.omt) {
+          response = {
+            text: "Voici des informations sur OMT (Order Management Template):",
+            data: [DEFAULT_ARTICLES.omt],
+            intent: 'omt_help'
+          };
+        } else {
+          const omtArticles = await searchKnowledgeArticles("OMT");
+          response = {
+            text: omtArticles.length ? "Voici des articles sur OMT:" : "Aucun article trouvé sur OMT.",
+            data: omtArticles,
+            intent: 'omt_help'
+          };
+        }
         break;
         
       case 'create_ticket':
@@ -242,10 +201,12 @@ const Chatbot = () => {
   };
 
   const processStepResponse = async (input) => {
+    // Recherche dans la base de connaissances
     if (currentStep === 'knowledge_query') {
+      // Vérifie d'abord les requêtes spéciales
       if (input.toLowerCase().includes("omt")) {
         setCurrentStep(null);
-        addBotMessage("Voici des informations sur OMT:", [], [DEFAULT_ARTICLES.omt]);
+        addBotMessage("Voici des informations sur OMT:", [], DEFAULT_ARTICLES.omt);
         return;
       }
       
@@ -278,14 +239,15 @@ const Chatbot = () => {
       return;
     }
     
+    // Création de ticket
     if (currentStep === 'ticket_short_description') {
       setContext({ ticket: { short_description: input } });
       setCurrentStep('ticket_priority');
       addBotMessage("Merci. Quelle est la priorité de ce ticket?", [
-        "1 - Critique (Impact majeur)",
-        "2 - Élevée (Impact important)",
-        "3 - Moyenne (Impact limité)",
-        "4 - Faible (Impact mineur)"
+        "1 - Critique",
+        "2 - Élevée",
+        "3 - Moyenne",
+        "4 - Faible"
       ]);
       return;
     }
@@ -354,34 +316,52 @@ const Chatbot = () => {
     addBotMessage("Je n'ai pas compris. Pouvez-vous répéter?");
   };
 
-  const detectIntent = (text) => {
-    text = text.toLowerCase();
-    
-    if (/(bonjour|salut|coucou|hello|hi)/.test(text)) return 'greeting';
-    
-    if (/(liste|afficher|voir|donner|chercher|recherche|trouver|spécification|spec|fiche)/.test(text)) {
-      return 'search_specs';
-    }
-    
-    if (/(article|connaissance|kb|base de donnée|aide|faq|question|solution|problème)/.test(text)) {
-      return 'search_kb';
-    }
-    
-    if (/(produit|offre|service|forfait|abonnement)/.test(text)) {
-      return 'search_products';
-    }
-    
-    if (/(omt|order management|template|commande)/.test(text)) {
-      return 'omt_help';
-    }
-    
-    if (/(ticket|incident|problème|bug|erreur|souci|demande|aide)/.test(text)) {
-      return 'create_ticket';
-    }
-    
-    return 'help';
-  };
+  // Détection d'intention améliorée avec tolérance aux fautes
+const detectIntent = (text) => {
+  text = text.toLowerCase().trim();
 
+  // Salutations
+  if (/(bonjour|salut|coucou|hello|hi)/.test(text)) {
+    return 'greeting';
+  }
+
+  // Recherche article de connaissance (KB)
+  if (
+    /^rechercher un article( de connaissance)?$/.test(text) ||
+    /(article de connaissance|base de connaissance|faq|kb|question|solution|problème|connaissance)/.test(text)
+  ) {
+    return 'search_kb';
+  }
+
+  // Aide spécifique OMT
+  if (/(omt|order management|template|commande)/.test(text)) {
+    return 'omt_help';
+  }
+
+  // Lister ou afficher les spécifications produits
+  if (
+    /^lister les spécifications( produits)?$/.test(text) ||
+    /(spécification|fiche produit|fiche technique|specification)/.test(text)
+  ) {
+    return 'search_specs';
+  }
+
+  // Produits et offres
+  if (/(produit|offre|service|forfait|abonnement)/.test(text)) {
+    return 'search_products';
+  }
+
+  // Création de ticket
+  if (/(ticket|incident|bug|erreur|souci|demande d'assistance|demande)/.test(text)) {
+    return 'create_ticket';
+  }
+
+  // Par défaut
+  return 'help';
+};
+
+
+  // Fonctions ServiceNow
   const searchSpecifications = async (query = '') => {
     try {
       const params = {
@@ -408,30 +388,39 @@ const Chatbot = () => {
   };
 
   const searchKnowledgeArticles = async (query = '') => {
-    try {
-      const response = await axios.get(SN_CONFIG.endpoints.searchKB, {
-        baseURL: SN_CONFIG.baseURL,
-        auth: SN_CONFIG.auth,
+  try {
+    const response = await axios.get(
+      'https://dev268291.service-now.com/api/now/table/kb_knowledge',
+      {
+        auth: {
+          username: 'group2',
+          password: 'K5F/Uj/lDbo9YAS'
+        },
+        headers: {
+          Accept: 'application/json'
+        },
         params: {
           sysparm_query: `workflow=published^short_descriptionLIKE${query}^ORtextLIKE${query}`,
           sysparm_limit: 5,
-          sysparm_fields: 'short_description,number,topic,text,url',
-          sysparm_display_value: true
+          sysparm_fields: 'short_description,display_number,topic,text,url',
+          sysparm_display_value: true,
+          sysparm_exclude_reference_link: true
         }
-      });
-      
-      return response.data.result.map(article => ({
-        short_description: article.short_description,
-        number: article.number,
-        topic: article.topic,
-        text: article.text,
-        url: article.url
-      }));
-    } catch (error) {
-      console.error("Erreur recherche KB:", error);
-      throw new Error("Impossible de récupérer les articles de connaissance.");
-    }
-  };
+      }
+    );
+    
+    return response.data.result.map(article => ({
+      short_description: article.short_description,
+      number: article.display_number,
+      topic: article.topic,
+      text: article.text,
+      url: article.url
+    }));
+  } catch (error) {
+    console.error("Erreur recherche KB:", error);
+    throw new Error("Impossible de récupérer les articles de connaissance.");
+  }
+};
   
   const searchProducts = async () => {
     try {
@@ -440,7 +429,7 @@ const Chatbot = () => {
         auth: SN_CONFIG.auth,
         params: {
           sysparm_limit: 10,
-          sysparm_query: 'install_status=1',
+          sysparm_query: 'install_status=1', // 1 = Installé
           sysparm_fields: 'name,model_number,version,sys_id,short_description'
         }
       });
@@ -466,6 +455,7 @@ const Chatbot = () => {
     }
   };
 
+  // Formatage des données
   const formatSpecifications = (specs) => {
     if (!specs || !Array.isArray(specs)) {
       return <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">Aucune donnée disponible</div>;
@@ -498,59 +488,50 @@ const Chatbot = () => {
   };
 
   const formatArticles = (articles) => {
-    if (!articles || !Array.isArray(articles)) {
-      return (
-        <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">
-          Aucun article trouvé.
-        </div>
-      );
-    }
-  
+  if (!articles || !Array.isArray(articles) || articles.length === 0) {
     return (
-      <div className="grid grid-cols-1 gap-3 mt-3">
-        {articles.map((article, index) => (
-          <div
-            key={index}
-            className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 text-sm"
-          >
-            <h4 className="font-semibold text-blue-700 mb-2">{article.short_description}</h4>
-            <table className="table-auto text-left w-full text-gray-700 text-sm">
-              <tbody>
-                {article.number && (
-                  <tr>
-                    <td className="font-medium pr-2 py-1">Numéro :</td>
-                    <td>{article.number}</td>
-                  </tr>
-                )}
-                {article.topic && (
-                  <tr>
-                    <td className="font-medium pr-2 py-1">Sujet :</td>
-                    <td>{article.topic}</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-            {article.text && (
-              <div className="mt-2 text-gray-800 leading-6">
-                <hr className="my-2" />
-                <div dangerouslySetInnerHTML={{ __html: article.text }} />
-              </div>
-            )}
-            {article.url && (
-              <a 
-                href={article.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline inline-block mt-2"
-              >
-                Voir l'article complet →
-              </a>
-            )}
-          </div>
-        ))}
+      <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">
+        Aucun article trouvé.
       </div>
     );
-  };
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-3 mt-3">
+      {articles.map((article, index) => (
+        <div
+          key={index}
+          className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 text-sm"
+        >
+          <h4 className="font-semibold text-blue-700 mb-2">{article.short_description}</h4>
+          <table className="table-auto text-left w-full text-gray-700 text-sm">
+            <tbody>
+              {article.number && (
+                <tr>
+                  <td className="font-medium pr-2 py-1">Numéro :</td>
+                  <td>{article.number}</td>
+                </tr>
+              )}
+              {article.topic && (
+                <tr>
+                  <td className="font-medium pr-2 py-1">Sujet :</td>
+                  <td>{article.topic}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          {article.text && (
+            <div className="mt-2 text-gray-800 leading-6">
+              <hr className="my-2" />
+              <div dangerouslySetInnerHTML={{ __html: article.text }} />
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
   
   const formatProducts = (products) => {
     if (!products || !Array.isArray(products)) {
@@ -575,6 +556,7 @@ const Chatbot = () => {
     );
   };
 
+  // Fonctions utilitaires
   const addBotMessage = (text, options = [], data = null) => {
     const newMessage = { text, sender: 'bot', options };
     if (data) {

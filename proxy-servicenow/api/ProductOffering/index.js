@@ -10,6 +10,9 @@ const create = require('../../controllers/ProductOffering/create');
 const update = require('../../controllers/ProductOffering/update');
 const updateStatus = require('../../controllers/ProductOffering/updateStatus');
 const deleteHandler = require('../../controllers/ProductOffering/delete');
+const getBySpec = require('../../controllers/ProductOffering/getBySpec');
+
+
 
 // Define routes
 router.get('/product-offering', getAll);
@@ -20,5 +23,8 @@ router.post('/product-offering', create);
 router.patch('/product-offering/:id', update);
 router.patch('/product-offering-status', updateStatus);
 router.delete('/product-offering/:id', deleteHandler);
+router.get('/product-offering/by-spec/:specId', getBySpec);
+
+
 
 module.exports = router;
