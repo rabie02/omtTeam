@@ -5,13 +5,14 @@ const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { 
-      text: "Bonjour! Je suis votre assistant pour la gestion des spécifications produits. Comment puis-je vous aider aujourd'hui?", 
+      text: "Bonjour! Je suis votre assistant ServiceNow. Comment puis-je vous aider aujourd'hui?", 
       sender: 'bot',
       options: [
-        "Lister les spécifications",
-        "Créer une nouvelle spécification",
-        "Aide-moi à publier une spécification",
-        "Rechercher un article de connaissance"
+        "Lister les spécifications produits",
+        "Rechercher un article de connaissance",
+        "Voir les produits disponibles",
+        "Aide sur OMT",
+        "Créer un ticket"
       ]
     }
   ]);
@@ -19,36 +20,20 @@ const Chatbot = () => {
   const [loading, setLoading] = useState(false);
   const [context, setContext] = useState(null);
   const [currentStep, setCurrentStep] = useState(null);
-  const [specData, setSpecData] = useState({
-    name: '',
-    display_name: '',
-    category: '',
-    type: '',
-    start_date: '',
-    end_date: '',
-    owner: '',
-    description: '',
-    status: 'draft',
-    external_code: '',
-    line: '',
-    cost_to_company: '',
-    composite: false,
-    installation_required: false,
-    location_specific: false
-  });
   const messagesEndRef = useRef(null);
 
   // Configuration ServiceNow
   const SN_CONFIG = {
-    baseURL: import.meta.env.VITE_SN_URL || 'https://dev323456.service-now.com',
+    baseURL: import.meta.env.VITE_SN_URL || 'https://dev12345.service-now.com',
     auth: {
       username: import.meta.env.VITE_SN_USER || 'admin',
-      password: import.meta.env.VITE_SN_PASS || 'bz!T-1ThIc1L'
+      password: import.meta.env.VITE_SN_PASS || 'password'
     },
     endpoints: {
       searchSpecs: '/api/now/table/sn_prd_pm_product_specification',
-      createSpec: '/api/now/table/sn_prd_pm_product_specification',
-      publishSpec: '/api/now/table/sn_prd_pm_product_specification/{sys_id}'
+      searchKB: '/api/now/table/kb_knowledge',
+      searchProducts: '/api/now/table/cmdb_ci_product',
+      createIncident: '/api/now/table/incident'
     }
   };
 
@@ -64,6 +49,19 @@ const Chatbot = () => {
 
   const toggleChatbot = () => {
     setIsOpen(!isOpen);
+    if (!isOpen) {
+      setMessages([{
+        text: "Bonjour! Je suis votre assistant ServiceNow. Comment puis-je vous aider aujourd'hui?", 
+        sender: 'bot',
+        options: [
+          "Lister les spécifications produits",
+          "Rechercher un article de connaissance",
+          "Voir les produits disponibles",
+          "Aide sur OMT",
+          "Créer un ticket"
+        ]
+      }]);
+    }
   };
 
   const handleSendMessage = async () => {
@@ -82,16 +80,17 @@ const Chatbot = () => {
         setMessages(prev => [...prev, response]);
         if (response.data) {
           setMessages(prev => [...prev, { 
-            text: formatSpecifications(response.data), 
+            text: response.text || "Voici les résultats:", 
             sender: 'bot',
             isData: true,
+            data: response.data,
             options: getFollowUpOptions(response.intent)
           }]);
         }
       }
     } catch (error) {
       console.error("Erreur chatbot:", error);
-      addBotMessage("Une erreur s'est produite. Veuillez réessayer.");
+      addBotMessage("Désolé, une erreur s'est produite. Pouvez-vous reformuler votre demande?");
     } finally {
       setLoading(false);
     }
@@ -101,353 +100,227 @@ const Chatbot = () => {
   const processUserInput = async (userInput) => {
     const intent = detectIntent(userInput);
     let response;
-  
+
     switch(intent) {
-      case 'search':
-        const searchResults = await searchSpecifications();
-        if (searchResults && searchResults.length > 0) {
-          response = {
-            text: "Voici les spécifications publiées disponibles:",
-            sender: 'bot',
-            data: searchResults,
-            intent: 'search'
-          };
-        } else {
-          response = {
-            text: "Aucune spécification publiée n'a été trouvée.",
-            sender: 'bot',
-            intent: 'search'
-          };
-        }
+      case 'search_specs':
+        const specs = await searchSpecifications();
+        response = {
+          text: specs.length ? "Voici les spécifications disponibles:" : "Aucune spécification trouvée.",
+          data: specs,
+          intent: 'search_specs'
+        };
         break;
         
-      case 'create':
-        startSpecCreation();
+      case 'search_kb':
+        setCurrentStep('knowledge_query');
         return {
-          text: "Commençons par créer une nouvelle spécification. Quel est le nom de la spécification?",
+          text: "Sur quel sujet souhaitez-vous chercher dans la base de connaissances?",
           sender: 'bot',
-          intent: 'create'
+          intent: 'search_kb'
         };
         
-      case 'publish':
-        const specId = context?.lastCreatedId || extractSpecId(userInput);
-        if (!specId) {
-          return {
-            text: "Je n'ai pas pu identifier quelle spécification vous voulez publier. Pouvez-vous préciser l'ID?",
-            sender: 'bot',
-            intent: 'clarify_publish'
-          };
-        }
-        
-        const publishedSpec = await publishSpecification(specId);
+      case 'search_products':
+        const products = await searchProducts();
         response = {
-          text: `Spécification ${publishedSpec.name} publiée avec succès!`,
+          text: products.length ? "Voici les produits disponibles:" : "Aucun produit trouvé.",
+          data: products,
+          intent: 'search_products'
+        };
+        break;
+        
+      case 'omt_help':
+        const omtArticles = await searchKnowledgeArticles("OMT");
+        response = {
+          text: omtArticles.length ? "Voici des articles sur OMT (Order Management Template):" : "Aucun article trouvé sur OMT.",
+          data: omtArticles,
+          intent: 'omt_help'
+        };
+        break;
+        
+      case 'create_ticket':
+        setCurrentStep('ticket_short_description');
+        return {
+          text: "Je vais vous aider à créer un ticket. Quel est le résumé du problème?",
           sender: 'bot',
-          data: [publishedSpec],
-          intent: 'publish',
+          intent: 'create_ticket'
+        };
+        
+      case 'greeting':
+        return {
+          text: "Bonjour! Comment puis-je vous aider aujourd'hui?",
+          sender: 'bot',
           options: [
-            "Voir toutes les spécifications publiées",
-            "Créer une nouvelle spécification"
+            "Lister les spécifications produits",
+            "Rechercher un article de connaissance",
+            "Voir les produits disponibles",
+            "Aide sur OMT",
+            "Créer un ticket"
           ]
         };
-        break;
-  
-        case 'knowledge':
-          setCurrentStep('knowledge_query');
-          return {
-            text: "D'accord, sur quel sujet souhaitez-vous chercher un article de connaissance ?",
-            sender: 'bot',
-            intent: 'knowledge'
-          };
         
-  
       case 'help':
       default:
-        response = {
+        return {
           text: "Je peux vous aider avec:",
           sender: 'bot',
           options: [
-            "Lister les spécifications",
-            "Créer une nouvelle spécification",
-            "Publier une spécification",
-            "Afficher des articles de connaissance"
+            "Lister les spécifications produits",
+            "Rechercher un article de connaissance",
+            "Voir les produits disponibles",
+            "Aide sur OMT",
+            "Créer un ticket"
           ]
         };
     }
   
     return response;
   };
-  
-
-  const startSpecCreation = () => {
-    setCurrentStep('name');
-    setSpecData({
-      name: '',
-      display_name: '',
-      category: '',
-      type: '',
-      start_date: '',
-      end_date: '',
-      owner: '',
-      description: '',
-      status: 'draft',
-      external_code: '',
-      line: '',
-      cost_to_company: '',
-      composite: false,
-      installation_required: false,
-      location_specific: false
-    });
-  };
 
   const processStepResponse = async (input) => {
-    // Étape de recherche d'article de connaissance
+    // Recherche dans la base de connaissances
     if (currentStep === 'knowledge_query') {
       const articles = await searchKnowledgeArticles(input);
       setCurrentStep(null);
     
       if (articles.length > 0) {
-        addBotMessage("Voici quelques articles de connaissance qui peuvent vous aider :");
-    
+        addBotMessage(`Voici les articles trouvés pour "${input}":`);
         setMessages(prev => [
           ...prev,
           {
             text: '',
             sender: 'bot',
-            data: articles.map(article => ({
-              name: article.short_description,
-              number: article.display_number,
-              topic: article.topic,
-              body: article.text
-            })),
-            intent: 'knowledge'
-          },
-          {
-            text: "Que souhaitez-vous faire maintenant ?",
-            sender: 'bot',
-            options: [
-              "Lister les spécifications",
-              "Créer une nouvelle spécification",
-              "Aide-moi à publier une spécification",
-              "Rechercher un article de connaissance"
-            ]
+            data: articles,
+            intent: 'search_kb'
           }
         ]);
       } else {
-        addBotMessage("Aucun article trouvé pour votre demande.");
+        addBotMessage(`Aucun article trouvé pour "${input}". Voulez-vous essayer avec d'autres mots-clés?`, [
+          "Oui, chercher à nouveau",
+          "Non, merci"
+        ]);
       }
       return;
     }
     
-  
-    switch(currentStep) {
-      case 'name':
-        setSpecData({...specData, name: input});
-        setCurrentStep('display_name');
-        addBotMessage(`Nom enregistré: ${input}. Quel est le nom d'affichage?`);
-        break;
-  
-      case 'display_name':
-        setSpecData({...specData, display_name: input});
-        setCurrentStep('category');
-        addBotMessage(`Nom d'affichage enregistré: ${input}. Quelle est la catégorie?`, [
-          "connectivity",
-          "Forfait",
-          "hardware",
-          "Internet",
-          "Autre"
-        ]);
-        break;
-  
-      case 'category':
-        setSpecData({...specData, category: input});
-        setCurrentStep('type');
-        addBotMessage(`Catégorie enregistrée: ${input}. Quel est le type?`);
-        break;
-  
-      case 'type':
-        setSpecData({...specData, type: input});
-        setCurrentStep('start_date');
-        addBotMessage(`Type enregistré: ${input}. Quelle est la date de début (format yyyy-MM-dd)?`);
-        break;
-  
-      case 'start_date':
-        if (!isValidDate(input)) {
-          addBotMessage("Format de date invalide. Veuillez entrer la date au format yyyy-MM-dd.");
-          return;
-        }
-        setSpecData({...specData, start_date: input});
-        setCurrentStep('end_date');
-        addBotMessage(`Date de début enregistrée: ${input}. Quelle est la date de fin (format yyyy-MM-dd)?`);
-        break;
-  
-      case 'end_date':
-        if (!isValidDate(input)) {
-          addBotMessage("Format de date invalide. Veuillez entrer la date au format yyyy-MM-dd.");
-          return;
-        }
-        setSpecData({...specData, end_date: input});
-        setCurrentStep('owner');
-        addBotMessage(`Date de fin enregistrée: ${input}. Qui est le propriétaire?`);
-        break;
-  
-      case 'owner':
-        setSpecData({...specData, owner: input});
-        setCurrentStep('description');
-        addBotMessage(`Propriétaire enregistré: ${input}. Veuillez fournir une description.`);
-        break;
-  
-      case 'description':
-        setSpecData({...specData, description: input});
-        setCurrentStep('external_code');
-        addBotMessage(`Description enregistrée. Quel est le code externe?`);
-        break;
-  
-      case 'external_code':
-        setSpecData({...specData, external_code: input});
-        setCurrentStep('line');
-        addBotMessage(`Code externe enregistré: ${input}. Quelle est la ligne de produit?`);
-        break;
-  
-      case 'line':
-        setSpecData({...specData, line: input});
-        setCurrentStep('cost_to_company');
-        addBotMessage(`Ligne de produit enregistrée: ${input}. Quel est le coût pour l'entreprise?`);
-        break;
-  
-      case 'cost_to_company':
-        setSpecData({...specData, cost_to_company: input});
-        setCurrentStep('composite');
-        addBotMessage(`Coût enregistré: ${input}. Est-ce une spécification composite?`, [
-          "Oui",
-          "Non"
-        ]);
-        break;
-  
-      case 'composite':
-        const isComposite = input.toLowerCase() === 'oui';
-        setSpecData({...specData, composite: isComposite});
-        setCurrentStep('installation_required');
-        addBotMessage(`Composite: ${isComposite ? 'Oui' : 'Non'}. Une installation est-elle requise?`, [
-          "Oui",
-          "Non"
-        ]);
-        break;
-  
-      case 'installation_required':
-        const installationRequired = input.toLowerCase() === 'oui';
-        setSpecData({...specData, installation_required: installationRequired});
-        setCurrentStep('location_specific');
-        addBotMessage(`Installation requise: ${installationRequired ? 'Oui' : 'Non'}. Est-ce spécifique à un lieu?`, [
-          "Oui",
-          "Non"
-        ]);
-        break;
-  
-      case 'location_specific':
-        const locationSpecific = input.toLowerCase() === 'oui';
-        setSpecData({...specData, location_specific: locationSpecific});
-        confirmAndSaveSpec();
-        break;
-  
-      default:
-        addBotMessage("Je n'ai pas compris. Pouvez-vous répéter?");
-    }
-  };
-  
-
-  const isValidDate = (dateString) => {
-    const regEx = /^\d{4}-\d{2}-\d{2}$/;
-    if(!dateString.match(regEx)) return false;
-    const d = new Date(dateString);
-    return !isNaN(d.getTime());
-  };
-
-  const confirmAndSaveSpec = () => {
-    const confirmationMessage = `Voici le récapitulatif de votre spécification:
-      - Nom: ${specData.name}
-      - Nom d'affichage: ${specData.display_name}
-      - Catégorie: ${specData.category}
-      - Type: ${specData.type}
-      - Dates: ${specData.start_date} à ${specData.end_date}
-      - Propriétaire: ${specData.owner}
-      - Description: ${specData.description}
-      
-      Voulez-vous enregistrer cette spécification?`;
-    
-    addBotMessage(confirmationMessage, [
-      "Oui, enregistrer",
-      "Non, modifier"
-    ]);
-    
-    setCurrentStep('confirmation');
-  };
-
-  const saveSpecification = async () => {
-    try {
-      const response = await axios.post(SN_CONFIG.endpoints.createSpec, specData, {
-        baseURL: SN_CONFIG.baseURL,
-        auth: SN_CONFIG.auth
-      });
-
-      const savedSpec = response.data.result;
-      setContext({ lastCreatedId: savedSpec.sys_id });
-      addBotMessage(`Spécification enregistrée avec succès! Numéro: ${savedSpec.number}`);
-      
-      // Reset for new specification
-      setCurrentStep(null);
-      
-      addBotMessage("Que souhaitez-vous faire maintenant?", [
-        "Voir cette spécification",
-        "Créer une nouvelle spécification",
-        "Retour au menu principal"
+    // Création de ticket
+    if (currentStep === 'ticket_short_description') {
+      setContext({ ticket: { short_description: input } });
+      setCurrentStep('ticket_priority');
+      addBotMessage("Merci. Quelle est la priorité de ce ticket?", [
+        "1 - Critique",
+        "2 - Élevée",
+        "3 - Moyenne",
+        "4 - Faible"
       ]);
-      
-    } catch (error) {
-      console.error("Erreur lors de l'enregistrement:", error);
-      addBotMessage("Une erreur s'est produite lors de l'enregistrement. Veuillez réessayer.");
+      return;
     }
+    
+    if (currentStep === 'ticket_priority') {
+      const priorityMap = {
+        "1": "1",
+        "critique": "1",
+        "2": "2",
+        "élevée": "2",
+        "3": "3",
+        "moyenne": "3",
+        "4": "4",
+        "faible": "4"
+      };
+      
+      const priority = priorityMap[input.toLowerCase().split(" - ")[0]];
+      
+      if (!priority) {
+        addBotMessage("Priorité non reconnue. Veuillez choisir une priorité entre 1 (Critique) et 4 (Faible).", [
+          "1 - Critique",
+          "2 - Élevée",
+          "3 - Moyenne",
+          "4 - Faible"
+        ]);
+        return;
+      }
+      
+      setContext(prev => ({
+        ticket: {
+          ...prev.ticket,
+          priority
+        }
+      }));
+      
+      setCurrentStep('ticket_description');
+      addBotMessage("Merci. Pouvez-vous décrire le problème plus en détail?");
+      return;
+    }
+    
+    if (currentStep === 'ticket_description') {
+      const ticketData = {
+        ...context.ticket,
+        description: input,
+        caller_id: "user", // À remplacer par l'utilisateur réel
+        category: "inquiry"
+      };
+      
+      try {
+        const ticket = await createIncident(ticketData);
+        setCurrentStep(null);
+        setContext(null);
+        
+        addBotMessage(`Ticket créé avec succès! Numéro: ${ticket.number}. Que souhaitez-vous faire maintenant?`, [
+          "Voir le statut du ticket",
+          "Rechercher un article de connaissance",
+          "Retour au menu principal"
+        ]);
+      } catch (error) {
+        addBotMessage("Désolé, je n'ai pas pu créer le ticket. Veuillez réessayer ou contacter l'administrateur.");
+        console.error("Erreur création ticket:", error);
+      }
+      return;
+    }
+    
+    addBotMessage("Je n'ai pas compris. Pouvez-vous répéter?");
   };
 
-  // Détection d'intention améliorée
+  // Détection d'intention améliorée avec tolérance aux fautes
   const detectIntent = (text) => {
     text = text.toLowerCase();
-  
-    if (/(liste|afficher|voir|donner|chercher|recherche|trouver)/.test(text) && 
-        /(spécification|spec|fiche|produit)/.test(text)) {
-      return 'search';
+    
+    // Salutations
+    if (/(bonjour|salut|coucou|hello|hi)/.test(text)) return 'greeting';
+    
+    // Spécifications produits
+    if (/(liste|afficher|voir|donner|chercher|recherche|trouver|spécification|spec|fiche)/.test(text)) {
+      return 'search_specs';
     }
-  
-    if (/(créer|nouveau|nouvelle|ajouter|générer)/.test(text) && 
-        /(spécification|spec|fiche)/.test(text)) {
-      return 'create';
+    
+    // Base de connaissances
+    if (/(article|connaissance|kb|base de donnée|aide|faq|question|solution|problème)/.test(text)) {
+      return 'search_kb';
     }
-  
-    if (/(publier|valider|finaliser|activer)/.test(text) && 
-        /(spécification|spec|fiche)/.test(text)) {
-      return 'publish';
+    
+    // Produits
+    if (/(produit|offre|service|forfait|abonnement)/.test(text)) {
+      return 'search_products';
     }
-  
-    if (/(article|connaissance|aide|faq|question)/.test(text) || 
-        text.includes("afficher des articles de connaissance")) {
-      return 'knowledge';
+    
+    // OMT
+    if (/(omt|order management|template|commande)/.test(text)) {
+      return 'omt_help';
     }
-  
-    if (/(aide|assistance|help|soutien)/.test(text)) {
-      return 'help';
+    
+    // Tickets
+    if (/(ticket|incident|problème|bug|erreur|souci|demande|aide)/.test(text)) {
+      return 'create_ticket';
     }
-  
+    
     return 'help';
   };
-  
-  
 
   // Fonctions ServiceNow
   const searchSpecifications = async (query = '') => {
     try {
       const params = {
         sysparm_limit: 10,
-        sysparm_query: 'status=published'
+        sysparm_query: 'status=published',
+        sysparm_fields: 'name,number,category,type,status,sys_id,short_description'
       };
       
       if (query) {
@@ -469,59 +342,66 @@ const Chatbot = () => {
 
   const searchKnowledgeArticles = async (query = '') => {
     try {
-      const response = await axios.get(
-        'https://dev268291.service-now.com/api/now/table/kb_knowledge',
-        {
-          auth: {
-            username: 'group2',
-            password: 'K5F/Uj/lDbo9YAS'
-          },
-          headers: {
-            Accept: 'application/json'
-          },
-          params: {
-            sysparm_query: `workflow=published^short_descriptionLIKE${query}`,
-            sysparm_limit: 5,
-            sysparm_fields: 'short_description,display_number,topic,text',
-            sysparm_display_value: true,
-            sysparm_exclude_reference_link: true
-          }
+      const response = await axios.get(SN_CONFIG.endpoints.searchKB, {
+        baseURL: SN_CONFIG.baseURL,
+        auth: SN_CONFIG.auth,
+        params: {
+          sysparm_query: `workflow=published^short_descriptionLIKE${query}^ORtextLIKE${query}`,
+          sysparm_limit: 5,
+          sysparm_fields: 'short_description,number,topic,text,url',
+          sysparm_display_value: true
         }
-      );
-      return response.data.result;
+      });
+      
+      return response.data.result.map(article => ({
+        name: article.short_description,
+        number: article.number,
+        topic: article.topic,
+        text: article.text,
+        url: article.url
+      }));
     } catch (error) {
-      console.error("❌ Erreur knowledge:", error);
+      console.error("Erreur recherche KB:", error);
       throw new Error("Impossible de récupérer les articles de connaissance.");
     }
   };
   
-  
-
-  const publishSpecification = async (specId) => {
+  const searchProducts = async () => {
     try {
-      const response = await axios.patch(
-        SN_CONFIG.endpoints.publishSpec.replace('{sys_id}', specId),
-        { status: 'published' },
-        { baseURL: SN_CONFIG.baseURL, auth: SN_CONFIG.auth }
-      );
-
+      const response = await axios.get(SN_CONFIG.endpoints.searchProducts, {
+        baseURL: SN_CONFIG.baseURL,
+        auth: SN_CONFIG.auth,
+        params: {
+          sysparm_limit: 10,
+          sysparm_query: 'install_status=1', // 1 = Installé
+          sysparm_fields: 'name,model_number,version,sys_id,short_description'
+        }
+      });
+      
       return response.data.result;
     } catch (error) {
-      console.error("Erreur publication:", error);
-      throw new Error(`Erreur lors de la publication de la spécification ${specId}.`);
+      console.error("Erreur recherche produits:", error);
+      throw new Error("Impossible de récupérer les produits.");
     }
   };
-
-  // Fonctions d'extraction améliorées
-  const extractSpecId = (text) => {
-    const idRegex = /(SPEC|spec)[- ]?([A-Z0-9]{8,})/i;
-    const match = text.match(idRegex);
-    return match ? match[0] : null;
+  
+  const createIncident = async (ticketData) => {
+    try {
+      const response = await axios.post(SN_CONFIG.endpoints.createIncident, ticketData, {
+        baseURL: SN_CONFIG.baseURL,
+        auth: SN_CONFIG.auth
+      });
+      
+      return response.data.result;
+    } catch (error) {
+      console.error("Erreur création incident:", error);
+      throw new Error("Impossible de créer le ticket.");
+    }
   };
 
   // Formatage des données
   const formatSpecifications = (specs) => {
-    if (!specs || !Array.isArray(specs)) {
+    if (!specs || !Array.isArray(specs) {
       return <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">Aucune donnée disponible</div>;
     }
 
@@ -531,28 +411,18 @@ const Chatbot = () => {
           <thead>
             <tr>
               <th className="sticky top-0 bg-gray-50 font-semibold text-gray-700 p-2.5 border-b-2 border-gray-200">Nom</th>
-              <th className="sticky top-0 bg-gray-50 font-semibold text-gray-700 p-2.5 border-b-2 border-gray-200">ID</th>
+              <th className="sticky top-0 bg-gray-50 font-semibold text-gray-700 p-2.5 border-b-2 border-gray-200">Numéro</th>
               <th className="sticky top-0 bg-gray-50 font-semibold text-gray-700 p-2.5 border-b-2 border-gray-200">Catégorie</th>
               <th className="sticky top-0 bg-gray-50 font-semibold text-gray-700 p-2.5 border-b-2 border-gray-200">Type</th>
-              <th className="sticky top-0 bg-gray-50 font-semibold text-gray-700 p-2.5 border-b-2 border-gray-200">Statut</th>
             </tr>
           </thead>
           <tbody>
             {specs.map(spec => (
               <tr key={spec.sys_id} className="hover:bg-blue-50">
                 <td className="p-2 border-b border-gray-100 align-top">{spec.name}</td>
-                <td className="font-mono text-sm p-2 border-b border-gray-100 align-top">{spec.sys_id}</td>
+                <td className="font-mono text-sm p-2 border-b border-gray-100 align-top">{spec.number}</td>
                 <td className="p-2 border-b border-gray-100 align-top">{spec.category || 'N/A'}</td>
                 <td className="p-2 border-b border-gray-100 align-top">{spec.type || 'N/A'}</td>
-                <td className="p-2 border-b border-gray-100 align-top">
-                  <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full ${
-                    spec.status === 'draft' 
-                      ? 'text-yellow-800 bg-yellow-100' 
-                      : 'text-green-800 bg-green-100'
-                  }`}>
-                    {spec.status === 'draft' ? 'Brouillon' : 'Publiée'}
-                  </span>
-                </td>
               </tr>
             ))}
           </tbody>
@@ -562,7 +432,7 @@ const Chatbot = () => {
   };
 
   const formatArticles = (articles) => {
-    if (!articles || !Array.isArray(articles) || articles.length === 0) {
+    if (!articles || !Array.isArray(articles) {
       return (
         <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">
           Aucun article trouvé.
@@ -578,34 +448,50 @@ const Chatbot = () => {
             className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 text-sm"
           >
             <h4 className="font-semibold text-blue-700 mb-2">{article.name}</h4>
-            <table className="table-auto text-left w-full text-gray-700 text-sm">
-              <tbody>
-                {article.number && (
-                  <tr>
-                    <td className="font-medium pr-2 py-1">Numéro :</td>
-                    <td>{article.number}</td>
-                  </tr>
-                )}
-                {article.topic && (
-                  <tr>
-                    <td className="font-medium pr-2 py-1">Sujet :</td>
-                    <td>{article.topic}</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-            {article.body && (
-              <div className="mt-2 text-gray-800 leading-6">
-                <hr className="my-2" />
-                <div dangerouslySetInnerHTML={{ __html: article.body }} />
+            <div className="text-gray-600 mb-2">KB{article.number}</div>
+            {article.topic && (
+              <div className="text-gray-700 mb-2">
+                <span className="font-medium">Sujet:</span> {article.topic}
               </div>
+            )}
+            {article.url && (
+              <a 
+                href={article.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline inline-block mt-2"
+              >
+                Voir l'article complet →
+              </a>
             )}
           </div>
         ))}
       </div>
     );
-  };  
+  };
   
+  const formatProducts = (products) => {
+    if (!products || !Array.isArray(products)) {
+      return <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">Aucun produit trouvé</div>;
+    }
+
+    return (
+      <div className="grid grid-cols-1 gap-3 mt-3">
+        {products.map(product => (
+          <div key={product.sys_id} className="bg-white border border-gray-200 rounded-lg p-4">
+            <h4 className="font-semibold text-blue-700 m-0">{product.name}</h4>
+            <div className="text-gray-600 text-sm mt-1">
+              {product.model_number && <div>Modèle: {product.model_number}</div>}
+              {product.version && <div>Version: {product.version}</div>}
+            </div>
+            {product.short_description && (
+              <p className="text-gray-700 mt-2 text-sm">{product.short_description}</p>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   // Fonctions utilitaires
   const addBotMessage = (text, options = []) => {
@@ -614,28 +500,28 @@ const Chatbot = () => {
 
   const getFollowUpOptions = (intent) => {
     switch(intent) {
-      case 'search':
-        return ["Filtrer les résultats", "Créer une nouvelle spécification"];
-      case 'create':
-        return ["Publier cette spécification", "Voir toutes les spécifications"];
-      case 'publish':
-        return ["Vérifier le statut", "Créer une nouvelle spécification"];
+      case 'search_specs':
+        return ["Filtrer les résultats", "Voir les produits", "Menu principal"];
+      case 'search_kb':
+        return ["Chercher un autre article", "Créer un ticket", "Menu principal"];
+      case 'search_products':
+        return ["Voir les spécifications", "Chercher un article", "Menu principal"];
+      case 'omt_help':
+        return ["Voir plus d'articles", "Créer un ticket OMT", "Menu principal"];
+      case 'create_ticket':
+        return ["Voir mes tickets", "Chercher un article", "Menu principal"];
       default:
-        return [];
+        return [
+          "Lister les spécifications produits",
+          "Rechercher un article de connaissance",
+          "Voir les produits disponibles",
+          "Aide sur OMT",
+          "Créer un ticket"
+        ];
     }
   };
 
   const handleQuickOption = (option) => {
-    if (currentStep === 'confirmation') {
-      if (option.includes("Oui")) {
-        saveSpecification();
-      } else {
-        startSpecCreation();
-        addBotMessage("Très bien, recommençons. Quel est le nom de la spécification?");
-      }
-      return;
-    }
-    
     setInput(option);
     setTimeout(() => {
       handleSendMessage();
@@ -645,7 +531,7 @@ const Chatbot = () => {
   return (
     <div className={`fixed bottom-8 right-8 z-[1000] transition-all duration-300 ease-in-out ${isOpen ? 'open' : ''}`}>
       <button 
-        className="flex items-center bg-cyan-700 text-white border-none py-3.5 px-6 cursor-pointer shadow-md transition-all duration-300 ease-in-out font-medium hover:bg-cyan-600 hover:scale-105"
+        className="flex items-center bg-blue-600 text-white border-none py-3.5 px-6 cursor-pointer shadow-md transition-all duration-300 ease-in-out font-medium hover:bg-blue-700 hover:scale-105 rounded-full"
         onClick={toggleChatbot}
       >
         <div className="w-6 h-6 mr-2.5">
@@ -653,14 +539,14 @@ const Chatbot = () => {
             <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
           </svg>
         </div>
-        <span>Assistant</span>
+        <span>Assistant ServiceNow</span>
       </button>
 
       {isOpen && (
-        <div className="absolute bottom-20 right-0 w-[550px] h-[400px] bg-white rounded-2xl shadow-lg flex flex-col overflow-hidden origin-bottom-right animate-fadeIn">
+        <div className="absolute bottom-20 right-0 w-[550px] h-[500px] bg-white rounded-2xl shadow-lg flex flex-col overflow-hidden origin-bottom-right animate-fadeIn">
           <div className="bg-blue-600 text-white p-4 relative">
-            <h2 className="m-0 text-xl font-semibold">Assistant Spécifications</h2>
-            <p className="mt-2 mb-0 text-sm opacity-90">Comment puis-je vous aider?</p>
+            <h2 className="m-0 text-xl font-semibold">Assistant ServiceNow</h2>
+            <p className="mt-2 mb-0 text-sm opacity-90">Je peux vous aider avec les produits, KB et tickets</p>
             <button 
               className="absolute top-3.5 right-3.5 bg-transparent border-none text-white text-2xl cursor-pointer p-1 transition-transform duration-200 hover:scale-110"
               onClick={toggleChatbot}
@@ -683,7 +569,15 @@ const Chatbot = () => {
                     : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm'
                 }`}>
                   {msg.text}
-                  {msg.data && (msg.intent === 'knowledge' ? formatArticles(msg.data) : formatSpecifications(msg.data))}
+                  
+                  {msg.data && (
+                    <>
+                      {msg.intent === 'search_kb' && formatArticles(msg.data)}
+                      {msg.intent === 'search_specs' && formatSpecifications(msg.data)}
+                      {msg.intent === 'search_products' && formatProducts(msg.data)}
+                      {msg.intent === 'omt_help' && formatArticles(msg.data)}
+                    </>
+                  )}
                   
                   {msg.options && (
                     <div className="flex flex-wrap gap-2.5 mt-3">
