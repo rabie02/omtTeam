@@ -488,43 +488,50 @@ const detectIntent = (text) => {
   };
 
   const formatArticles = (articles) => {
-    if (!articles || !Array.isArray(articles)) {
-      return (
-        <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">
-          Aucun article trouvé.
-        </div>
-      );
-    }
-  
+  if (!articles || !Array.isArray(articles) || articles.length === 0) {
     return (
-      <div className="grid grid-cols-1 gap-3 mt-3">
-        {articles.map((article, index) => (
-          <div
-            key={index}
-            className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 text-sm"
-          >
-            <h4 className="font-semibold text-blue-700 mb-2">{article.name}</h4>
-            <div className="text-gray-600 mb-2">KB{article.number}</div>
-            {article.topic && (
-              <div className="text-gray-700 mb-2">
-                <span className="font-medium">Sujet:</span> {article.topic}
-              </div>
-            )}
-            {article.url && (
-              <a 
-                href={article.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline inline-block mt-2"
-              >
-                Voir l'article complet →
-              </a>
-            )}
-          </div>
-        ))}
+      <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">
+        Aucun article trouvé.
       </div>
     );
-  };
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-3 mt-3">
+      {articles.map((article, index) => (
+        <div
+          key={index}
+          className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 text-sm"
+        >
+          <h4 className="font-semibold text-blue-700 mb-2">{article.short_description}</h4>
+          <table className="table-auto text-left w-full text-gray-700 text-sm">
+            <tbody>
+              {article.number && (
+                <tr>
+                  <td className="font-medium pr-2 py-1">Numéro :</td>
+                  <td>{article.number}</td>
+                </tr>
+              )}
+              {article.topic && (
+                <tr>
+                  <td className="font-medium pr-2 py-1">Sujet :</td>
+                  <td>{article.topic}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          {article.text && (
+            <div className="mt-2 text-gray-800 leading-6">
+              <hr className="my-2" />
+              <div dangerouslySetInnerHTML={{ __html: article.text }} />
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
   
   const formatProducts = (products) => {
     if (!products || !Array.isArray(products)) {
