@@ -108,7 +108,7 @@ module.exports = async (req, res) => {
 
     try {
       await updateCatalogCategoryRelationship(
-        catalogDoc._id,
+        catalogDoc,
         updatedCategory,
         decodedToken.sn_access_token
       );

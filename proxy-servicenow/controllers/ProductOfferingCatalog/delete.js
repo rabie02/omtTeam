@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
             );
         } catch (error) {
             return res.status(500).json({
-                error: 'Failed to create catalog-category relationship',
+                error: 'Failed to delete catalog-category relationship',
                 details: error.message
             });
         }

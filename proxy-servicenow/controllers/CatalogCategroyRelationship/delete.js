@@ -4,6 +4,7 @@ const CatalogCategoryRelationship = require('../../models/CatalogCategoryRelatio
 module.exports = async (catalog, category, token) => {
   // Build query based on provided parameters
   const query = {};
+  
   if (catalog) query.catalog = catalog._id;
   if (category) query.category = category._id;
 
@@ -16,7 +17,7 @@ module.exports = async (catalog, category, token) => {
   const relationships = await CatalogCategoryRelationship.find(query);
 
   if (relationships.length === 0) {
-    throw new Error('No matching Catalog-Category relationships found');
+    return;
   }
 
   // Delete each relationship from both systems
