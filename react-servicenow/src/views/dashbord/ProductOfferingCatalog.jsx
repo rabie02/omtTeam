@@ -3,7 +3,6 @@ import { useDispatch } from 'react-redux';
 import Table from '../../components/dashboard/ProductOfferingCatalog/Table';
 import Form from '../../components/dashboard/ProductOfferingCatalog/Form';
 
-
 function ProductOfferingCatalog() {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState(null);

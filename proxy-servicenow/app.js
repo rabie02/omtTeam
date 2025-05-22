@@ -26,7 +26,7 @@ const priceList = require("./api/PriceList/index")
 
 const Quote = require('./api/quote/index');
 const emailroutes = require('./email/router');
-const createAccount = require('./api/createAccount')
+const createAccount = require('./api/createAccount/index')
 require('dotenv').config();
 
 const app = express();

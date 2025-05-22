@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
 
   // Auto-detect environment: development uses localhost:3000, production uses env var
   const backendUrl = mode === 'development'
-    ? 'http://localhost:5000'
+    ? 'http://localhost:3000'
     : env.VITE_BACKEND_URL
 
   return {
