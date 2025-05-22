@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Table from '../../components/dashbord/ProductOffering/Table';
-import Form from '../../components/dashbord/ProductOffering/Form';
-import { getall as getSpecs } from '../../features/servicenow/product-specification/productSpecificationSlice';
+import Table from '../../components/dashboard/ProductOffering/Table';
+import Form from '../../components/dashboard/ProductOffering/Form';
+import { getPublished as getSpecs } from '../../features/servicenow/product-specification/productSpecificationSlice';
 import { getall as getCats } from '../../features/servicenow/product-offering/productOfferingCategorySlice';
 import { getall as getChannels } from '../../features/servicenow/channel/channelSlice';
 import { useDispatch, useSelector } from 'react-redux';
@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from 'react-redux';
 function ProductOffering() {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState(null); 
-
+  const [searchQuery, setSearchQuery] = useState(null);
   const dispatch = useDispatch();
   // Selectors
   const { data: specs, loading: specsLoading, error: specsError } = useSelector(
@@ -22,26 +22,29 @@ function ProductOffering() {
     useSelector((state) => state.channel);
   useEffect(() => {
       if (localStorage.getItem('access_token')) {
-        dispatch(getSpecs());
+        dispatch(getSpecs({ page: 1, limit: 99 }));
         dispatch(getCats({ page: 1, limit: 99 }));
         dispatch(getChannels());
       } else {
         console.error('Auth token not found. Please login.');
       }
     }, [dispatch]);
+    // console.log(specs);
 
   const options = {specifications: specs, categories: cats, channels: channels}
 
   return (
     <>
       <div className='h-svh'>
-        <div className='h-36 bg-cyan-700/40 flex items-end py-3 px-20'>
+        <div className='h-36 bg-gradient-to-b from-cyan-700  from-10% to-cyan-700/40  to-90%  flex items-end py-3 px-20'>
           <div className='flex w-full justify-between'>
 
             <div className="relative w-48 transition-all focus-within:w-56 ">
               <input
                 type="text"
                 placeholder="Search..."
+                value={searchQuery || ''}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 id="searchInput"
                 className="w-full py-2 pl-10 pr-4 text-gray-700 bg-white border outline-none transition-all border-gray-300"
               />
@@ -70,7 +73,7 @@ function ProductOffering() {
         </div>
 
         <div className='flex justify-center items-center py-5'>
-          <Table setData={setData} setOpen={setOpen} dispatch={dispatch} ></Table>
+          <Table setData={setData} setOpen={setOpen} dispatch={dispatch} searchQuery={searchQuery}></Table>
         </div>
          
          <Form open={open} setOpen={setOpen} initialData={data} options={options} dispatch={dispatch}></Form>

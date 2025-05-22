@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import Table from '../../components/dashbord/ProductOfferingCatalog/Table';
-import Form from '../../components/dashbord/ProductOfferingCatalog/Form';
+import Table from '../../components/dashboard/ProductOfferingCatalog/Table';
+import Form from '../../components/dashboard/ProductOfferingCatalog/Form';
 
 
 function ProductOfferingCatalog() {

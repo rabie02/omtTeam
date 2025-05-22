@@ -16,6 +16,13 @@ const ProductOfferingCategory = require('./api/ProductOfferingCategory/index')
 const ProductOffering = require('./api/ProductOffering/index')
 const channel = require('./api/channel/index')
 const ProductSpecification = require('./api/ProductSpecification/index');
+const AiSearch = require('./api/ai-search/index')
+const measurmentUnit = require('./api/unit-of-measurment/index')
+const account = require('./api/account/index')
+const opportunity = require("./api/opportunity/index");
+const ProductOfferingPrice = require("./api/productOfferingPrice/index")
+const opportunityLine = require("./api/OpportunityLine/index")
+const priceList = require("./api/PriceList/index")
 
 const Quote = require('./api/quote/index');
 const emailroutes = require('./email/router');
@@ -82,6 +89,7 @@ if (process.env.NODE_ENV === 'development') {
 app.use('/api', [
   authRoutes,    // Login
   signupRoutes,  // Registration + confirmation
+    
     ProductSpecification,
     emailroutes,
     createAccount,
@@ -98,7 +106,16 @@ app.use('/api', authjwt , [
   ProductOffering,
   channel,
   ProductSpecification,
+  AiSearch,
+  measurmentUnit,
+  account,
+  priceList,
+  opportunity,
+  opportunityLine,
+  ProductOfferingPrice
 ]);
+
+
 
 
 
