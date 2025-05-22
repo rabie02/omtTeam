@@ -40,16 +40,16 @@ const Chatbot = () => {
   // Articles par défaut pour requêtes spéciales
   const DEFAULT_ARTICLES = {
     "omt": {
-      name: "Guide complet OMT (Order Management Template)",
+      short_description: "Guide complet OMT (Order Management Template)",
       number: "KB0012345",
       topic: "Order Management",
-      text: "L'OMT est un template standard pour la gestion des commandes dans ServiceNow. Il inclut des workflows prédéfinis et des bonnes pratiques pour le processus de commande."
+      text: "<p>L'OMT est un template standard pour la gestion des commandes dans ServiceNow. Il inclut :</p><ul><li>Workflows prédéfinis</li><li>Bonnes pratiques</li><li>Processus de commande standardisé</li></ul><p>Pour accéder au template : <strong>OMT > Gestion des commandes</strong></p>"
     },
     "produit": {
-      name: "Catalogue des produits disponibles",
+      short_description: "Catalogue des produits disponibles",
       number: "KB0023456",
       topic: "Produits",
-      text: "Notre catalogue contient tous les produits disponibles avec leurs spécifications techniques. Consultez la liste complète dans la section Produits."
+      text: "<p>Notre catalogue contient tous les produits disponibles avec leurs spécifications techniques :</p><ol><li>Connectivité</li><li>Forfaits</li><li>Matériel</li><li>Services</li></ol>"
     }
   };
 
@@ -80,6 +80,38 @@ const Chatbot = () => {
     }
   };
 
+  const advancedResponseLogic = (userInput, context) => {
+    const input = userInput.toLowerCase();
+    
+    // Détection d'urgence
+    if (/(urgent|important|critique|bloquant)/.test(input)) {
+      return {
+        priority: 'high',
+        response: "Je vois que votre demande semble urgente. Je vais prioriser cela."
+      };
+    }
+    
+    // Détection de problème technique
+    if (/(erreur|bug|problème|ne marche pas|planté)/.test(input)) {
+      return {
+        needsTicket: true,
+        response: "Il semble que vous rencontrez un problème technique. Voulez-vous créer un ticket?"
+      };
+    }
+    
+    // Détection de demande d'information
+    if (/(quoi|comment|pourquoi|quand|où|que faire)/.test(input)) {
+      return {
+        knowledgeSearch: true,
+        response: "Je vais chercher dans nos articles de connaissance pour vous."
+      };
+    }
+    
+    return {
+      response: "Je vais traiter votre demande."
+    };
+  };
+
   const handleSendMessage = async () => {
     if (!input.trim() || loading) return;
 
@@ -89,6 +121,25 @@ const Chatbot = () => {
     setLoading(true);
 
     try {
+      // Analyse avancée de la demande
+      const advancedAnalysis = advancedResponseLogic(input, context);
+      
+      if (advancedAnalysis.priority === 'high') {
+        addBotMessage(advancedAnalysis.response);
+      }
+      
+      if (advancedAnalysis.needsTicket && !currentStep) {
+        setCurrentStep('ticket_short_description');
+        addBotMessage(advancedAnalysis.response, ["Oui, créer un ticket", "Non, juste une question"]);
+        setLoading(false);
+        return;
+      }
+      
+      if (advancedAnalysis.knowledgeSearch && !currentStep) {
+        addBotMessage(advancedAnalysis.response);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
       if (currentStep) {
         await processStepResponse(input);
       } else {
@@ -106,7 +157,7 @@ const Chatbot = () => {
       }
     } catch (error) {
       console.error("Erreur chatbot:", error);
-      addBotMessage("Désolé, je n'ai pas compris. Pouvez-vous reformuler votre demande?");
+      addBotMessage("Désolé, je n'ai pas pu traiter votre demande. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
@@ -144,21 +195,11 @@ const Chatbot = () => {
         break;
         
       case 'omt_help':
-        // Vérifie d'abord si on a un article par défaut
-        if (DEFAULT_ARTICLES.omt) {
-          response = {
-            text: "Voici des informations sur OMT (Order Management Template):",
-            data: [DEFAULT_ARTICLES.omt],
-            intent: 'omt_help'
-          };
-        } else {
-          const omtArticles = await searchKnowledgeArticles("OMT");
-          response = {
-            text: omtArticles.length ? "Voici des articles sur OMT:" : "Aucun article trouvé sur OMT.",
-            data: omtArticles,
-            intent: 'omt_help'
-          };
-        }
+        response = {
+          text: "Voici des informations sur OMT (Order Management Template):",
+          data: [DEFAULT_ARTICLES.omt],
+          intent: 'omt_help'
+        };
         break;
         
       case 'create_ticket':
@@ -201,9 +242,7 @@ const Chatbot = () => {
   };
 
   const processStepResponse = async (input) => {
-    // Recherche dans la base de connaissances
     if (currentStep === 'knowledge_query') {
-      // Vérifie d'abord les requêtes spéciales
       if (input.toLowerCase().includes("omt")) {
         setCurrentStep(null);
         addBotMessage("Voici des informations sur OMT:", [], [DEFAULT_ARTICLES.omt]);
@@ -239,15 +278,14 @@ const Chatbot = () => {
       return;
     }
     
-    // Création de ticket
     if (currentStep === 'ticket_short_description') {
       setContext({ ticket: { short_description: input } });
       setCurrentStep('ticket_priority');
       addBotMessage("Merci. Quelle est la priorité de ce ticket?", [
-        "1 - Critique",
-        "2 - Élevée",
-        "3 - Moyenne",
-        "4 - Faible"
+        "1 - Critique (Impact majeur)",
+        "2 - Élevée (Impact important)",
+        "3 - Moyenne (Impact limité)",
+        "4 - Faible (Impact mineur)"
       ]);
       return;
     }
@@ -316,34 +354,27 @@ const Chatbot = () => {
     addBotMessage("Je n'ai pas compris. Pouvez-vous répéter?");
   };
 
-  // Détection d'intention améliorée avec tolérance aux fautes
   const detectIntent = (text) => {
     text = text.toLowerCase();
     
-    // Salutations
     if (/(bonjour|salut|coucou|hello|hi)/.test(text)) return 'greeting';
     
-    // Spécifications produits
     if (/(liste|afficher|voir|donner|chercher|recherche|trouver|spécification|spec|fiche)/.test(text)) {
       return 'search_specs';
     }
     
-    // Base de connaissances
     if (/(article|connaissance|kb|base de donnée|aide|faq|question|solution|problème)/.test(text)) {
       return 'search_kb';
     }
     
-    // Produits
     if (/(produit|offre|service|forfait|abonnement)/.test(text)) {
       return 'search_products';
     }
     
-    // OMT
     if (/(omt|order management|template|commande)/.test(text)) {
       return 'omt_help';
     }
     
-    // Tickets
     if (/(ticket|incident|problème|bug|erreur|souci|demande|aide)/.test(text)) {
       return 'create_ticket';
     }
@@ -351,7 +382,6 @@ const Chatbot = () => {
     return 'help';
   };
 
-  // Fonctions ServiceNow
   const searchSpecifications = async (query = '') => {
     try {
       const params = {
@@ -391,7 +421,7 @@ const Chatbot = () => {
       });
       
       return response.data.result.map(article => ({
-        name: article.short_description,
+        short_description: article.short_description,
         number: article.number,
         topic: article.topic,
         text: article.text,
@@ -410,7 +440,7 @@ const Chatbot = () => {
         auth: SN_CONFIG.auth,
         params: {
           sysparm_limit: 10,
-          sysparm_query: 'install_status=1', // 1 = Installé
+          sysparm_query: 'install_status=1',
           sysparm_fields: 'name,model_number,version,sys_id,short_description'
         }
       });
@@ -436,7 +466,6 @@ const Chatbot = () => {
     }
   };
 
-  // Formatage des données
   const formatSpecifications = (specs) => {
     if (!specs || !Array.isArray(specs)) {
       return <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">Aucune donnée disponible</div>;
@@ -484,11 +513,27 @@ const Chatbot = () => {
             key={index}
             className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 text-sm"
           >
-            <h4 className="font-semibold text-blue-700 mb-2">{article.name}</h4>
-            <div className="text-gray-600 mb-2">KB{article.number}</div>
-            {article.topic && (
-              <div className="text-gray-700 mb-2">
-                <span className="font-medium">Sujet:</span> {article.topic}
+            <h4 className="font-semibold text-blue-700 mb-2">{article.short_description}</h4>
+            <table className="table-auto text-left w-full text-gray-700 text-sm">
+              <tbody>
+                {article.number && (
+                  <tr>
+                    <td className="font-medium pr-2 py-1">Numéro :</td>
+                    <td>{article.number}</td>
+                  </tr>
+                )}
+                {article.topic && (
+                  <tr>
+                    <td className="font-medium pr-2 py-1">Sujet :</td>
+                    <td>{article.topic}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            {article.text && (
+              <div className="mt-2 text-gray-800 leading-6">
+                <hr className="my-2" />
+                <div dangerouslySetInnerHTML={{ __html: article.text }} />
               </div>
             )}
             {article.url && (
@@ -530,7 +575,6 @@ const Chatbot = () => {
     );
   };
 
-  // Fonctions utilitaires
   const addBotMessage = (text, options = [], data = null) => {
     const newMessage = { text, sender: 'bot', options };
     if (data) {
