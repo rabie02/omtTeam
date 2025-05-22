@@ -81,7 +81,6 @@ const priceListSlice = createSlice({
         state.loading = true;
       })
       .addCase(createPriceList.fulfilled, (state, action) => {
-        console.log(action)
         state.priceLists.unshift(action.payload);
         state.loading = false;
       })
@@ -108,6 +107,9 @@ const priceListSlice = createSlice({
         state.loading = true;
       })
       .addCase(deletePriceList.fulfilled, (state, action) => {
+        console.log(action.payload)
+        console.log(state.priceLists)
+        state.priceLists = state.priceLists.filter(p => p.id !== action.payload.mongoId);
         state.loading = false;
         
       })

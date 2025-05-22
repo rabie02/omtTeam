@@ -96,11 +96,9 @@ function OpportunityForm({ open, setOpen, dispatch }) {
     dispatch(getStages());
     dispatch(getAccounts());
     dispatch(getUnitOfMeasures());
-    dispatch(getProductOfferings());
+    dispatch(getProductOfferings({ page: 1, limit: 6}));
     dispatch(getPriceList());
   }, [dispatch]);
-
-  
 
   const formik = useFormik({
     initialValues: {
@@ -169,57 +167,21 @@ function OpportunityForm({ open, setOpen, dispatch }) {
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
       try {
-        
         dispatch(workflow(values));
-        // // Step 1: Create opportunity
-        // const opportunityResponse = await dispatch(createOpportunity(values.opportunity)).unwrap();
-        
-        // // Step 2: Use existing or create new price list
-        // let priceListId;
-        // if (values.createNewPriceList) {
-        //   const priceListResponse = await dispatch(createPriceList({
-        //     ...values.priceList,
-        //     account: values.opportunity.account
-        //   })).unwrap();
-        //   priceListId = priceListResponse.sys_id;
-        // } else {
-        //   priceListId = values.selectedPriceList;
-        // }
-
-        // // Step 3: Create product offering prices
-        // const productOfferingPrices = await Promise.all(
-        //   values.productOfferings.map(async (productOffering) => {
-        //     const response = await dispatch(createProductOfferingPrice({
-        //       ...productOffering,
-        //       priceList: { id: priceListId }
-        //     })).unwrap();
-        //     return response.id;
-        //   })
-        // );
-
-        // // Step 4: Create opportunity line items
-        // await Promise.all(
-        //   values.productOfferings.map((productOffering, index) => (
-        //     dispatch(createOpportunityLineItem({
-        //       price_list: priceListId,
-        //       product_offering: productOffering.productOffering.id,
-        //       opportunity: opportunityResponse.sys_id,
-        //       unit_of_measurement: productOffering.unitOfMeasure.id,
-        //       quantity: values.opportunityLineItem.quantity,
-        //       term_month: values.opportunityLineItem.term_month
-        //     }))
-        //   ))
-        // );
-
-        
-
+        notification.success({
+              message: 'Opportunity Created',
+              description: 'New Opportunity has been created successfully',
+            });
         message.success('Opportunity created successfully!');
         setOpen(false);
         resetForm();
         setCurrentStep(0);
       } catch (error) {
         console.error('Submission error:', error);
-        message.error('Failed to create opportunity. Please try again.');
+        notification.error({
+          message: 'Operation Failed',
+          description: error.message || 'Failed to create opportunity. Please try again.',
+        });
       }
     },
   });

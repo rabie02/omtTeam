@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Popconfirm, Pagination, Spin, Empty, notification, Table } from 'antd';
+import { Popconfirm, Pagination, Spin, Empty, notification, Table, Tooltip } from 'antd';
 import { getall, deleteProductOffering, updateProductOfferingStatus } from '../../../features/servicenow/product-offering/productOfferingSlice';
 
 function ProductOfferingTable({ setData, setOpen, searchQuery }) {
@@ -138,41 +138,52 @@ function ProductOfferingTable({ setData, setOpen, searchQuery }) {
             key: 'actions',
             render: (_, product) => (
                 <div className="flex">
-                    <Popconfirm
-                        title={`${getStatusAction(product.status).action} Product offering`}
-                        description={`Are you sure you want to ${getStatusAction(product.status).action.toLowerCase()} this product offering?`}
-                        icon={<i className="ri-error-warning-line text-yellow-600 text-md mr-2"></i>}
-                        onConfirm={() => handleUpdateStatus(product._id, getStatusAction(product.status).newStatus)}
-                    >
-                        <button className="mr-1 text-gray-500 hover:text-green-600">
-                            <i className="ri-loop-right-line text-2xl"></i>
-                        </button>
-                    </Popconfirm>
-                    {product.status === "draft" && (
-                        <button
-                            className="text-gray-500 hover:text-blue-600"
-                            onClick={() => changeData(product)}
+                    <Tooltip title={`${getStatusAction(product.status).action} This Product Offering`}>
+                        <Popconfirm
+                            title={`${getStatusAction(product.status).action} Product offering`}
+                            description={`Are you sure you want to ${getStatusAction(product.status).action.toLowerCase()} this product offering?`}
+                            icon={<i className="ri-error-warning-line text-yellow-600 text-md mr-2"></i>}
+                            onConfirm={() => handleUpdateStatus(product._id, getStatusAction(product.status).newStatus)}
                         >
-                            <i className="ri-pencil-line text-2xl"></i>
-                        </button>
+                            <button className="text-gray-500 hover:text-green-600">
+                                <i className="ri-loop-right-line text-2xl"></i>
+                            </button>
+                        </Popconfirm>
+                    </Tooltip>
+                    <Tooltip title="Delete This Product Offering">
+                        <Popconfirm
+                            title="Delete the Product Offering"
+                            description="Are you sure to delete this Product Offering?"
+                            icon={<i className="ri-error-warning-line text-red-600 mr-2"></i>}
+                            onConfirm={() => handleDelete(product._id)}
+                        >
+                            <button className="mx-2 text-gray-500 hover:text-red-600">
+                                <i className="ri-delete-bin-6-line text-2xl"></i>
+                            </button>
+                        </Popconfirm>
+                    </Tooltip>
+                     {product.status === "draft" && (
+                        <Tooltip title="Update This Product Offering">
+                            <button
+                                className="text-gray-500 hover:text-blue-600"
+                                onClick={() => changeData(product)}
+                            >
+                                <i className="ri-pencil-line text-2xl"></i>
+                            </button>
+                        </Tooltip>
                     )}
-                    <Popconfirm
-                        title="Delete the Product Offering"
-                        description="Are you sure to delete this Product Offering?"
-                        icon={<i className="ri-error-warning-line text-red-600 mr-2"></i>}
-                        onConfirm={() => handleDelete(product._id)}
-                    >
-                        <button className="ml-1 text-gray-500 hover:text-red-600">
-                            <i className="ri-delete-bin-6-line text-2xl"></i>
-                        </button>
-                    </Popconfirm>
                 </div>
             )
         }
     ];
 
     if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
-    if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
+    if (error) {
+        notification.error({
+                message: 'Update Failed',
+                description: error.message || 'Failed to update Product Offering status. Please try again.',
+            });
+    }
 
     return (
         <div className='w-full justify-center flex'>

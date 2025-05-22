@@ -5,8 +5,7 @@ import {useSelector} from 'react-redux';
 
 const OpportunityStep1 = ({ formik }) => {
   const { salesCycleTypes, stages, accounts } = useSelector((state) => state.opportunity);
-  console.log(JSON.stringify(stages,null, 2));
-  console.log(JSON.stringify(salesCycleTypes,null,2));
+  
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium">Opportunity Details</h3>

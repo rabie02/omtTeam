@@ -7,8 +7,10 @@ import {useSelector} from 'react-redux';
 import { formatDateForInput } from '@/utils/formatDateForInput.js';
 
 const OpportunityStep3 = ({ formik }) => {
-  const { productOfferings: allOfferings, unitOfMeasures } = useSelector((state) => state.opportunity);
-  
+  const { unitOfMeasures, productOfferings: allOfferings } = useSelector((state) => ({
+      ...state.opportunity,
+      productOfferings: state.productOffering.data || [],
+    }));
   const addProductOffering = () => {
     
     formik.setFieldValue('productOfferings', [
@@ -27,6 +29,8 @@ const OpportunityStep3 = ({ formik }) => {
       }
     ]);
   };
+
+
 
   const removeProductOffering = (index) => {
     const newOfferings = [...formik.values.productOfferings];
@@ -116,7 +120,7 @@ const OpportunityStep3 = ({ formik }) => {
               options={allOfferings
                 .filter(po => po.status === "published")
                 .map(po => ({
-                  value: po.sys_id,
+                  value: po._id,
                   label: po.name
                 }))}
               
@@ -170,7 +174,7 @@ const OpportunityStep3 = ({ formik }) => {
             formik={formik}
               label="Valid From*"
               name={`productOfferings[${index}].validFor.startDateTime`}
-              type="datetime-local"
+              type="date"
               value={offering.validFor.startDateTime}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
@@ -181,7 +185,7 @@ const OpportunityStep3 = ({ formik }) => {
             formik={formik}
               label="Valid Until"
               name={`productOfferings[${index}].validFor.endDateTime`}
-              type="datetime-local"
+              type="date"
               value={offering.validFor.endDateTime}
               onChange={formik.handleChange}
             />

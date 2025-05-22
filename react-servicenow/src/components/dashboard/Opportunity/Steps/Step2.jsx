@@ -86,7 +86,7 @@ const OpportunityStep2 = ({ formik }) => {
             .filter(pl => pl.state === 'published')
             .map(pl => ({
               value: pl.sys_id,
-              label: `${pl.name} (${pl.currency.value})`
+              label: `${pl.name} (${pl.currency})`
             }))}
             onChange={formik.handleChange}
         onBlur={formik.handleBlur}

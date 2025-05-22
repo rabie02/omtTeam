@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Popconfirm, Empty, Spin, Table, Tag, Button } from 'antd';
+import { Popconfirm, Empty, Spin, Table, notification, Tooltip} from 'antd';
 import { 
   getOpportunities,
   deleteOpportunity,
@@ -21,17 +21,22 @@ function OpportunityTable({ setOpenForm }) {
   }, [dispatch]);
   
   const handleDelete = async (opportunityId) => {
-    await dispatch(deleteOpportunity(opportunityId));
-    dispatch(getOpportunities());
+    try {
+      await dispatch(deleteOpportunity(opportunityId));
+      notification.success({
+          message: 'Price List Deleted',
+          description: 'Price List has been deleted successfully',
+      });
+      dispatch(getOpportunities());
+    } catch (error) {
+        console.error('Deletion failed:', error);
+        notification.error({
+            message: 'Deletion Failed',
+            description: error.message || 'Failed to delete Price List. Please try again.',
+        });
+    }
   };
 
-  const handleUpdateStatus = async (opportunityId, newStatus) => {
-    await dispatch(updateOpportunityStatus({
-      id: opportunityId,
-      status: newStatus
-    }));
-    dispatch(getOpportunities());
-  };
 
   const columns = [
     {
@@ -98,7 +103,9 @@ function OpportunityTable({ setOpenForm }) {
             description="Are you sure to delete this opportunity?"
             onConfirm={() => handleDelete(record._id)}
           >
-            <Button type="text" danger icon={<i className="ri-delete-bin-6-line" />} />
+            <button className="mx-2 text-gray-500 hover:text-red-600">
+                <i className="ri-delete-bin-6-line text-2xl"></i>
+            </button>
           </Popconfirm>
         </div>
       ),
@@ -106,7 +113,13 @@ function OpportunityTable({ setOpenForm }) {
   ];
 
   if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
-  if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
+  if (error) {
+    console.log(error)
+      notification.error({
+              message: 'creation Failed',
+              description: error.message || 'Failed to create opportunity. Please try again.',
+          });
+  }
 
   return (
     <div className="space-y-4">

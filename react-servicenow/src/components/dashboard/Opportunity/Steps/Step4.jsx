@@ -13,20 +13,20 @@ const OpportunityStep4 = ({ formik }) => {
     opportunityLineItem
   } = formik.values;
 
-  const { productOfferings: allOfferings, unitOfMeasures, accounts } = useSelector(
-    (state) => state.opportunity
+  const { unitOfMeasures, accounts } = useSelector(
+    (state) =>   state.opportunity
   );
   const { priceLists } = useSelector((state) => state.priceList);
-
-
+  const { data: allOfferings } = useSelector((state) => state.productOffering);
+  console.log(allOfferings)
   const getSelectedPriceList = () => {
     if (createNewPriceList) return priceList;
     return priceLists.find(pl => pl.sys_id === selectedPriceList);
   };
 
   const getOfferingName = (id) => {
-    console.log(allOfferings)
-    const offering = allOfferings.find(o => o.sys_id||o.id === id);
+    console.log(id)
+    const offering = allOfferings.find(o => o._id === id);
     console.log(offering)
     return offering ? offering.name : 'Not found';
   };
@@ -43,8 +43,7 @@ const OpportunityStep4 = ({ formik }) => {
     return account ? account.name : 'Not found';
   }
 
-  console.log(JSON.stringify(productOfferings,null, 2));
-  
+  console.log(productOfferings)
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-medium">Opportunity Summary</h3>
