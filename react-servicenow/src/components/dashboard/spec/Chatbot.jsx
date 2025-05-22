@@ -132,7 +132,7 @@ const Chatbot = () => {
         
         const publishedSpec = await publishSpecification(specId);
         response = {
-          text: Spécification ${publishedSpec.name} publiée avec succès!,
+          text: `Spécification ${publishedSpec.name} publiée avec succès!`,
           sender: 'bot',
           data: [publishedSpec],
           intent: 'publish',
