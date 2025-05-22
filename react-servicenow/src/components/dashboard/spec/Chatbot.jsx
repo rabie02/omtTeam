@@ -120,14 +120,6 @@ const Chatbot = () => {
         }
         break;
         
-      case 'create':
-        startSpecCreation();
-        return {
-          text: "Commençons par créer une nouvelle spécification. Quel est le nom de la spécification?",
-          sender: 'bot',
-          intent: 'create'
-        };
-        
       case 'publish':
         const specId = context?.lastCreatedId || extractSpecId(userInput);
         if (!specId) {
@@ -422,11 +414,6 @@ const Chatbot = () => {
       return 'create';
     }
   
-    if (/(publier|valider|finaliser|activer)/.test(text) && 
-        /(spécification|spec|fiche)/.test(text)) {
-      return 'publish';
-    }
-  
     if (/(article|connaissance|aide|faq|question)/.test(text) || 
         text.includes("afficher des articles de connaissance")) {
       return 'knowledge';
@@ -614,7 +601,7 @@ const Chatbot = () => {
   const getFollowUpOptions = (intent) => {
     switch(intent) {
       case 'search':
-        return ["Filtrer les résultats", "Créer une nouvelle spécification"];
+        return ["Filtrer les résultats", "Publier une spécification"];
       case 'create':
         return ["Publier cette spécification", "Voir toutes les spécifications"];
       case 'publish':
