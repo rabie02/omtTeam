@@ -10,7 +10,7 @@ const Chatbot = () => {
       options: [
         "Lister les spécifications produits",
         "Rechercher un article de connaissance",
-        "Voir les produits disponibles",
+        "Voir les offres produits",
         "Aide sur OMT",
         "Créer un ticket"
       ]
@@ -24,16 +24,32 @@ const Chatbot = () => {
 
   // Configuration ServiceNow
   const SN_CONFIG = {
-    baseURL: import.meta.env.VITE_SN_URL || 'https://dev12345.service-now.com',
+    baseURL: 'https://dev323456.service-now.com',
     auth: {
-      username: import.meta.env.VITE_SN_USER || 'admin',
-      password: import.meta.env.VITE_SN_PASS || 'password'
+      username: 'admin',
+      password: 'bz!T-1ThIc1L'
     },
     endpoints: {
       searchSpecs: '/api/now/table/sn_prd_pm_product_specification',
       searchKB: '/api/now/table/kb_knowledge',
       searchProducts: '/api/now/table/cmdb_ci_product',
       createIncident: '/api/now/table/incident'
+    }
+  };
+
+  // Articles par défaut pour requêtes spéciales
+  const DEFAULT_ARTICLES = {
+    "omt": {
+      name: "Guide complet OMT (Order Management Template)",
+      number: "KB0012345",
+      topic: "Order Management",
+      text: "L'OMT est un template standard pour la gestion des commandes dans ServiceNow. Il inclut des workflows prédéfinis et des bonnes pratiques pour le processus de commande."
+    },
+    "produit": {
+      name: "Catalogue des produits disponibles",
+      number: "KB0023456",
+      topic: "Produits",
+      text: "Notre catalogue contient tous les produits disponibles avec leurs spécifications techniques. Consultez la liste complète dans la section Produits."
     }
   };
 
@@ -56,7 +72,7 @@ const Chatbot = () => {
         options: [
           "Lister les spécifications produits",
           "Rechercher un article de connaissance",
-          "Voir les produits disponibles",
+          "Voir les offres produits",
           "Aide sur OMT",
           "Créer un ticket"
         ]
@@ -90,13 +106,12 @@ const Chatbot = () => {
       }
     } catch (error) {
       console.error("Erreur chatbot:", error);
-      addBotMessage("Désolé, une erreur s'est produite. Pouvez-vous reformuler votre demande?");
+      addBotMessage("Désolé, je n'ai pas compris. Pouvez-vous reformuler votre demande?");
     } finally {
       setLoading(false);
     }
   };
 
-  // Traitement intelligent de l'entrée utilisateur
   const processUserInput = async (userInput) => {
     const intent = detectIntent(userInput);
     let response;
@@ -122,19 +137,28 @@ const Chatbot = () => {
       case 'search_products':
         const products = await searchProducts();
         response = {
-          text: products.length ? "Voici les produits disponibles:" : "Aucun produit trouvé.",
+          text: products.length ? "Voici nos offres produits disponibles:" : "Aucun produit trouvé.",
           data: products,
           intent: 'search_products'
         };
         break;
         
       case 'omt_help':
-        const omtArticles = await searchKnowledgeArticles("OMT");
-        response = {
-          text: omtArticles.length ? "Voici des articles sur OMT (Order Management Template):" : "Aucun article trouvé sur OMT.",
-          data: omtArticles,
-          intent: 'omt_help'
-        };
+        // Vérifie d'abord si on a un article par défaut
+        if (DEFAULT_ARTICLES.omt) {
+          response = {
+            text: "Voici des informations sur OMT (Order Management Template):",
+            data: [DEFAULT_ARTICLES.omt],
+            intent: 'omt_help'
+          };
+        } else {
+          const omtArticles = await searchKnowledgeArticles("OMT");
+          response = {
+            text: omtArticles.length ? "Voici des articles sur OMT:" : "Aucun article trouvé sur OMT.",
+            data: omtArticles,
+            intent: 'omt_help'
+          };
+        }
         break;
         
       case 'create_ticket':
@@ -152,7 +176,7 @@ const Chatbot = () => {
           options: [
             "Lister les spécifications produits",
             "Rechercher un article de connaissance",
-            "Voir les produits disponibles",
+            "Voir les offres produits",
             "Aide sur OMT",
             "Créer un ticket"
           ]
@@ -166,7 +190,7 @@ const Chatbot = () => {
           options: [
             "Lister les spécifications produits",
             "Rechercher un article de connaissance",
-            "Voir les produits disponibles",
+            "Voir les offres produits",
             "Aide sur OMT",
             "Créer un ticket"
           ]
@@ -179,6 +203,19 @@ const Chatbot = () => {
   const processStepResponse = async (input) => {
     // Recherche dans la base de connaissances
     if (currentStep === 'knowledge_query') {
+      // Vérifie d'abord les requêtes spéciales
+      if (input.toLowerCase().includes("omt")) {
+        setCurrentStep(null);
+        addBotMessage("Voici des informations sur OMT:", [], [DEFAULT_ARTICLES.omt]);
+        return;
+      }
+      
+      if (input.toLowerCase().includes("produit")) {
+        setCurrentStep(null);
+        addBotMessage("Voici des informations sur nos produits:", [], [DEFAULT_ARTICLES.produit]);
+        return;
+      }
+      
       const articles = await searchKnowledgeArticles(input);
       setCurrentStep(null);
     
@@ -401,7 +438,7 @@ const Chatbot = () => {
 
   // Formatage des données
   const formatSpecifications = (specs) => {
-    if (!specs || !Array.isArray(specs) {
+    if (!specs || !Array.isArray(specs)) {
       return <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">Aucune donnée disponible</div>;
     }
 
@@ -432,7 +469,7 @@ const Chatbot = () => {
   };
 
   const formatArticles = (articles) => {
-    if (!articles || !Array.isArray(articles) {
+    if (!articles || !Array.isArray(articles)) {
       return (
         <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">
           Aucun article trouvé.
@@ -494,8 +531,13 @@ const Chatbot = () => {
   };
 
   // Fonctions utilitaires
-  const addBotMessage = (text, options = []) => {
-    setMessages(prev => [...prev, { text, sender: 'bot', options }]);
+  const addBotMessage = (text, options = [], data = null) => {
+    const newMessage = { text, sender: 'bot', options };
+    if (data) {
+      newMessage.data = Array.isArray(data) ? data : [data];
+      newMessage.intent = 'search_kb';
+    }
+    setMessages(prev => [...prev, newMessage]);
   };
 
   const getFollowUpOptions = (intent) => {
@@ -514,7 +556,7 @@ const Chatbot = () => {
         return [
           "Lister les spécifications produits",
           "Rechercher un article de connaissance",
-          "Voir les produits disponibles",
+          "Voir les offres produits",
           "Aide sur OMT",
           "Créer un ticket"
         ];
@@ -531,7 +573,7 @@ const Chatbot = () => {
   return (
     <div className={`fixed bottom-8 right-8 z-[1000] transition-all duration-300 ease-in-out ${isOpen ? 'open' : ''}`}>
       <button 
-        className="flex items-center bg-blue-600 text-white border-none py-3.5 px-6 cursor-pointer shadow-md transition-all duration-300 ease-in-out font-medium hover:bg-blue-700 hover:scale-105 rounded-full"
+        className="flex items-center bg-blue-600 text-white border-none rounded-[50px] py-3.5 px-6 cursor-pointer shadow-md transition-all duration-300 ease-in-out font-medium hover:bg-blue-700 hover:scale-105"
         onClick={toggleChatbot}
       >
         <div className="w-6 h-6 mr-2.5">
