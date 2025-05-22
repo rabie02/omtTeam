@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: 'Catalog not synced with ServiceNow (missing sys_id)' });
         }
 
-           try {
+        try {
             await deleteCatalogCategoryRelationship(
                 catalog,
                 null,
@@ -44,6 +44,19 @@ module.exports = async (req, res) => {
         }
 
         const sys_id = catalog.sys_id;
+
+        try {
+            await deleteCatalogCategoryRelationship(
+                catalog,
+                null,
+                decodedToken.sn_access_token
+            );
+        } catch (error) {
+            return res.status(500).json({
+                error: 'Failed to delete catalog-category relationship',
+                details: error.message
+            });
+        }
 
 
         const snResponse = await axios.delete(
@@ -60,18 +73,6 @@ module.exports = async (req, res) => {
             return handleMongoError(res, snResponse.data, mongoError, 'deletion');
         }
 
-        try {
-            await deleteCatalogCategoryRelationship(
-                catalog,
-                null,
-                decodedToken.sn_access_token
-            );
-        } catch (error) {
-            return res.status(500).json({
-                error: 'Failed to delete catalog-category relationship',
-                details: error.message
-            });
-        }
 
 
         res.status(204).end();

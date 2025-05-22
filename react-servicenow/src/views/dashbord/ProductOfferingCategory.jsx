@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
 import Table from '../../components/dashboard/ProductOfferingCategory/Table';
 import Form from '../../components/dashboard/ProductOfferingCategory/Form';
 
 
 function ProductOfferingCategory() {
   const [open, setOpen] = useState(false);
-  const [data, setData] = useState(null); 
+  const [data, setData] = useState(null);
+  const [searchQuery, setSearchQuery] = useState(null);
+  const dispatch = useDispatch();
 
   return (
     <>
@@ -13,10 +16,12 @@ function ProductOfferingCategory() {
         <div className='h-36 bg-gradient-to-b from-cyan-700  from-10% to-cyan-700/40  to-90%  flex items-end py-3 px-20'>
           <div className='flex w-full justify-between'>
 
-            <div className="relative w-48 transition-all focus-within:w-56 ">
+            <div className="relative w-48 transition-all focus-within:w-60">
               <input
                 type="text"
                 placeholder="Search..."
+                value={searchQuery || ''}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 id="searchInput"
                 className="w-full py-2 pl-10 pr-4 text-gray-700 bg-white border outline-none transition-all border-gray-300"
               />
@@ -28,7 +33,7 @@ function ProductOfferingCategory() {
             </div>
             <button
               className="overflow-hidden relative w-36 h-10 cursor-pointer flex items-center border border-cyan-700 bg-cyan-700 group hover:bg-cyan-700 active:bg-cyan-700 active:border-cyan-700"
-               onClick={() => {setOpen(true); setData(null)}}
+              onClick={() => { setOpen(true); setData(null) }}
             >
               <span
                 className="text-gray-200 font-semibold ml-12 transform group-hover:translate-x-20 transition-all duration-300"
@@ -45,10 +50,10 @@ function ProductOfferingCategory() {
         </div>
 
         <div className='flex justify-center items-center py-5'>
-          <Table setData={setData} setOpen={setOpen} ></Table>
+          <Table setData={setData} setOpen={setOpen} dispatch={dispatch} searchQuery={searchQuery} ></Table>
         </div>
-         
-         <Form open={open} setOpen={setOpen} initialData={data} ></Form>
+
+        <Form open={open} setOpen={setOpen} initialData={data} dispatch={dispatch} ></Form>
 
 
       </div>
