@@ -229,8 +229,8 @@ function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
                                         bordered
                                         size="small"
                                         pagination={
-                                            record.specifications?.length > 5
-                                                ? { pageSize: 5, showSizeChanger: false }
+                                            record.specifications?.length > 4
+                                                ? { pageSize: 4, showSizeChanger: false }
                                                 : false
                                         }
                                     />

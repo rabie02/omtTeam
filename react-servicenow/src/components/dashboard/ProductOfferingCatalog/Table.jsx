@@ -213,9 +213,9 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
                                         bordered
                                         size="small"
                                         pagination={
-                                            record.categories?.length > 6
+                                            record.categories?.length > 4
                                                 ? {
-                                                    pageSize: 6,
+                                                    pageSize: 4,
                                                     showSizeChanger: false,
                                                 }
                                                 : false
