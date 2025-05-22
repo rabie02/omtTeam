@@ -241,7 +241,7 @@ const Chatbot = () => {
       case 'display_name':
         setSpecData({...specData, display_name: input});
         setCurrentStep('category');
-        addBotMessage(Nom d'affichage enregistré: ${input}. Quelle est la catégorie?, [
+       addBotMessage(`Nom d'affichage enregistré: ${input}. Quelle est la catégorie?`, [
           "connectivity",
           "Forfait",
           "hardware",
@@ -253,13 +253,13 @@ const Chatbot = () => {
       case 'category':
         setSpecData({...specData, category: input});
         setCurrentStep('type');
-        addBotMessage(Catégorie enregistrée: ${input}. Quel est le type?);
+        addBotMessage(`Catégorie enregistrée: ${input}. Quel est le type?`);
         break;
   
       case 'type':
         setSpecData({...specData, type: input});
         setCurrentStep('start_date');
-        addBotMessage(Type enregistré: ${input}. Quelle est la date de début (format yyyy-MM-dd)?);
+        addBotMessage(`Type enregistré: ${input}. Quelle est la date de début (format yyyy-MM-dd)?`);
         break;
   
       case 'start_date':
@@ -269,7 +269,7 @@ const Chatbot = () => {
         }
         setSpecData({...specData, start_date: input});
         setCurrentStep('end_date');
-        addBotMessage(Date de début enregistrée: ${input}. Quelle est la date de fin (format yyyy-MM-dd)?);
+        addBotMessage(`Date de début enregistrée: ${input}. Quelle est la date de fin (format yyyy-MM-dd)?`);
         break;
   
       case 'end_date':
@@ -279,13 +279,13 @@ const Chatbot = () => {
         }
         setSpecData({...specData, end_date: input});
         setCurrentStep('owner');
-        addBotMessage(Date de fin enregistrée: ${input}. Qui est le propriétaire?);
+        addBotMessage(`Date de fin enregistrée: ${input}. Qui est le propriétaire?`);
         break;
   
       case 'owner':
         setSpecData({...specData, owner: input});
         setCurrentStep('description');
-        addBotMessage(Propriétaire enregistré: ${input}. Veuillez fournir une description.);
+        addBotMessage(`Propriétaire enregistré: ${input}. Veuillez fournir une description.`);
         break;
   
       case 'description':
@@ -297,19 +297,19 @@ const Chatbot = () => {
       case 'external_code':
         setSpecData({...specData, external_code: input});
         setCurrentStep('line');
-        addBotMessage(Code externe enregistré: ${input}. Quelle est la ligne de produit?);
+        addBotMessage(`Code externe enregistré: ${input}. Quelle est la ligne de produit?`);
         break;
   
       case 'line':
         setSpecData({...specData, line: input});
         setCurrentStep('cost_to_company');
-        addBotMessage(Ligne de produit enregistrée: ${input}. Quel est le coût pour l'entreprise?);
+        addBotMessage(`Ligne de produit enregistrée: ${input}. Quel est le coût pour l'entreprise?`);
         break;
   
       case 'cost_to_company':
         setSpecData({...specData, cost_to_company: input});
         setCurrentStep('composite');
-        addBotMessage(Coût enregistré: ${input}. Est-ce une spécification composite?, [
+        addBotMessage(`Coût enregistré: ${input}. Est-ce une spécification composite?`, [
           "Oui",
           "Non"
         ]);
@@ -319,7 +319,7 @@ const Chatbot = () => {
         const isComposite = input.toLowerCase() === 'oui';
         setSpecData({...specData, composite: isComposite});
         setCurrentStep('installation_required');
-        addBotMessage(Composite: ${isComposite ? 'Oui' : 'Non'}. Une installation est-elle requise?, [
+        addBotMessage(`Composite: ${isComposite ? 'Oui' : 'Non'}. Une installation est-elle requise?`, [
           "Oui",
           "Non"
         ]);
@@ -329,7 +329,7 @@ const Chatbot = () => {
         const installationRequired = input.toLowerCase() === 'oui';
         setSpecData({...specData, installation_required: installationRequired});
         setCurrentStep('location_specific');
-        addBotMessage(Installation requise: ${installationRequired ? 'Oui' : 'Non'}. Est-ce spécifique à un lieu?, [
+        addBotMessage(`Installation requise: ${installationRequired ? 'Oui' : 'Non'}. Est-ce spécifique à un lieu?`, [
           "Oui",
           "Non"
         ]);
@@ -383,7 +383,7 @@ const Chatbot = () => {
 
       const savedSpec = response.data.result;
       setContext({ lastCreatedId: savedSpec.sys_id });
-      addBotMessage(Spécification enregistrée avec succès! Numéro: ${savedSpec.number});
+      addBotMessage(`Spécification enregistrée avec succès! Numéro: ${savedSpec.number}`);
       
       // Reset for new specification
       setCurrentStep(null);
@@ -494,7 +494,7 @@ const Chatbot = () => {
       return response.data.result;
     } catch (error) {
       console.error("Erreur publication:", error);
-      throw new Error(Erreur lors de la publication de la spécification ${specId}.);
+     throw new Error(`Erreur lors de la publication de la spécification ${specId}.`);
     }
   };
 
