@@ -235,7 +235,7 @@ const Chatbot = () => {
       case 'name':
         setSpecData({...specData, name: input});
         setCurrentStep('display_name');
-        addBotMessage(Nom enregistré: ${input}. Quel est le nom d'affichage?);
+        addBotMessage(`Nom enregistré: ${input}. Quel est le nom d'affichage?`);
         break;
   
       case 'display_name':
