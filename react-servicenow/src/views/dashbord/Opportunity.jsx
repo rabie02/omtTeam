@@ -46,13 +46,8 @@ function Opportunity() {
         </div>
 
         <div className='flex justify-center items-center py-5'>
-          {/* <Table setData={setData} setOpen={setOpen} dispatch={dispatch} searchQuery={searchQuery}></Table> */}
           <OpportunityTable setOpenForm={setOpenForm} />
-      
         </div>
-         
-         {/* <Form open={open} setOpen={setOpen} initialData={data} options={options} dispatch={dispatch}></Form> */}
-
         <OpportunityForm open={openForm} setOpen={setOpenForm} dispatch={dispatch} />
       </div>
     </>

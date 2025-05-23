@@ -95,7 +95,10 @@ const productOfferingSchema = new Schema({
     required: false,
   },
   productOfferingTerm: { type: String, required: false, default: "" },
-  productSpecification: { type: productSpecificationSchema, required: false },
+  productSpecification: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ProductSpecification'
+  },
   prodSpecCharValueUse: {
     type: [prodSpecCharValueUseSchema],
     required: false,

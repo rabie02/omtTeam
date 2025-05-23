@@ -25,9 +25,7 @@ const OpportunityStep4 = ({ formik }) => {
   };
 
   const getOfferingName = (id) => {
-    console.log(id)
     const offering = allOfferings.find(o => o._id === id);
-    console.log(offering)
     return offering ? offering.name : 'Not found';
   };
 
@@ -43,7 +41,7 @@ const OpportunityStep4 = ({ formik }) => {
     return account ? account.name : 'Not found';
   }
 
-  console.log(productOfferings)
+  console.log(currentPriceList)
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-medium">Opportunity Summary</h3>
@@ -74,7 +72,7 @@ const OpportunityStep4 = ({ formik }) => {
             {currentPriceList?.name || 'N/A'}
           </Descriptions.Item>
           <Descriptions.Item label="Currency">
-            {currentPriceList?.currency.value || 'N/A'}
+            {currentPriceList?.currency || 'N/A'}
           </Descriptions.Item>
           <Descriptions.Item label="Status">
             <Tag color={currentPriceList?.state === 'published' ? 'green' : 'blue'}>
