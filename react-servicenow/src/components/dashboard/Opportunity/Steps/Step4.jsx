@@ -13,12 +13,12 @@ const OpportunityStep4 = ({ formik }) => {
     opportunityLineItem
   } = formik.values;
 
+
   const { unitOfMeasures, accounts } = useSelector(
     (state) =>   state.opportunity
   );
   const { priceLists } = useSelector((state) => state.priceList);
   const { data: allOfferings } = useSelector((state) => state.productOffering);
-  console.log(allOfferings)
   const getSelectedPriceList = () => {
     if (createNewPriceList) return priceList;
     return priceLists.find(pl => pl.sys_id === selectedPriceList);
@@ -41,7 +41,7 @@ const OpportunityStep4 = ({ formik }) => {
     return account ? account.name : 'Not found';
   }
 
-  console.log(currentPriceList)
+  console.log(JSON.stringify(formik.values,null, 2  ));
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-medium">Opportunity Summary</h3>

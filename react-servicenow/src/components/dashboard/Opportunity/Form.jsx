@@ -187,42 +187,6 @@ function OpportunityForm({ open, setOpen, dispatch }) {
   });
 
   
-
-  // Add a new product offering to the list
-  const addProductOffering = () => {
-    formik.setFieldValue('productOfferings', [
-      ...formik.values.productOfferings,
-      {
-        name: '',
-        price: { unit: 'USD', value: '' },
-        productOffering: { id: '' },
-        unitOfMeasure: { id: '' },
-        priceType: 'recurring',
-        recurringChargePeriodType: 'monthly',
-        validFor: {
-          startDateTime: formatDateForInput(new Date()),
-          endDateTime: ''
-        }
-      }
-    ]);
-  };
-
-  // Remove a product offering from the list
-  const removeProductOffering = (index) => {
-    const newOfferings = [...formik.values.productOfferings];
-    newOfferings.splice(index, 1);
-    formik.setFieldValue('productOfferings', newOfferings);
-  };
-
-  // Update product offering field
-  const updateProductOffering = (index, field, value) => {
-    const newOfferings = [...formik.values.productOfferings];
-    newOfferings[index][field] = value;
-    formik.setFieldValue('productOfferings', newOfferings);
-    // Manually trigger validation for the updated field
-    formik.setFieldTouched(`productOfferings[${index}].${field}`, true, false);
-  };
-
   const handleCancel = () => {
     setOpen(false);
     formik.resetForm();
@@ -292,41 +256,6 @@ function OpportunityForm({ open, setOpen, dispatch }) {
     setCurrentStep(currentStep - 1);
   };
 
-  // Update account in both opportunity and price list when changed
-  const handleAccountChange = (accountId) => {
-    formik.setFieldValue('opportunity.account', accountId);
-    formik.setFieldValue('priceList.account', accountId);
-  };
-
-  // Update unit of measure in both product offering price and opportunity line item
-  const handleUnitOfMeasureChange = (uomId) => {
-    formik.setFieldValue('productOfferingPrice.unitOfMeasure.id', uomId);
-    formik.setFieldValue('opportunityLineItem.unit_of_measurement', uomId);
-  };
-
-  // Update product offering in both product offering price and opportunity line item
-  const handleProductOfferingChange = (productOfferingId) => {
-    formik.setFieldValue('productOfferingPrice.productOffering.id', productOfferingId);
-    formik.setFieldValue('opportunityLineItem.product_offering', productOfferingId);
-  };
-
-   // Render error message for a field
-  const renderErrorMessage = (fieldName) => {
-    const touched = formik.touched[fieldName];
-    const error = formik.errors[fieldName];
-    return touched && error ? (
-      <p className="text-red-500 text-sm mt-1">{error}</p>
-    ) : null;
-  };
-
-  // Render error message for array fields
-  const renderArrayErrorMessage = (arrayName, index, fieldName) => {
-    const touched = formik.touched[arrayName]?.[index]?.[fieldName];
-    const error = formik.errors[arrayName]?.[index]?.[fieldName];
-    return touched && error ? (
-      <p className="text-red-500 text-sm mt-1">{error}</p>
-    ) : null;
-  };
 
   
 

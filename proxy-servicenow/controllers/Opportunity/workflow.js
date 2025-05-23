@@ -8,6 +8,7 @@ const createPOPrice = require('../ProductOfferingPrice/createProductOfferingPric
 const createOpportunityLineItem = require('../OpportunityLine/createOpportunityLine');
 
 module.exports = async (req, res) => {
+
   const createNewPriceList = req.body.createNewPriceList;
   const selectedPriceList = req.body.selectedPriceList;
   const op = req.body.opportunity; // opportunity JSON body
@@ -25,7 +26,7 @@ module.exports = async (req, res) => {
       priceList = await createPriceList(payload);
     }
     
-    const priceListID = createNewPriceList ? priceList.sys_id : selectedPriceList;
+    const priceListID = createNewPriceList ? priceList._id : selectedPriceList;
 
     // Create opportunity
     payload.body = {...op, "price_list": priceListID};
@@ -37,7 +38,7 @@ module.exports = async (req, res) => {
         // Prepare product offering price JSON body
         payload.body = {
           ...po,
-          priceList: { id: priceListID },
+          priceList: { _id: priceListID },
           "lifecycleStatus": "Active",
           '@type': 'ProductOfferingPrice'
         };
@@ -50,7 +51,7 @@ module.exports = async (req, res) => {
           ...opli,
           price_list: priceListID,
           product_offering: po.productOffering.id,
-          opportunity: opportunity.sys_id,
+          opportunity: opportunity._id,
           unit_of_measurement: po.unitOfMeasure.id,
         };
         
