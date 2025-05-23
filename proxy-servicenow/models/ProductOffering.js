@@ -87,6 +87,7 @@ const productOfferingSchema = new Schema({
   description: { type: String, required: false },
   externalId: { type: String, required: false, default: "" },
   id: { type: String, required: false }, 
+  sys_id: { type: String, required: false },
   internalId: { type: String, required: false },
   lastUpdate: { type: String, required: false, default: "" },
   name: { type: String, required: true },

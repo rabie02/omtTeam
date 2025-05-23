@@ -33,7 +33,7 @@ async function createOpportunityLine(req, res = null) {
     const snPayload = {
       ...rest,
       price_list: priceListDoc.sys_id,
-      product_offering: productOfferingDoc.sys_id,
+      product_offering: productOfferingDoc.id,
       opportunity: opportunityDoc.sys_id
     };
 

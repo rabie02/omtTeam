@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Modal, Steps, message } from 'antd';
+import { Modal, Steps, notification } from 'antd';
 import { useSelector } from 'react-redux';
 import OpportunityNavigation from './Steps/Navigation';
 import OpportunityStep1 from './Steps/Step1';
@@ -172,7 +172,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
               message: 'Opportunity Created',
               description: 'New Opportunity has been created successfully',
             });
-        message.success('Opportunity created successfully!');
+        
         setOpen(false);
         resetForm();
         setCurrentStep(0);
@@ -248,7 +248,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
       setCurrentStep(currentStep + 1);
     } else {
       console.log('Validation errors:', errors);
-      message.error('Please fill all required fields before proceeding');
+      
     }
   };
 

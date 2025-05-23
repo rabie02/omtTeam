@@ -21,7 +21,7 @@ const OpportunityStep4 = ({ formik }) => {
   const { data: allOfferings } = useSelector((state) => state.productOffering);
   const getSelectedPriceList = () => {
     if (createNewPriceList) return priceList;
-    return priceLists.find(pl => pl.sys_id === selectedPriceList);
+    return priceLists.find(pl => pl._id === selectedPriceList);
   };
 
   const getOfferingName = (id) => {

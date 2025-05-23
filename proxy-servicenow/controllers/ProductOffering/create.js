@@ -103,7 +103,8 @@ module.exports = async (req, res) => {
             mongoDoc = new ProductOffering({    
                 ...snRecord,
                 category: req.body.category._id,
-                productSpecification: req.body.productSpecification._id
+                productSpecification: req.body.productSpecification._id,
+                sys_id: snRecord.id
             });
             await mongoDoc.save();
             

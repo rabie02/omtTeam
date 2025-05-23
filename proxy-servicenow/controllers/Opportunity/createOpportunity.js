@@ -6,24 +6,37 @@ const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 
 async function createOpportunity(req, res = null) {
+  const priceListSys_id = await getPriceListReference(req.body.price_list);
   try {
+    const snPayload = {
+      price_list: priceListSys_id,
+      short_description: req.body.short_description,
+      estimated_closed_date: req.body.estimated_closed_date,
+      description: req.body.description,
+      term_month: req.body.term_month,
+      sales_cycle_type: req.body.sales_cycle_type,
+      probability: req.body.probability,
+      stage: req.body.stage,
+      industry: req.body.industry,
+      account: req.body.account
+    }
+    
     // Create in ServiceNow
     const connection = snConnection.getConnection(req.user.sn_access_token);
     const snResponse = await axios.post(
       `${connection.baseURL}/api/now/table/sn_opty_mgmt_core_opportunity`,
-      req.body,
+      snPayload,
       { headers: connection.headers }
     );
     
     // Prepare MongoDB data
     const snData = snResponse.data.result;
+    
     const mongoData = {
       sys_id: snData.sys_id,
       number: snData.number,
       // Handle price_list reference conversion
-      price_list: snData.price_list 
-        ? await getPriceListReference(snData.price_list) 
-        : undefined,
+      price_list: req.body.price_list,
       // Include other fields from both sources
       ...transformServiceNowData(snData),
       ...req.body
@@ -63,18 +76,10 @@ async function createOpportunity(req, res = null) {
 }
 
 // Helper function to get PriceList reference
-async function getPriceListReference(priceListIdentifier) {
+async function getPriceListReference(id) {
   try {
-    // Try to find by sys_id first (ServiceNow ID)
-    const bySysId = await PriceList.findOne({ sys_id: priceListIdentifier });
-    if (bySysId) return bySysId._id;
-    
-    // Try as direct ObjectId if not found by sys_id
-    if (mongoose.Types.ObjectId.isValid(priceListIdentifier)) {
-      return priceListIdentifier;
-    }
-    
-    return undefined;
+    const price_list = await PriceList.findById(id);
+    return price_list.sys_id ? price_list.sys_id : undefined
   } catch (error) {
     console.error('Error resolving price_list reference:', error);
     return undefined;

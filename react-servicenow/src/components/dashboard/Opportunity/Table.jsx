@@ -4,7 +4,7 @@ import { Popconfirm, Empty, Spin, Table, notification, Tooltip} from 'antd';
 import { 
   getOpportunities,
   deleteOpportunity,
-  updateOpportunityStatus
+  getAccounts
 } from '../../../features/servicenow/opportunity/opportunitySlice';
 
 
@@ -12,12 +12,14 @@ function OpportunityTable({ setOpenForm }) {
   const dispatch = useDispatch();
   const {
     opportunities,
+    accounts,
     loading,
     error
   } = useSelector((state) => state.opportunity);
 
   useEffect(() => {
     dispatch(getOpportunities());
+    dispatch(getAccounts());
   }, [dispatch]);
   
   const handleDelete = async (opportunityId) => {
@@ -37,6 +39,15 @@ function OpportunityTable({ setOpenForm }) {
     }
   };
 
+  const ops = []
+  opportunities.map(opp => {
+    ops.push({
+      ...opp,
+      account: accounts.find(a => a.sys_id === opp.account )
+    })
+  })
+
+  console.log(ops[1].account.name);
 
   const columns = [
     {
@@ -52,7 +63,7 @@ function OpportunityTable({ setOpenForm }) {
     {
       title: 'Account',
       dataIndex: 'account',
-      key: 'account',
+      key: 'account.sys_id',
       render: (account) => account?.name || 'N/A',
     },
     {
@@ -127,7 +138,7 @@ function OpportunityTable({ setOpenForm }) {
       <Table
         headerColor="rgba(0, 117, 149, 1)"
         columns={columns}
-        dataSource={opportunities}
+        dataSource={ops}
         rowKey="sys_id"
         locale={{
           emptyText: <Empty description="No opportunities found" />,

@@ -38,7 +38,7 @@ module.exports = async (req, res) => {
         // Prepare product offering price JSON body
         payload.body = {
           ...po,
-          priceList: { _id: priceListID },
+          priceList: { id: priceListID },
           "lifecycleStatus": "Active",
           '@type': 'ProductOfferingPrice'
         };
@@ -78,10 +78,10 @@ module.exports = async (req, res) => {
 
     // Check if all operations were successful
     const allSuccessful = results.every(result => result.success);
-    
     if (allSuccessful) {
       // All items created successfully
       return res.status(201).json({
+        data: opportunity,
         success: true,
         message: 'Opportunity created successfully',
         
