@@ -121,8 +121,9 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
               }
           ],
           category: {
-              id: values.category,
-              name: options.categories.find(c => (c.id || c.sys_id) === values.category)?.name || ""
+              _id: values.category,
+              id: options.categories.find(c=> c._id === values.category)?.id || options.categories.find(c=> c._id === values.category)?.sys_id,
+              name: options.categories.find(c => c._id === values.category)?.name || ""
           },
           lifecycleStatus: "Draft",
           status: "draft"
@@ -318,7 +319,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           <option value="">Select a Category</option>
           {/* Map over the categories passed via props */}
           {options.categories.map(cat => ( cat.status ==="published" ?
-                <option key={cat.id || cat.sys_id} value={cat.id || cat.sys_id}> {/* Use correct ID field */}
+                <option key={cat._id} value={cat._id}> {/* Use correct ID field */}
                     {cat.name} {/* Use correct Name field */}
                 </option> : ""
                 ))}
