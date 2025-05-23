@@ -41,10 +41,15 @@ module.exports = async (req, res) => {
       productSpecification: req.body.productSpecification,
         prodSpecCharValueUse: req.body.prodSpecCharValueUse,
       channel: req.body.channel,
-      category: req.body.category,
+      category: {
+        id: req.body.category.id,
+        name: req.body.category.name
+      },
       lifecycleStatus: req.body.lifecycleStatus,
       status: req.body.status
     };
+
+    
     
     // ServiceNow API Call
     const snResponse = await axios.post(
@@ -64,7 +69,8 @@ module.exports = async (req, res) => {
         try {
           const snRecord = snResponse.data;
           mongoDoc = new ProductOffering({    
-            ...snRecord
+            ...snRecord,
+            category: req.body.category._id
           });
           await mongoDoc.save();
         } catch (mongoError) {

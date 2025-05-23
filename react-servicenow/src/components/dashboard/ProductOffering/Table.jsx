@@ -63,7 +63,7 @@ function ProductOfferingTable({ setData, setOpen, searchQuery }) {
         setData(newData)
         setOpen(true)
     }
-
+    
     const handlePageChange = (page) => {
         dispatch(getall({ page, limit, q: searchQuery }));
     };
@@ -137,18 +137,26 @@ function ProductOfferingTable({ setData, setOpen, searchQuery }) {
             title: 'Actions',
             key: 'actions',
             render: (_, product) => (
-                <div className="flex">
-                    <Tooltip title={`${getStatusAction(product.status).action} This Product Offering`}>
+                <div className="grid grid-cols-3 gap-0.5">
+                    <Tooltip title={product.status === "archived" ? "Unavailable" : `${getStatusAction(product.status).action} This Product Offering`}>
                         <Popconfirm
                             title={`${getStatusAction(product.status).action} Product offering`}
                             description={`Are you sure you want to ${getStatusAction(product.status).action.toLowerCase()} this product offering?`}
                             icon={<i className="ri-error-warning-line text-yellow-600 text-md mr-2"></i>}
                             onConfirm={() => handleUpdateStatus(product._id, getStatusAction(product.status).newStatus)}
                         >
-                            <button className="text-gray-500 hover:text-green-600">
+                            <button className="text-gray-500 hover:text-green-600 disabled:text-gray-200" disabled={product.status === "archived"}>
                                 <i className="ri-loop-right-line text-2xl"></i>
                             </button>
                         </Popconfirm>
+                    </Tooltip>
+                    <Tooltip title={product.status === "draft" && "Update This Product Offering"}>
+                        <button
+                            className="text-gray-500 hover:text-blue-600 disabled:text-gray-200"
+                            onClick={() => changeData(product)} disabled={product.status !== "draft"}
+                        >
+                            <i className="ri-pencil-line text-2xl"></i>
+                        </button>
                     </Tooltip>
                     <Tooltip title="Delete This Product Offering">
                         <Popconfirm
@@ -157,21 +165,12 @@ function ProductOfferingTable({ setData, setOpen, searchQuery }) {
                             icon={<i className="ri-error-warning-line text-red-600 mr-2"></i>}
                             onConfirm={() => handleDelete(product._id)}
                         >
-                            <button className="mx-2 text-gray-500 hover:text-red-600">
+                            <button className=" text-gray-500 hover:text-red-600">
                                 <i className="ri-delete-bin-6-line text-2xl"></i>
                             </button>
                         </Popconfirm>
                     </Tooltip>
-                     {product.status === "draft" && (
-                        <Tooltip title="Update This Product Offering">
-                            <button
-                                className="text-gray-500 hover:text-blue-600"
-                                onClick={() => changeData(product)}
-                            >
-                                <i className="ri-pencil-line text-2xl"></i>
-                            </button>
-                        </Tooltip>
-                    )}
+                    
                 </div>
             )
         }
