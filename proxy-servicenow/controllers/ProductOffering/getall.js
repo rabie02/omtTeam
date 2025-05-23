@@ -19,7 +19,11 @@ module.exports = async(req, res) =>{
       }
   
       const [data, total] = await Promise.all([
-        ProductOffering.find(query).skip(skip).limit(limit),
+        ProductOffering.find(query)
+          .skip(skip)
+          .limit(limit)
+          .populate('productSpecification') // This will populate the referenced ProductSpecification
+          .exec(),
         ProductOffering.countDocuments(query)
       ]);
   

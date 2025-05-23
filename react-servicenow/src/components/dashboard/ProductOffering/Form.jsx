@@ -32,9 +32,9 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         recurring_price: initialData?.productOfferingPrice[0].price?.taxIncludedAmount?.value || '', // Use nullish coalescing
         non_recurring_price: initialData?.productOfferingPrice[1].price?.taxIncludedAmount?.value || '', // Use nullish coalescing
         po_term: initialData?.productOfferingTerm || 'not_applicable',
-        p_spec: initialData?.productSpecification?.id || '', // Get ID from nested object
+        p_spec: initialData?.productSpecification._id || '', // Get ID from nested object
         channel: initialData?.channel?.[0]?.id || '', // Get ID from first item in array
-        category: initialData?.category[0]?.id || '', // Get ID from nested object
+        category: initialData?.category[0] || '', // Get ID from nested object
     },
     validationSchema,
     onSubmit: async (values, {resetForm}) => {
@@ -42,7 +42,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
        
         // Find the selected Product Specification object
         const selectedSpec = options.specifications.find(spec => 
-          (spec.id || spec.sys_id) === values.p_spec
+          (spec._id) === values.p_spec
         );
         
 
@@ -107,11 +107,12 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
               }
           ],
           productSpecification: {
-            id: values.p_spec,
-            name: options.specifications.find(s => (s.id || s.sys_id) === values.p_spec)?.display_name || "",
+            _id: values.p_spec,
+            id: options.specifications.find(s => (s._id) === values.p_spec)?.sys_id,
+            name: options.specifications.find(s => (s._id) === values.p_spec)?.display_name || "",
             version: "",
             internalVersion: "1",
-            internalId: values.p_spec
+            internalId: options.specifications.find(s => (s._id) === values.p_spec)?.sys_id
           },
           prodSpecCharValueUse: prodSpecCharValueUse,
           channel: [
@@ -161,7 +162,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
 
 
   const handleCancel = () => setOpen(false);
- 
+
   return (
     <Modal
       title={isEditMode ? 'Edit Record ' : 'Add New Record'}
@@ -293,8 +294,8 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           <option value="">Select a product specification</option>
           {/* Map over the specs passed via props */}
           {options.specifications.map(spec => ( spec.status ==="published"?
-                <option key={spec.id || spec.sys_id} value={spec.id || spec.sys_id}> {/* Use correct ID field */}
-                    {spec.display_name} {/* Use correct Name field */}
+                <option key={spec._id} value={spec._id}> {/* Use correct ID field */}
+                    {spec.display_name || spec.name} {/* Use correct Name field */}
                 </option> : ""
                 ))}
           </select>

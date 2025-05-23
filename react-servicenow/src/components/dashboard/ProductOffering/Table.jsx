@@ -36,6 +36,7 @@ function ProductOfferingTable({ setData, setOpen, searchQuery }) {
     };
 
     const handleUpdateStatus = async (productId, newStatus) => {
+
         try {
             await dispatch(updateProductOfferingStatus({
                 id: productId,
@@ -91,12 +92,12 @@ function ProductOfferingTable({ setData, setOpen, searchQuery }) {
         },
         {
             title: 'Product Specification',
-            dataIndex: ['productSpecification', 'name'],
+            dataIndex: ['productSpecification', 'display_name'],
             key: 'productSpecification',
             render: (text) => text || 'N/A',
             sorter: (a, b) => {
-                const nameA = a.productSpecification?.name || '';
-                const nameB = b.productSpecification?.name || '';
+                const nameA = a.productSpecification?.display_name || '';
+                const nameB = b.productSpecification?.display_name || '';
                 return nameA.localeCompare(nameB);
             }
         },
