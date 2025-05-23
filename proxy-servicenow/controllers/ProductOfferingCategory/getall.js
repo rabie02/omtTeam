@@ -34,10 +34,10 @@ module.exports = async (req, res) => {
       // Lookup specifications
       {
         $lookup: {
-          from: 'productspecifications',
+          from: 'ProductOffering',
           localField: '_id',
-          foreignField: 'category',
-          as: 'specifications'
+          foreignField: 'categories',
+          as: 'productOffering'
         }
       },
 

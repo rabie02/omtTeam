@@ -72,32 +72,45 @@ function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
         }
     };
 
-    const specificationColumns = [
+
+    const productOfferingColumns = [
         {
-            title: 'Name',
+            title: 'Product Offering Name',
             dataIndex: 'name',
             key: 'name',
-
         },
         {
-            title: 'Type',
-            dataIndex: 'type',
-            key: 'type',
+            title: 'Code',
+            dataIndex: 'code',
+            key: 'code',
         },
         {
-            title: 'Mandatory',
-            dataIndex: 'mandatory',
-            key: 'mandatory',
-            render: (mandatory) => mandatory ? 'Yes' : 'No',
-            width: 120,
+            title: 'Status',
+            dataIndex: 'status',
+            key: 'status',
+            render: (status) => (
+                <span className={`px-2 py-1 capitalize ${status === 'published'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-700'
+                    }`}>
+                    {status}
+                </span>
+            ),
         },
         {
-            title: 'Description',
-            dataIndex: 'description',
-            key: 'description',
-            ellipsis: true,
+            title: 'Start Date',
+            dataIndex: 'start_date',
+            render: (date) => new Date(date).toISOString().split("T")[0],
+        },
+        {
+            title: 'End date',
+            dataIndex: 'end_date',
+            render: (_, record) => record.end_date
+                ? new Date(record.end_date).toISOString().split("T")[0]
+                : 'N/A',
         },
     ];
+
 
     const mainColumns = [
         {
@@ -220,16 +233,15 @@ function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
                     expandable={{
                         expandedRowRender: (record) => (
                             <div className="ml-8 bg-gray-50 p-4 rounded">
-                                <h4 className="mb-2 font-semibold">Specifications</h4>
-                                {record.specifications?.length > 0 ? (
+                                {record.productOffering?.length > 0 ? (
                                     <Table
-                                        columns={specificationColumns}
-                                        dataSource={record.specifications}
+                                        columns={productOfferingColumns}
+                                        dataSource={record.productOffering}
                                         rowKey="_id"
                                         bordered
                                         size="small"
                                         pagination={
-                                            record.specifications?.length > 4
+                                            record.productOffering?.length > 4
                                                 ? { pageSize: 4, showSizeChanger: false }
                                                 : false
                                         }
@@ -237,12 +249,12 @@ function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
                                 ) : (
                                     <Empty
                                         image={Empty.PRESENTED_IMAGE_SIMPLE}
-                                        description="No specifications found"
+                                        description="No product Offering found"
                                     />
                                 )}
                             </div>
                         ),
-                        rowExpandable: (record) => record.specifications?.length > 0,
+                        rowExpandable: (record) => record.productOffering?.length > 0,
                     }}
                     pagination={false}
                     locale={{

@@ -87,7 +87,7 @@ const productOfferingSchema = new Schema({
   channel: { type: Array(channelSchema), required: false },
   description: { type: String, required: false },
   externalId: { type: String, required: false, default: "" },
-  id: { type: String, required: false }, 
+  id: { type: String, required: false },
   internalId: { type: String, required: false },
   lastUpdate: { type: String, required: false, default: "" },
   name: { type: String, required: true },
@@ -103,9 +103,14 @@ const productOfferingSchema = new Schema({
   },
   validFor: { type: validForSchema, required: false },
   version: { type: String, required: false },
-  status: { type: String, required: false }, 
-  lifecycleStatus:{ type: String, required: false }, 
-  href:{ type: String, required: false },
+  status: { type: String, required: false },
+  lifecycleStatus: { type: String, required: false },
+  href: { type: String, required: false },
+  categories: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ProductOfferingCategory',
+    required: true
+  },
 });
 
 module.exports = mongoose.model('ProductOffering', productOfferingSchema);

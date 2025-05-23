@@ -9,11 +9,6 @@ const productSpecificationSchema = new mongoose.Schema({
     unique: true,
     index: true  // Add index for faster queries
   },
-  category: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'ProductOfferingCategory',
-    required: true
-  },
   display_name: String,
   specification_category: String,
   specification_type: String,
