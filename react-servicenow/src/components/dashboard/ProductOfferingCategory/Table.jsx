@@ -72,32 +72,58 @@ function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
         }
     };
 
-    const specificationColumns = [
+
+    const productOfferingColumns = [
         {
-            title: 'Name',
+            title: 'Product Offering Name',
             dataIndex: 'name',
             key: 'name',
-
         },
         {
-            title: 'Type',
-            dataIndex: 'type',
-            key: 'type',
+            title: 'Status',
+            dataIndex: 'status',
+            key: 'status',
+            render: (status) => (
+                <span className={`px-2 py-1 capitalize ${status === 'published'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-700'
+                    }`}>
+                    {status}
+                </span>
+            ),
         },
         {
-            title: 'Mandatory',
-            dataIndex: 'mandatory',
-            key: 'mandatory',
-            render: (mandatory) => mandatory ? 'Yes' : 'No',
-            width: 120,
+            title: 'Term',
+            dataIndex: 'productOfferingTerm',
+            key: 'term',
+            render: (text) => text ?
+                text.replace(/_/g, ' ')  // Replace underscores with spaces
+                    .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize first letters
+                : 'N/A',
         },
         {
-            title: 'Description',
-            dataIndex: 'description',
-            key: 'description',
-            ellipsis: true,
+            title: 'Start Date',
+            render: (_, record) => record.validFor.startDateTime
+                ? new Date(record.validFor.startDateTime).toISOString().split("T")[0]
+                : 'N/A',
+        },
+        {
+            title: 'End Date',
+            render: (_, record) => record.validFor.endDateTime
+                ? new Date(record.validFor.endDateTime).toISOString().split("T")[0]
+                : 'N/A',
+        },
+        {
+            title: 'Price',
+            render: (_, record) => {
+                const recurringPrice = record.productOfferingPrice?.find(p => p.priceType === 'recurring');
+                return recurringPrice
+                    ? `${recurringPrice.price.taxIncludedAmount.value} ${recurringPrice.price.taxIncludedAmount.unit}`
+                    : 'N/A';
+            },
         },
     ];
+
 
     const mainColumns = [
         {
@@ -153,31 +179,30 @@ function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
                 return (
                     <div className="flex items-center">
                         {/* Status Change Button - Hidden for archived */}
-                        {record.status.toLowerCase() !== 'archived' && (
+                    
                             <Tooltip title={`${action} Category`}>
                                 <Popconfirm
                                     title={`${action} Category`}
                                     description={`Are you sure to ${action.toLowerCase()} this category?`}
                                     onConfirm={() => handleUpdateStatus(record._id, newStatus)}
+                                    disabled={product.status === "archived"}
                                 >
                                     <button className="mx-1 text-gray-500 hover:text-green-600">
                                         <i className="ri-loop-right-line text-2xl"></i>
                                     </button>
                                 </Popconfirm>
                             </Tooltip>
-                        )}
+                      
 
                         {/* Edit Button - Only shown for draft */}
-                        {record.status.toLowerCase() === 'draft' && (
                             <Tooltip title="Edit This Category">
                                 <button
                                     className="mx-1 text-gray-500 hover:text-yellow-400"
-                                    onClick={() => changeData(record)}
+                                    onClick={() => changeData(record)} disabled={product.status !== "draft"}
                                 >
                                     <i className="ri-pencil-line text-2xl"></i>
                                 </button>
                             </Tooltip>
-                        )}
 
                         {/* Delete Button - Always shown */}
                         <Tooltip title="Delete This Category">
@@ -220,16 +245,15 @@ function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
                     expandable={{
                         expandedRowRender: (record) => (
                             <div className="ml-8 bg-gray-50 p-4 rounded">
-                                <h4 className="mb-2 font-semibold">Specifications</h4>
-                                {record.specifications?.length > 0 ? (
+                                {record.productOffering?.length > 0 ? (
                                     <Table
-                                        columns={specificationColumns}
-                                        dataSource={record.specifications}
+                                        columns={productOfferingColumns}
+                                        dataSource={record.productOffering}
                                         rowKey="_id"
                                         bordered
                                         size="small"
                                         pagination={
-                                            record.specifications?.length > 4
+                                            record.productOffering?.length > 4
                                                 ? { pageSize: 4, showSizeChanger: false }
                                                 : false
                                         }
@@ -237,12 +261,12 @@ function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
                                 ) : (
                                     <Empty
                                         image={Empty.PRESENTED_IMAGE_SIMPLE}
-                                        description="No specifications found"
+                                        description="No product Offering found"
                                     />
                                 )}
                             </div>
                         ),
-                        rowExpandable: (record) => record.specifications?.length > 0,
+                        rowExpandable: (record) => record.productOffering?.length > 0,
                     }}
                     pagination={false}
                     locale={{

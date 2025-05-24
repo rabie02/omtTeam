@@ -8,10 +8,10 @@ module.exports = async (categoryId) => {
 
     {
       $lookup: {
-        from: 'productspecifications',
+        from: 'ProductOffering',
         localField: '_id',
         foreignField: 'category',
-        as: 'specifications'
+        as: 'productOffering'
       }
     },
 
