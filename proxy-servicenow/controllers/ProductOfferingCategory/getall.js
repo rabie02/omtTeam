@@ -26,22 +26,19 @@ module.exports = async (req, res) => {
 
     const aggregationPipeline = [
       { $match: matchStage },
-
-      // Pagination
+      // Pagination applied early to limit processed documents
       { $skip: skip },
       { $limit: limit },
-
-      // Lookup specifications
+      // Lookup ProductOfferings
       {
         $lookup: {
-          from: 'ProductOffering',
+          from: 'productofferings', // Correct collection name
           localField: '_id',
-          foreignField: 'categories',
+          foreignField: 'category', // Correct field name in ProductOffering
           as: 'productOffering'
         }
       },
-
-      // Lookup catalog relations and expand to include catalog details
+      // Lookup Catalog Relations
       {
         $lookup: {
           from: 'catalogcategoryrelations',
@@ -54,7 +51,7 @@ module.exports = async (req, res) => {
             },
             {
               $lookup: {
-                from: 'productofferingcatalogs',
+                from: 'productofferingcatalogs', // Ensure correct collection name
                 localField: 'catalog',
                 foreignField: '_id',
                 as: 'catalogDetails'

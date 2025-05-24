@@ -10,7 +10,6 @@ fs.readdirSync(modelsPath).forEach((file) => {
 
 let mermaid = 'classDiagram\n\n';
 const relationships = new Set();
-const layoutLinks = new Set();
 
 // Build the undirected graph of model references
 const graph = new Map();
@@ -20,16 +19,34 @@ mongoose.modelNames().forEach(modelName => {
   graph.set(modelName, new Set());
 });
 
-// Populate the graph with undirected edges based on references
+// Populate the graph with relationships
 mongoose.modelNames().forEach(modelName => {
   const schema = mongoose.model(modelName).schema;
+
   schema.eachPath((pathName, type) => {
-    const fieldOptions = schema.path(pathName).options;
-    if (fieldOptions.ref) {
-      const targetModel = fieldOptions.ref;
-      // Add undirected edges
-      graph.get(modelName).add(targetModel);
-      graph.get(targetModel).add(modelName);
+    const pathObj = schema.path(pathName);
+    let refModel;
+
+    // Check for direct reference
+    if (pathObj.options.ref) {
+      refModel = pathObj.options.ref;
+    }
+    // Check for array of references
+    else if (type.instance === 'Array') {
+      const caster = pathObj.caster;
+
+
+      if (caster && caster.options?.ref) {
+        refModel = caster.options.ref;
+      }
+    }
+
+    if (refModel) {
+      // Add undirected edges to graph
+      graph.get(modelName).add(refModel);
+      graph.get(refModel).add(modelName);
+      // Add relationship for Mermaid
+      relationships.add(`${modelName} --> ${refModel} : "${pathName}"`);
     }
   });
 });
@@ -43,9 +60,11 @@ mongoose.modelNames().forEach(modelName => {
     const component = [];
     const queue = [modelName];
     visited.add(modelName);
+
     while (queue.length > 0) {
       const current = queue.shift();
       component.push(current);
+
       graph.get(current).forEach(neighbor => {
         if (!visited.has(neighbor)) {
           visited.add(neighbor);
@@ -57,11 +76,12 @@ mongoose.modelNames().forEach(modelName => {
   }
 });
 
-// Generate subgraphs for each component and collect relationships
+// Generate subgraphs for each component
 components.forEach((component, index) => {
   mermaid += `  subgraph Component_${index + 1}\n`;
   component.forEach(modelName => {
     const schema = mongoose.model(modelName).schema;
+
     mermaid += `    class ${modelName} {\n`;
     schema.eachPath((pathName, type) => {
       const fieldOptions = schema.path(pathName).options;
@@ -71,23 +91,17 @@ components.forEach((component, index) => {
         fieldOptions.enum ? `enum: [${fieldOptions.enum.join(',')}]` : null,
         fieldOptions.default !== undefined ? `default: ${JSON.stringify(fieldOptions.default)}` : null
       ].filter(Boolean).join(', ');
-      mermaid += `      +${type.instance} ${pathName}${constraints ? ` (${constraints})` : ''}\n`;
 
-      // Collect relationships and layout links
-      if (fieldOptions.ref) {
-        const targetModel = fieldOptions.ref;
-        relationships.add(`${modelName} --> ${targetModel} : "${pathName}"`);
-      }
+      mermaid += `      +${type.instance} ${pathName}${constraints ? ` (${constraints})` : ''}\n`;
     });
     mermaid += '    }\n';
   });
   mermaid += '  end\n\n';
 });
 
-// Add relationships and layout links to the diagram
+// Add relationships to the diagram
 relationships.forEach(rel => mermaid += `  ${rel}\n`);
-layoutLinks.forEach(link => mermaid += `  ${link}\n`);
 
-// Save file
+// Save to file
 fs.writeFileSync('uml-with-relationships.mmd', mermaid);
-console.log('UML with grouped relationships generated!');
+console.log('UML diagram with relationships generated!');

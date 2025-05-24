@@ -73,20 +73,33 @@ classDiagram
       +String description
       +String externalId (default: "")
       +String id
+      +String sys_id
       +String internalId
       +String lastUpdate (default: "")
       +String name (required)
       +Array productOfferingPrice
       +String productOfferingTerm (default: "")
-      +Embedded productSpecification
+      +ObjectId productSpecification
       +Array prodSpecCharValueUse
       +Embedded validFor
       +String version
       +String status
       +String lifecycleStatus
       +String href
-      +ObjectId categories (required)
       +ObjectId _id
+      +Number __v
+    }
+    class ProductSpecification {
+      +String sys_id (required, unique)
+      +String display_name
+      +String specification_category
+      +String specification_type
+      +String start_date
+      +String description
+      +String status
+      +ObjectId _id
+      +Date createdAt
+      +Date updatedAt
       +Number __v
     }
   end
@@ -191,22 +204,6 @@ classDiagram
   end
 
   subgraph Component_6
-    class ProductSpecification {
-      +String sys_id (required, unique)
-      +String display_name
-      +String specification_category
-      +String specification_type
-      +String start_date
-      +String description
-      +String status
-      +ObjectId _id
-      +Date createdAt
-      +Date updatedAt
-      +Number __v
-    }
-  end
-
-  subgraph Component_7
     class quotes {
       +String number (required, unique)
       +String sys_id (required, unique)
@@ -227,7 +224,7 @@ classDiagram
     }
   end
 
-  subgraph Component_8
+  subgraph Component_7
     class User {
       +String serviceNowId (required)
       +String firstName (required)
@@ -253,4 +250,5 @@ classDiagram
 
   CatalogCategoryRelations --> ProductOfferingCatalog : "catalog"
   CatalogCategoryRelations --> ProductOfferingCategory : "category"
-  ProductOffering --> ProductOfferingCategory : "categories"
+  ProductOffering --> ProductOfferingCategory : "category"
+  ProductOffering --> ProductSpecification : "productSpecification"
