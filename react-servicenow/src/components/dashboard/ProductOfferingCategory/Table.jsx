@@ -179,30 +179,32 @@ function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
                 return (
                     <div className="flex items-center">
                         {/* Status Change Button - Hidden for archived */}
-                    
-                            <Tooltip title={`${action} Category`}>
-                                <Popconfirm
-                                    title={`${action} Category`}
-                                    description={`Are you sure to ${action.toLowerCase()} this category?`}
-                                    onConfirm={() => handleUpdateStatus(record._id, newStatus)}
-                                    disabled={product.status === "archived"}
-                                >
-                                    <button className="mx-1 text-gray-500 hover:text-green-600">
-                                        <i className="ri-loop-right-line text-2xl"></i>
-                                    </button>
-                                </Popconfirm>
-                            </Tooltip>
-                      
+
+                        <Tooltip title={`${action} Category`}>
+                            <Popconfirm
+                                title={`${action} Category`}
+                                description={`Are you sure to ${action.toLowerCase()} this category?`}
+                                onConfirm={() => handleUpdateStatus(record._id, newStatus)}
+                                disabled={record.status === "archived"}
+                            >
+                                <button className="mx-1 text-gray-500 hover:text-green-600  ">
+                                    <i className="ri-loop-right-line text-2xl"></i>
+                                </button>
+                            </Popconfirm>
+                        </Tooltip>
+
 
                         {/* Edit Button - Only shown for draft */}
-                            <Tooltip title="Edit This Category">
-                                <button
-                                    className="mx-1 text-gray-500 hover:text-yellow-400"
-                                    onClick={() => changeData(record)} disabled={product.status !== "draft"}
-                                >
-                                    <i className="ri-pencil-line text-2xl"></i>
-                                </button>
-                            </Tooltip>
+                        <Tooltip title={record.status !== "draft" ? "Editing is only allowed in this status" : "Edit This Category"}>
+                            <button
+                                className={`mx-1 ${record.status !== "draft" ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-yellow-400"}`}
+                                onClick={() => changeData(record)}
+                                disabled={record.status !== "draft"}
+                            >
+                                <i className="ri-pencil-line text-2xl"></i>
+                            </button>
+                        </Tooltip>
+
 
                         {/* Delete Button - Always shown */}
                         <Tooltip title="Delete This Category">
