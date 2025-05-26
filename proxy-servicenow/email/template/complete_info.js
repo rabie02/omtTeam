@@ -19,6 +19,7 @@ const template = (link) => `
     }
     .action-btn:hover {
       background-color: #1976D2;
+      color : white;
     }
     .note { font-size: 14px; color: #666; margin-top: 25px; }
   </style>

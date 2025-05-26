@@ -1,4 +1,4 @@
-const Quote = require('../../models/Quote');
+const Quote = require('../../models/quote');
 
 const deleteQuote = async (req, res) => {
   console.log('=== DELETE QUOTE REQUEST RECEIVED ===');
