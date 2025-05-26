@@ -26,7 +26,7 @@ function OpportunityTable({ setOpenForm }) {
         if (!field) return '';
         return typeof field === 'object' ? field.value : field;
     };
-  
+  console.log(JSON.stringify(opportunities[3],null,2))
   const handleDelete = async (opportunityId) => {
     try {
       await dispatch(deleteOpportunity(opportunityId));
@@ -106,16 +106,22 @@ function OpportunityTable({ setOpenForm }) {
               message.info('Edit functionality to be implemented');
             }}
           /> */}
-          
-          <Popconfirm
-            title="Delete Opportunity"
-            description="Are you sure to delete this opportunity?"
-            onConfirm={() => handleDelete(record._id)}
-          >
-            <button className="mx-2 text-gray-500 hover:text-red-600">
-                <i className="ri-delete-bin-6-line text-2xl"></i>
-            </button>
-          </Popconfirm>
+          <Tooltip title={`Delete Opportunity`}>
+            <Popconfirm
+              title="Delete Opportunity"
+              description="Are you sure to delete this opportunity?"
+              onConfirm={() => handleDelete(record._id)}
+            >
+              <button className="mx-2 text-gray-500 hover:text-red-600">
+                  <i className="ri-delete-bin-6-line text-2xl"></i>
+              </button>
+            </Popconfirm>
+          </Tooltip>
+          <Tooltip title={`See More Details`}>
+              <button className="mx-2 text-gray-500 hover:text-green-600">
+                  <i className="ri-eye-line text-2xl"></i>
+              </button>
+          </Tooltip>
         </div>
       ),
     },
@@ -131,7 +137,7 @@ function OpportunityTable({ setOpenForm }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="">
       
       <Table
         headerColor="rgba(0, 117, 149, 1)"

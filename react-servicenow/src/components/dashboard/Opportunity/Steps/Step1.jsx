@@ -12,7 +12,7 @@ const OpportunityStep1 = ({ formik }) => {
       shortDescriptionRef.current.focus();
     }
   }, []);
-  console.log(accounts);
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium">Opportunity Details</h3>
@@ -24,7 +24,7 @@ const OpportunityStep1 = ({ formik }) => {
         inputRef={shortDescriptionRef}
         autoFocus
       />
-      <div class="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
       <FormInput
         formik={formik}
         name="opportunity.estimated_closed_date"
@@ -39,7 +39,7 @@ const OpportunityStep1 = ({ formik }) => {
         type="number"
       />
       </div>
-      <div class="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
       <FormSelect
         formik={formik}
         name="opportunity.sales_cycle_type"
@@ -65,7 +65,7 @@ const OpportunityStep1 = ({ formik }) => {
       />
       </div>
       {salesCycleTypes.filter(s=> s.sys_id === formik.values.opportunity.sales_cycle_type)?.[0]?.["sys_name"] === "NEWCUST" && 
-      <div class="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
          <FormInput
           formik={formik}
           name="account.name"
@@ -85,7 +85,7 @@ const OpportunityStep1 = ({ formik }) => {
         name="opportunity.account"
         label="Account*"
         options={accounts.map(account => ({
-          value: account.sys_id,
+          value: account._id,
           label: account.name
         }))}
         onChange={formik.handleChange}

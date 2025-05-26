@@ -3,7 +3,7 @@ const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 const Account = require('../../models/account');
 
-module.exports = async (req, res) => {
+async function createAccount(req, res=null) {
   try {
     console.log('Creating account in ServiceNow with payload:', req.body);
     
@@ -25,13 +25,19 @@ module.exports = async (req, res) => {
     });
       const savedAccount = await account.save();
       console.log('Account created in MongoDB:', savedAccount._id);
-      
-      res.status(201).json({
+
+      const resultat = {
+        _id:savedAccount._id,
         message: 'Account created successfully in both ServiceNow and MongoDB',
         servicenow: snResponse.data.result,
         mongodb: savedAccount,
         source: 'both'
-      });
+      }
+      if(res){
+        res.status(201).json(resultat);
+      //res.stauts(201).json(savedAccount);
+      }
+      return resultat;
       
     } catch (mongoError) {
       console.error('MongoDB creation failed:', mongoError);
@@ -53,3 +59,10 @@ module.exports = async (req, res) => {
     res.status(status).json({ error: message });
   }
 };
+
+// Original Express route handler for backward compatibility
+module.exports = async (req, res) => {
+  return createAccount(req, res);
+};
+
+module.exports.createAccount = createAccount;

@@ -5,7 +5,7 @@ const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 const Account = require('../../models/account');
 
-async function createOpportunity(req, res) {
+async function createOpportunity(req, res=null) {
   try {
     const { account, price_list, ...opportunityData } = req.body;
     
@@ -73,13 +73,15 @@ async function createOpportunity(req, res) {
         .populate('account', 'name email country city industry')
         .populate('price_list', 'name');
       
-      res.status(201).json({
+      if(res){
+        res.status(201).json({
         message: 'Opportunity created successfully in both ServiceNow and MongoDB',
         servicenow: snResponse.data.result,
         mongodb: populatedOpportunity,
         source: 'both'
       });
-      
+      }
+      return populatedOpportunity;
     } catch (mongoError) {
       console.error('MongoDB creation failed:', mongoError);
       return handleMongoError(res, snResponse.data.result, mongoError, 'creation');
@@ -87,8 +89,8 @@ async function createOpportunity(req, res) {
     
   } catch (error) {
     console.error('Error creating opportunity:', error);
-    
-    // Handle MongoDB errors
+    if(res){
+      // Handle MongoDB errors
     if (error.name && error.name.includes('Mongo')) {
       const mongoError = handleMongoError(error);
       return res.status(mongoError.status).json({ error: mongoError.message });
@@ -98,6 +100,7 @@ async function createOpportunity(req, res) {
     const status = error.response?.status || 500;
     const message = error.response?.data?.error?.message || error.message;
     res.status(status).json({ error: message });
+    }
   }
 }
 // Original Express route handler for backward compatibility
