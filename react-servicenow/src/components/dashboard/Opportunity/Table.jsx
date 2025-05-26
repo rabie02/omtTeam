@@ -19,8 +19,13 @@ function OpportunityTable({ setOpenForm }) {
 
   useEffect(() => {
     dispatch(getOpportunities());
-    dispatch(getAccounts());
   }, [dispatch]);
+
+  // Helper function to extract value from ServiceNow object format
+    const getValue = (field) => {
+        if (!field) return '';
+        return typeof field === 'object' ? field.value : field;
+    };
   
   const handleDelete = async (opportunityId) => {
     try {
@@ -40,19 +45,12 @@ function OpportunityTable({ setOpenForm }) {
   };
   
 
-  const ops = []
-  opportunities.map(opp => {
-    ops.push({
-      ...opp,
-      account: accounts.find(a => a.sys_id === opp.account )
-    })
-  })
-
   const columns = [
     {
       title: 'Number',
       dataIndex: 'number',
       key: 'number',
+      sorter: (a, b) => getValue(a.number).localeCompare(getValue(b.number)),
     },
     {
       title: 'Short Description',
@@ -82,6 +80,7 @@ function OpportunityTable({ setOpenForm }) {
       dataIndex: 'estimated_closed_date',
       key: 'estimated_closed_date',
       render: (date) => date ? new Date(date).toLocaleDateString() : 'N/A',
+      sorter: (a, b) => getValue(a.estimated_closed_date).localeCompare(getValue(b.estimated_closed_date)),
     },
     {
       title: 'Actions',
@@ -137,7 +136,7 @@ function OpportunityTable({ setOpenForm }) {
       <Table
         headerColor="rgba(0, 117, 149, 1)"
         columns={columns}
-        dataSource={ops}
+        dataSource={opportunities}
         rowKey="sys_id"
         locale={{
           emptyText: <Empty description="No opportunities found" />,
