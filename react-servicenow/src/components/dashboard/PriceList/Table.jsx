@@ -4,9 +4,22 @@ import { Popconfirm, Empty, Spin, Tag, Table, Tooltip, notification } from 'antd
 import { getPriceList, deletePriceList } from '../../../features/servicenow/price-list/priceListSlice';
 
 
-function PriceListTable({ setData, setOpen, dispatch }) {
+function PriceListTable({ setData, setOpen, dispatch, searchQuery }) {
     
     const { priceLists, loading, error } = useSelector((state) => state.priceList);
+
+    useEffect(() => {
+      dispatch(getPriceList({q:searchQuery}));
+  }, [dispatch, searchQuery]);
+
+  useEffect(() => {
+        if (priceLists.length < 0 && error) {
+            notification.error({
+                message: 'Operation Failed',
+                description: error || 'Failure at the execution. Please try again later.',
+            });
+        }
+    }, [error]);
 
     // Helper function to extract value from ServiceNow object format
     const getValue = (field) => {
@@ -21,12 +34,12 @@ function PriceListTable({ setData, setOpen, dispatch }) {
                 message: 'Price List Deleted',
                 description: 'Price List has been deleted successfully',
             });
-            dispatch(getPriceList());
+            dispatch(getPriceList({q:searchQuery}));
         } catch (error) {
             console.error('Deletion failed:', error);
             notification.error({
                 message: 'Deletion Failed',
-                description: error.message || 'Failed to delete Price List. Please try again.',
+                description: error || 'Failed to delete Price List. Please try again.',
             });
         }
     };
@@ -108,12 +121,7 @@ function PriceListTable({ setData, setOpen, dispatch }) {
     ];
 
     if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
-    if (error) {
-        notification.error({
-                message: 'Operation Failed',
-                description: error.message || 'Failure at the execution. Please try again later.',
-            });
-    }
+
     return (
         <div className='w-full justify-center flex'>
             <div className="w-9/12">

@@ -4,16 +4,22 @@ const PriceList = require('../../models/priceList');
 const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 const Account = require('../../models/account');
+const SCT = require('../../models/salesCycleType');
+const Stage = require('../../models/stage');
 
 async function createOpportunity(req, res=null) {
   try {
-    const { account, price_list, ...opportunityData } = req.body;
+    const { account, price_list, stage, sales_cycle_type, ...opportunityData } = req.body;
     
     // Step 1: Get sys_ids from MongoDB documents using their _id (if provided)
     let accountSysId = null;
     let priceListSysId = null;
     let accountDoc = null;
     let priceListDoc = null;
+    let stageDoc = null;
+    let SCTDoc = null;
+    let stageSysId = null;
+    let SCTSysId = null;
     
     // Get Account sys_id if account is provided
     if (account) {
@@ -32,12 +38,32 @@ async function createOpportunity(req, res=null) {
       }
       priceListSysId = priceListDoc.sys_id;
     }
+
+    // Get stage sys_id if stage is provided 
+    if(stage){
+      stageDoc = await Stage.findById(stage);
+      if (!stageDoc) {
+        return res.status(404).json({ error: `PriceList not found with id: ${stage}` });
+      }
+      stageSysId = stageDoc.sys_id;
+    }
+
+    // Get Sales Cycle Type sys_id if sales_cycle_type is provided 
+    if(sales_cycle_type){
+      SCTDoc = await SCT.findById(sales_cycle_type);
+      if (!SCTDoc) {
+        return res.status(404).json({ error: `PriceList not found with id: ${SCT}` });
+      }
+      SCTSysId = SCTDoc.sys_id;
+    }
     
     // Step 2: Prepare ServiceNow payload with sys_ids
     const serviceNowPayload = {
       ...opportunityData,
       account: accountSysId,
-      price_list: priceListSysId
+      price_list: priceListSysId,
+      stage: stageSysId,
+      sales_cycle_type: SCTSysId
     };
     
     console.log('Creating opportunity in ServiceNow with payload:', serviceNowPayload);
@@ -71,6 +97,8 @@ async function createOpportunity(req, res=null) {
       // Populate the saved opportunity with account and price_list details
       const populatedOpportunity = await Opportunity.findById(savedOpportunity._id)
         .populate('account', 'name email country city industry')
+        .populate('price_list')
+        .populate('sales_cycle_type')
         .populate('price_list', 'name');
       
       if(res){

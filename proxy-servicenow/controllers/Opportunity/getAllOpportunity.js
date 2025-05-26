@@ -8,7 +8,7 @@ module.exports = async (req, res) => {
       number: numberQuery, 
       description: descQuery,
       page = 1, 
-      limit = 10 
+      limit = 6 
     } = req.query;
     
     let query = {};
@@ -40,16 +40,38 @@ module.exports = async (req, res) => {
       .populate('stage')
       .lean();
 
-    // Format response
+    // Get all opportunity IDs
+    const opportunityIds = mongoData.map(opp => opp._id);
+
+    // Lookup all line items for these opportunities
+    const OpportunityLineItem = require('../../models/opportunityLine');
+    const lineItems = await OpportunityLineItem.find({
+      opportunity: { $in: opportunityIds }
+    })
+    .populate('productOffering')
+    .lean();
+
+    // Group line items by opportunity ID
+    const lineItemsByOpportunity = {};
+    lineItems.forEach(item => {
+      const oppId = item.opportunity.toString();
+      if (!lineItemsByOpportunity[oppId]) {
+        lineItemsByOpportunity[oppId] = [];
+      }
+      lineItemsByOpportunity[oppId].push(item);
+    });
+
+    // Format response with line items attached
     const formattedData = mongoData.map(item => ({
       ...item,
       _id: item._id.toString(),
-      mongoId: item._id.toString()
+      mongoId: item._id.toString(),
+      line_items: lineItemsByOpportunity[item._id.toString()] || [] // Add line items here
     }));
 
     return res.json({
       success: true,
-      formattedData,
+      data: formattedData,
       pagination: {
         total: totalCount,
         page: parseInt(page),

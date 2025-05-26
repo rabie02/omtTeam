@@ -172,10 +172,6 @@ function OpportunityForm({ open, setOpen, dispatch }) {
       opportunityLineItem: {
         term_month: '12',
         quantity: '1'
-      },
-      account:{
-        name:"",
-        email:""
       }
     },
     validationSchema,
@@ -304,7 +300,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
       });
     };
 
-    console.log(stages);
+
 
   return (
     <Modal

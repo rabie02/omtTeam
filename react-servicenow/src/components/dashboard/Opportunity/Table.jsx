@@ -1,49 +1,60 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Popconfirm, Empty, Spin, Table, notification, Tooltip} from 'antd';
+import { Popconfirm, Empty, Spin, Table, notification, Tooltip, Modal} from 'antd';
 import { 
   getOpportunities,
   deleteOpportunity,
   getAccounts
 } from '../../../features/servicenow/opportunity/opportunitySlice';
+import OpportunityStep4 from './Steps/Step4-1';
 
 
-function OpportunityTable({ setOpenForm }) {
+function OpportunityTable({ setOpenForm, searchQuery }) {
+
+  const [visible, setVisible] = useState(false);
+
+  const showModal = () => setVisible(true);
+  const hideModal = () => setVisible(false);
+
   const dispatch = useDispatch();
   const {
     opportunities,
     accounts,
     loading,
-    error
+    error,
+    currentPage,
+    totalItems,
+    limit,
+    totalPages
   } = useSelector((state) => state.opportunity);
 
   useEffect(() => {
-    dispatch(getOpportunities());
-  }, [dispatch]);
+    dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
+  }, [dispatch, searchQuery]);
 
   // Helper function to extract value from ServiceNow object format
     const getValue = (field) => {
         if (!field) return '';
         return typeof field === 'object' ? field.value : field;
     };
-  console.log(JSON.stringify(opportunities[3],null,2))
+
   const handleDelete = async (opportunityId) => {
     try {
       await dispatch(deleteOpportunity(opportunityId));
       notification.success({
-          message: 'Price List Deleted',
-          description: 'Price List has been deleted successfully',
+          message: 'Opportunuity Deleted',
+          description: 'Opportunuity has been deleted successfully',
       });
-      dispatch(getOpportunities());
+      dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
     } catch (error) {
         console.error('Deletion failed:', error);
         notification.error({
             message: 'Deletion Failed',
-            description: error.message || 'Failed to delete Price List. Please try again.',
+            description: error.message || 'Failed to delete Opportunuity. Please try again.',
         });
     }
   };
-  console.log(opportunities);
+
 
   const columns = [
     {
@@ -123,22 +134,41 @@ function OpportunityTable({ setOpenForm }) {
               </button>
             </Popconfirm>
           </Tooltip>
-          <Tooltip title={`See More Details`}>
-              <button className="mx-2 text-gray-500 hover:text-green-600">
-                  <i className="ri-eye-line text-2xl"></i>
+          <>
+            <Tooltip title="See More Details">
+              <button 
+                className="mx-2 text-gray-500 hover:text-green-600"
+                onClick={showModal}
+                disabled
+              >
+                <i className="ri-eye-line text-2xl"></i>
               </button>
-          </Tooltip>
+            </Tooltip>
+            
+            <Modal
+             
+              open={visible}
+              onCancel={hideModal}
+              footer={null}
+              width={800}
+            >
+              <OpportunityStep4 
+                initialData={record}
+              />
+            </Modal>
+          </>
         </div>
       ),
     },
   ];
+  console.log(opportunities)
 
   if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
   if (error) {
-    console.log(error)
+    
       notification.error({
               message: 'creation Failed',
-              description: error.message || 'Failed to create opportunity. Please try again.',
+              description: error || 'Failed to create opportunity. Please try again.',
           });
   }
 

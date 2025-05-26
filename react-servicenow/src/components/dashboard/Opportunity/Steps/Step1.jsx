@@ -64,7 +64,7 @@ const OpportunityStep1 = ({ formik }) => {
         onBlur={formik.handleBlur}
       />
       </div>
-      {salesCycleTypes.filter(s=> s.sys_id === formik.values.opportunity.sales_cycle_type)?.[0]?.["sys_name"] === "NEWCUST" && 
+      {salesCycleTypes.filter(s=> s._id === formik.values.opportunity.sales_cycle_type)?.[0]?.["sys_name"] === "NEWCUST" && 
       <div className="grid grid-cols-2 gap-4">
          <FormInput
           formik={formik}
@@ -79,7 +79,7 @@ const OpportunityStep1 = ({ formik }) => {
         />
       </div>}
       
-      {salesCycleTypes.filter(s=> s.sys_id === formik.values.opportunity.sales_cycle_type)?.[0]?.["sys_name"] !== "NEWCUST" &&
+      {salesCycleTypes.filter(s=> s._id === formik.values.opportunity.sales_cycle_type)?.[0]?.["sys_name"] !== "NEWCUST" &&
       <FormSelect
         formik={formik}
         name="opportunity.account"
