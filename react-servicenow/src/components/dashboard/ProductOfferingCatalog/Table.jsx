@@ -108,18 +108,24 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
                 const { action, newStatus } = getStatusAction(record.status);
                 return (
                     <div className="flex items-center">
-                        <Tooltip title={`${action} Catalog`}>
-                            <Popconfirm
-                                title={`${action} Catalog`}
-                                description={`Are you sure to ${action.toLowerCase()} this catalog?`}
-                                onConfirm={() => handleUpdateStatus(record._id, newStatus)}
-                            >
-                                <button className="text-gray-500 hover:text-green-600">
-                                    <i className="ri-loop-right-line text-2xl"></i>
-                                </button>
-                            </Popconfirm>
-                        </Tooltip>
-                        <Tooltip title="Edit This Catalog">
+                        {/* Status Change Button - Hidden for archived */}
+                        {record.status.toLowerCase() !== 'archived' && (
+                            <Tooltip title={`${action} Category`}>
+                                <Popconfirm
+                                    title={`${action} Category`}
+                                    description={`Are you sure to ${action.toLowerCase()} this category?`}
+                                    onConfirm={() => handleUpdateStatus(record._id, newStatus)}
+                                >
+                                    <button className="text-gray-500 hover:text-green-600">
+                                        <i className="ri-loop-right-line text-2xl"></i>
+                                    </button>
+                                </Popconfirm>
+                            </Tooltip>
+                        )}
+
+
+
+                        <Tooltip title="Edit This Category">
                             <button
                                 className="mx-2 text-gray-500 hover:text-yellow-400"
                                 onClick={() => changeData(record)}
@@ -127,10 +133,13 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
                                 <i className="ri-pencil-line text-2xl"></i>
                             </button>
                         </Tooltip>
-                        <Tooltip title="Delete This Catalog">
+
+
+                        {/* Delete Button - Always shown */}
+                        <Tooltip title="Delete This Category">
                             <Popconfirm
-                                title="Delete Catalog"
-                                description="Are you sure to delete this catalog?"
+                                title="Delete Category"
+                                description="Are you sure to delete this category?"
                                 onConfirm={() => handleDelete(record._id)}
                             >
                                 <button className="text-gray-500 hover:text-red-600">
@@ -141,7 +150,7 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
                     </div>
                 );
             },
-        },
+        }
     ];
 
     const categoryColumns = [
@@ -184,7 +193,7 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
 
     if (loading) return <div className="h-full flex justify-center items-center"><Spin size="large" /></div>;
     if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
-    
+
     return (
         <div className='w-full justify-center flex'>
             <div className="w-10/12 ">
@@ -201,9 +210,16 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
                                         columns={categoryColumns}
                                         dataSource={record.categories}
                                         rowKey="_id"
-                                        pagination={false}
                                         bordered
                                         size="small"
+                                        pagination={
+                                            record.categories?.length > 4
+                                                ? {
+                                                    pageSize: 4,
+                                                    showSizeChanger: false,
+                                                }
+                                                : false
+                                        }
                                     />
                                 ) : (
                                     <Empty

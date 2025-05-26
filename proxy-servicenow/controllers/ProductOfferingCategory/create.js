@@ -57,6 +57,7 @@ module.exports = async (req, res) => {
           code: code,
           is_leaf: is_leaf,
           start_date: start_date || new Date().toISOString(),
+          end_date: end_date || null,
           description: description
         },
         {

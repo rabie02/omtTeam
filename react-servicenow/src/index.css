@@ -1,12 +1,13 @@
 @import "tailwindcss";
 
-*{
+* {
     border-radius: 0px !important;
 }
 
 /* pagination css */
 .ant-pagination-item-active {
-    border-color: #0891b2 !important; /* Cyan 700 */
+    border-color: #0891b2 !important;
+    /* Cyan 700 */
 }
 
 .ant-pagination-item-active a {
@@ -22,12 +23,28 @@
 }
 
 /* modal */
-.ant-modal-content{
 
+/* .ant-modal-wrap {
+  display: flex !important;
 
 }
 
- .ant-table-thead .ant-table-cell {
-  background-color: oklch(52% 0.105 223.128) !important;
-  color:white !important;
-  }
+.ant-modal{
+    top:1px !important;
+} */
+
+.ant-table-thead .ant-table-cell {
+    background-color: oklch(52% 0.105 223.128) !important;
+    color: white !important;
+}
+
+
+/* select */
+.ant-select-selector {
+    border: none !important;
+    height: 39.6px;
+}
+
+.ant-select-single {
+    height: 39.6px !important;
+}

@@ -6,12 +6,12 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL;
 // Async Thunks
 export const getall = createAsyncThunk(
   'ProductOfferingCategory/getall',
-  async ({ page = 1, limit = 6 }, { rejectWithValue }) => {
+  async ({ page = 1, limit = 6, q }, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
       const response = await axios.get(`${backendUrl}/api/product-offering-category`, {
         headers: { authorization: access_token },
-        params: { page, limit }
+        params: { page, limit, q }
       });
       console.log(response.data);
       
@@ -52,18 +52,14 @@ export const createCategory = createAsyncThunk(
   }
 );
 
-export const updatecategoryStatus = createAsyncThunk(
+export const updateCategoryStatus = createAsyncThunk(
   'ProductOfferingCategory/updateStatus',
-  async ({ id, currentStatus }, { rejectWithValue }) => {
+  async ({ id, status }, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      const newStatus = currentStatus === 'draft' ? 'published' 
-                      : currentStatus === 'published' ? 'retired'
-                      : currentStatus;
-
       const response = await axios.patch(
-        `${backendUrl}/api/product-offering-category/${id}`, 
-        { status: newStatus },
+        `${backendUrl}/api/product-offering-category-status/${id}`, 
+        { status },
         { headers: { authorization: access_token } }
       );
       return response.data.result;
@@ -167,18 +163,18 @@ const ProductOfferingCategorySlice = createSlice({
       })
 
       // Update Status
-      .addCase(updatecategoryStatus.pending, (state) => {
+      .addCase(updateCategoryStatus.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(updatecategoryStatus.fulfilled, (state, action) => {
+      .addCase(updateCategoryStatus.fulfilled, (state, action) => {
         const index = state.data.findIndex(p => p.sys_id === action.payload.sys_id);
         if (index !== -1) {
           state.data[index] = action.payload;
         }
         state.loading = false;
       })
-      .addCase(updatecategoryStatus.rejected, (state, action) => {
+      .addCase(updateCategoryStatus.rejected, (state, action) => {
         state.error = action.payload;
         state.loading = false;
       })

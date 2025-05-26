@@ -1,10 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const categorySchema = new Schema({
-  id: { type: String, required: false },
-  name: { type: String, required: false, default: "" },
-});
 
 const channelSchema = new Schema({
   description: { type: String, required: false, default: "" },
@@ -83,11 +79,15 @@ const prodSpecCharValueUseSchema = new Schema({
 
 const productOfferingSchema = new Schema({
   //number: { type: String, required: false }, 
-  category: { type: Array(categorySchema), required: false },
+  category: { type: Array({
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'ProductOfferingCategory'
+}), required: false },
   channel: { type: Array(channelSchema), required: false },
   description: { type: String, required: false },
   externalId: { type: String, required: false, default: "" },
   id: { type: String, required: false }, 
+  sys_id: { type: String, required: false },
   internalId: { type: String, required: false },
   lastUpdate: { type: String, required: false, default: "" },
   name: { type: String, required: true },
@@ -96,7 +96,10 @@ const productOfferingSchema = new Schema({
     required: false,
   },
   productOfferingTerm: { type: String, required: false, default: "" },
-  productSpecification: { type: productSpecificationSchema, required: false },
+  productSpecification: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ProductSpecification'
+  },
   prodSpecCharValueUse: {
     type: [prodSpecCharValueUseSchema],
     required: false,
