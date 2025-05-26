@@ -15,7 +15,7 @@ const productSpecificationSchema = new mongoose.Schema({
   start_date: String,
   description: String,
   status: String
-}, { 
+}, {
   timestamps: true,
   strict: false
 });

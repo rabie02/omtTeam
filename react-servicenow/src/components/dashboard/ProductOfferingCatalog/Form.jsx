@@ -86,7 +86,6 @@ function ProductOfferingCatalogForm({ open, setOpen, initialData = null, dispatc
       onCancel={handleCancel}
       footer={null}
       destroyOnClose
-      style={{ top: 20 }}
     >
       <form onSubmit={formik.handleSubmit} className="space-y-4">
         {/* Name */}

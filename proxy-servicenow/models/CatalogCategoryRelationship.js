@@ -5,7 +5,6 @@ const CatalogCategoryRelationSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    match: [/^[a-f0-9]{32}$/, 'Please provide a valid 32-character sys_id']
   },
   sys_updated_by: { 
     type: String, 

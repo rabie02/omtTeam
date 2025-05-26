@@ -1,274 +1,288 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Popconfirm, Empty, Spin, Pagination, Modal, Select } from 'antd';
-import { getall, deleteCategory, updatecategoryStatus, createCatalogCategoryRelationship } from '../../../features/servicenow/product-offering/productOfferingCategorySlice';
-import { getall as getCatalogs } from '../../../features/servicenow/product-offering/productOfferingCatalogSlice';
-import PublishButton from './PublishButton';
+import { Table, notification, Popconfirm, Empty, Spin, Pagination, Tooltip } from 'antd';
+import { getall, deleteCategory, updateCategoryStatus } from '../../../features/servicenow/product-offering/productOfferingCategorySlice';
 
-
-function Table({ setData, setOpen, searchTerm }) {
-    const [publishModal, setPublishModal] = useState({ 
-        visible: false, 
-        id: null, 
-        currentStatus: null,
-        selectedCatalog: null
-    });
-    
-    const dispatch = useDispatch();
+function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
     const {
-        data: products,
+        data: categories,
         loading,
         error,
         currentPage,
         totalItems,
-        limit,
-        relationshipStatus
+        limit
     } = useSelector((state) => state.productOfferingCategory);
-    
-    // Get catalog data from Redux store
-    const {
-        data: catalogs,
-        loading: loadingCatalogs
-    } = useSelector((state) => state.productOfferingCatalog);
 
-    // Fetch catalogs when the publish modal is opened
     useEffect(() => {
-        if (publishModal.visible) {
-            dispatch(getCatalogs({ page: 1, limit: 100 }));
-        }
-    }, [publishModal.visible, dispatch]);
+        dispatch(getall({ page: 1, limit: 6, q: searchQuery }));
+    }, [dispatch, searchQuery]);
 
-    // Load initial data
-    useEffect(() => {
-        dispatch(getall({ page: 1, limit: 6 }));
-    }, [dispatch]);
-
-    // Listen for search term changes
-    useEffect(() => {
-        if (searchTerm !== undefined) {
-            dispatch(getall({ page: 1, limit: 6, search: searchTerm }));
-        }
-    }, [dispatch, searchTerm]);
-      
     const handleDelete = async (productId) => {
-        await dispatch(deleteCategory(productId));
-        // Refresh current page after deletion
-        dispatch(getall({ page: currentPage, limit, search: searchTerm }));
+        try {
+            await dispatch(deleteCategory(productId)).unwrap();
+            notification.success({
+                message: 'Category Deleted',
+                description: 'Category has been deleted successfully'
+            });
+            dispatch(getall({ page: currentPage, limit, q: searchQuery }));
+        } catch (error) {
+            notification.error({
+                message: 'Deletion Failed',
+                description: error.message || 'Failed to delete category'
+            });
+        }
+    };
+
+    const handleUpdateStatus = async (categoryId, newStatus) => {
+        try {
+            await dispatch(updateCategoryStatus({
+                id: categoryId,
+                status: newStatus
+            })).unwrap();
+
+            notification.success({
+                message: 'Status Updated',
+                description: `Category has been ${newStatus} successfully`
+            });
+
+            dispatch(getall({ page: currentPage, limit, q: searchQuery }));
+        } catch (error) {
+            notification.error({
+                message: 'Update Failed',
+                description: error.message || 'Status update failed'
+            });
+        }
     };
 
     const handlePageChange = (page) => {
-        dispatch(getall({ page, limit, search: searchTerm }));
+        dispatch(getall({ page, limit, q: searchQuery }));
     };
-  
+
     const changeData = (newData) => {
         setData(newData);
         setOpen(true);
     };
-    
-    // Function to open the publish modal
-    const showPublishModal = (id, currentStatus) => {
-        setPublishModal({ 
-            visible: true, 
-            id, 
-            currentStatus,
-            selectedCatalog: null
-        });
-    };
-    
-    // Handle catalog selection in the modal
-    const handleCatalogChange = (catalogId) => {
-        setPublishModal({
-            ...publishModal,
-            selectedCatalog: catalogId
-        });
-    };
-    
-    // Handle publish with catalog relationship
-    const handlePublish = async () => {
-        try {
-            // First, create catalog-category relationship if needed
-            if (publishModal.currentStatus === 'draft' && publishModal.selectedCatalog) {
-                try {
-                    // Use the Redux action to create relationship
-                    await dispatch(createCatalogCategoryRelationship({
-                        catalogId: publishModal.selectedCatalog,
-                        categoryId: publishModal.id
-                    })).unwrap();
-                } catch (relationshipError) {
-                    console.error('Failed to create relationship:', relationshipError);
-                    return; // Don't proceed with status update if relationship creation fails
-                }
-            }
-            
-            // Then update the status
-            await dispatch(updatecategoryStatus({ 
-                id: publishModal.id, 
-                currentStatus: publishModal.currentStatus 
-            })).unwrap();
-            
-            // Refresh data after status update
-            dispatch(getall({ page: currentPage, limit, search: searchTerm }));
-            
-            // Close modal
-            setPublishModal({ visible: false, id: null, currentStatus: null, selectedCatalog: null });
-        } catch (error) {
-            console.error('Failed to publish:', error);
+
+    const getStatusAction = (currentStatus) => {
+        switch (currentStatus.toLowerCase()) {
+            case 'draft': return { action: 'Publish', newStatus: 'published' };
+            case 'published': return { action: 'Retire', newStatus: 'retired' };
+            case 'retired': return { action: 'Archive', newStatus: 'archived' };
+            default: return { action: 'Update Status', newStatus: currentStatus };
         }
     };
-    
-    // Show a custom message for search
-    const noProductsMessage = searchTerm 
-        ? `No categories found matching "${searchTerm}"`
-        : "No categories found";
-      
-    if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
-    if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
 
-    // Determine if catalog selection is needed (only when publishing from draft to published)
-    const needsCatalogSelection = publishModal.currentStatus === 'draft';
+
+    const productOfferingColumns = [
+        {
+            title: 'Product Offering Name',
+            dataIndex: 'name',
+            key: 'name',
+        },
+        {
+            title: 'Status',
+            dataIndex: 'status',
+            key: 'status',
+            render: (status) => (
+                <span className={`px-2 py-1 capitalize ${status === 'published'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-700'
+                    }`}>
+                    {status}
+                </span>
+            ),
+        },
+        {
+            title: 'Term',
+            dataIndex: 'productOfferingTerm',
+            key: 'term',
+            render: (text) => text ?
+                text.replace(/_/g, ' ')  // Replace underscores with spaces
+                    .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize first letters
+                : 'N/A',
+        },
+        {
+            title: 'Start Date',
+            render: (_, record) => record.validFor.startDateTime
+                ? new Date(record.validFor.startDateTime).toISOString().split("T")[0]
+                : 'N/A',
+        },
+        {
+            title: 'End Date',
+            render: (_, record) => record.validFor.endDateTime
+                ? new Date(record.validFor.endDateTime).toISOString().split("T")[0]
+                : 'N/A',
+        },
+        {
+            title: 'Price',
+            render: (_, record) => {
+                const recurringPrice = record.productOfferingPrice?.find(p => p.priceType === 'recurring');
+                return recurringPrice
+                    ? `${recurringPrice.price.taxIncludedAmount.value} ${recurringPrice.price.taxIncludedAmount.unit}`
+                    : 'N/A';
+            },
+        },
+    ];
+
+
+    const mainColumns = [
+        {
+            title: 'Number',
+            dataIndex: 'number',
+            key: 'number',
+            width: 150,
+
+        },
+        {
+            title: 'Name',
+            dataIndex: 'name',
+            key: 'name',
+
+        },
+        {
+            title: 'Status',
+            key: 'status',
+
+            render: (_, record) => (
+                <span className={`px-2 py-1 capitalize rounded ${record.status === 'published'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-700'
+                    }`}>
+                    {record.status}
+                </span>
+            ),
+
+        },
+        {
+            title: 'Start Date',
+            key: 'start_date',
+            sorter: (a, b) => new Date(a.start_date) - new Date(b.start_date),
+            render: (_, record) => record.start_date
+                ? new Date(record.start_date).toISOString().split("T")[0]
+                : 'N/A',
+
+        },
+        {
+            title: 'End Date',
+            key: 'end_date',
+            sorter: (a, b) => new Date(a.end_date) - new Date(b.end_date),
+            render: (_, record) => record.end_date
+                ? new Date(record.end_date).toISOString().split("T")[0]
+                : 'N/A',
+
+        },
+        {
+            title: 'Actions',
+            key: 'actions',
+            render: (_, record) => {
+                const { action, newStatus } = getStatusAction(record.status);
+                return (
+                    <div className="flex items-center">
+                        {/* Status Change Button - Hidden for archived */}
+
+                        <Tooltip title={`${action} Category`}>
+                            <Popconfirm
+                                title={`${action} Category`}
+                                description={`Are you sure to ${action.toLowerCase()} this category?`}
+                                onConfirm={() => handleUpdateStatus(record._id, newStatus)}
+                                disabled={record.status === "archived"}
+                            >
+                                <button className="mx-1 text-gray-500 hover:text-green-600  ">
+                                    <i className="ri-loop-right-line text-2xl"></i>
+                                </button>
+                            </Popconfirm>
+                        </Tooltip>
+
+
+                        {/* Edit Button - Only shown for draft */}
+                        <Tooltip title={record.status !== "draft" ? "Editing is only allowed in this status" : "Edit This Category"}>
+                            <button
+                                className={`mx-1 ${record.status !== "draft" ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-yellow-400"}`}
+                                onClick={() => changeData(record)}
+                                disabled={record.status !== "draft"}
+                            >
+                                <i className="ri-pencil-line text-2xl"></i>
+                            </button>
+                        </Tooltip>
+
+
+                        {/* Delete Button - Always shown */}
+                        <Tooltip title="Delete This Category">
+                            <Popconfirm
+                                title="Delete Category"
+                                description="Are you sure to delete this category?"
+                                onConfirm={() => handleDelete(record._id)}
+                            >
+                                <button className=" mx-1 text-gray-500 hover:text-red-600">
+                                    <i className="ri-delete-bin-6-line text-2xl"></i>
+                                </button>
+                            </Popconfirm>
+                        </Tooltip>
+                    </div>
+                );
+            },
+        }
+    ];
+
+    if (loading) return (
+        <div className="h-full flex justify-center items-center">
+            <Spin size="large" tip="Loading categories..." />
+        </div>
+    );
+
+    if (error) return (
+        <div className="text-red-500 p-4">
+            Error: {error.message || 'Failed to load categories'}
+        </div>
+    );
 
     return (
         <div className='w-full justify-center flex'>
-        <div className="w-9/12 ">
-        <table className=" divide-y-2 min-w-full divide-gray-200 overflow-x-auto border border-gray-300  shadow-2xl">
-                    <thead className="ltr:text-left rtl:text-right bg-cyan-700 text-white">
-                        <tr className="*:font-medium ">
-                            <th className="px-3 py-3 whitespace-nowrap">Number</th>
-                            <th className="px-3 py-3 whitespace-nowrap">Name</th>
-                            <th className="px-3 py-3 whitespace-nowrap">Status</th>
-                            <th className="px-3 py-3 whitespace-nowrap">Start Date</th>
-                            <th className="px-3 py-3 whitespace-nowrap">End Date</th>
-                            <th className="px-3 py-3 whitespace-nowrap">Actions</th>
-                        </tr>
-                    </thead>
+            <div className="w-10/12 ">
+                <Table
+                    columns={mainColumns}
+                    dataSource={categories}
+                    rowKey="sys_id"
+                    loading={loading}
+                    expandable={{
+                        expandedRowRender: (record) => (
+                            <div className="ml-8 bg-gray-50 p-4 rounded">
+                                {record.productOffering?.length > 0 ? (
+                                    <Table
+                                        columns={productOfferingColumns}
+                                        dataSource={record.productOffering}
+                                        rowKey="_id"
+                                        bordered
+                                        size="small"
+                                        pagination={
+                                            record.productOffering?.length > 4
+                                                ? { pageSize: 4, showSizeChanger: false }
+                                                : false
+                                        }
+                                    />
+                                ) : (
+                                    <Empty
+                                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                        description="No product Offering found"
+                                    />
+                                )}
+                            </div>
+                        ),
+                        rowExpandable: (record) => record.productOffering?.length > 0,
+                    }}
+                    pagination={false}
+                    locale={{
+                        emptyText: (
+                            <Empty
+                                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                description="No categories found"
+                            />
+                        ),
+                    }}
+                    className="shadow-lg rounded-lg overflow-hidden"
+                />
 
-                <tbody className="divide-y divide-gray-200">
-                    {!products || products.length === 0 ? (
-                                                <tr>
-                                                    <td colSpan="6" className="py-8 text-center">
-                                                        <Empty
-                                                              image={Empty.PRESENTED_IMAGE_SIMPLE}
-                                                              description={noProductsMessage}
-                                                        />
-                                                    </td>
-                                                </tr>
-                                            ) : (
-                                                products.map((product) => (
-                                                    <tr key={product.number} className="*:text-gray-900 *:first:font-medium">
-                                                        <td className="px-3 py-3 whitespace-nowrap">{product.number}</td>
-                                                        <td className="px-3 py-3 whitespace-nowrap">{product.name}</td>
-                                                        <td className="px-3 py-3 whitespace-nowrap">
-                                                            <span className={`px-2 py-1 text-md capitalize rounded ${product.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
-                                                                {product.status}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-3 py-3 whitespace-nowrap">
-                                                            {product.start_date ? new Date(product.start_date).toISOString().split("T")[0] : 'N/A'}
-                                                        </td>
-                                                        <td className="px-3 py-3 whitespace-nowrap">
-                                                            {product.end_date ? new Date(product.end_date).toISOString().split("T")[0] : 'N/A'}
-                                                        </td>
-                                                        <td className="px-3 py-3 whitespace-nowrap">
-                                                            {/* Status change button */}
-                                                            <button
-                                                                className="mr-2 text-gray-500 hover:text-green-500"
-                                                                onClick={() => showPublishModal(product.sys_id, product.status)}
-                                                            >
-                                                                <i className="ri-refresh-line text-2xl"></i>
-                                                            </button>
-                                                            <button
-                                                                className="mr-2 text-gray-500 hover:text-yellow-400 "
-                                                                onClick={() => changeData(product)}
-                                                            >
-                                                                <i className="ri-pencil-line text-2xl"></i>
-                                                            </button>
-                                                            <Popconfirm
-                                                                title="Delete the category"
-                                                                description="Are you sure to delete this category?"
-                                                                icon={<i className="ri-error-warning-line text-red-600 mr-2"></i>}
-                                                                onConfirm={() => handleDelete(product.sys_id)}
-                                                            >
-                                                                <button className="text-gray-500 hover:text-red-600 ">
-                                                                    <i className="ri-delete-bin-6-line text-2xl"></i>
-                                                                </button>
-                                                            </Popconfirm>
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            )}
-
-                </tbody>
-            </table>
-            
-            {/* Modal for status change with catalog selection if needed */}
-            <Modal
-                title={
-                    <div className="flex items-center">
-                        <span className="text-yellow-500 mr-2">
-                            <i className="ri-error-warning-line text-xl"></i>
-                        </span>
-                        <span>
-                            {publishModal.currentStatus === 'draft' 
-                                ? 'Publish Category' 
-                                : publishModal.currentStatus === 'published' 
-                                    ? 'Retire Category' 
-                                    : 'Update Status'}
-                        </span>
-                    </div>
-                }
-                open={publishModal.visible}
-                onCancel={() => setPublishModal({ visible: false, id: null, currentStatus: null, selectedCatalog: null })}
-                footer={[
-                    <button
-                        key="cancel"
-                        onClick={() => setPublishModal({ visible: false, id: null, currentStatus: null, selectedCatalog: null })}
-                        className="px-4 py-2 rounded border bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    >
-                        Cancel
-                    </button>,
-                    <button
-                        key="ok"
-                        onClick={handlePublish}
-                        disabled={needsCatalogSelection && !publishModal.selectedCatalog}
-                        className={`px-4 py-2 ml-2 rounded ${needsCatalogSelection && !publishModal.selectedCatalog 
-                            ? 'bg-blue-300 cursor-not-allowed' 
-                            : 'bg-blue-500 hover:bg-blue-600'} text-white`}
-                    >
-                        Confirm
-                    </button>
-                ]}
-            >
-                <p>
-                    {publishModal.currentStatus === 'draft' 
-                        ? 'Are you sure you want to publish this category?' 
-                        : publishModal.currentStatus === 'published' 
-                            ? 'Are you sure you want to retire this category?' 
-                            : 'Are you sure you want to update the status of this category?'}
-                </p>
-                
-                {/* Catalog selection - Only shown when publishing from draft */}
-                {needsCatalogSelection && (
-                    <div className="mt-4">
-                        <label className="block font-medium mb-1">Select Catalog</label>
-                        <Select
-                            className="w-full"
-                            value={publishModal.selectedCatalog}
-                            onChange={handleCatalogChange}
-                            loading={loadingCatalogs}
-                            placeholder="Select a catalog"
-                            options={catalogs.map(catalog => ({
-                                value: catalog.sys_id,
-                                label: catalog.name
-                            }))}
-                        />
-                        <p className="text-sm text-gray-500 mt-1">
-                            A catalog-category relationship must be created before publishing.
-                        </p>
-                    </div>
-                )}
-            </Modal>
-            
-            <div className=" mt-5 flex justify-end ">
+                <div className="mt-4 flex justify-end">
                     <Pagination
                         current={currentPage}
                         total={totalItems}
@@ -279,11 +293,9 @@ function Table({ setData, setOpen, searchTerm }) {
                         className="ant-pagination-custom"
                     />
                 </div>
-
-        </div>
-
+            </div>
         </div>
     );
 }
 
-export default Table;
+export default CategoryTable;

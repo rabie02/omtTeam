@@ -15,8 +15,8 @@ router.get('/product-offering-category', getAll);
 router.get('/product-offering-category/:id', getOne);
 router.post('/product-offering-category', create);
 router.patch('/product-offering-category/:id', update);
-// router.patch('/product-offering-category-status/:id', updateStatus);
-router.patch('/product-offering-category-status', updateStatus);
+router.patch('/product-offering-category-status/:id', updateStatus);
+// router.patch('/product-offering-category-status', updateStatus);
 // router.post('/category-catalog-relation', createRelation);
 router.delete('/product-offering-category/:id', deleteHandler);
 

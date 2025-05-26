@@ -72,6 +72,19 @@ module.exports = async (req, res) => {
       }
     });
 
+    try {
+      await updateCatalogCategoryRelationship(
+        catalogDoc,
+        existingCategory,
+        decodedToken.sn_access_token
+      );
+    } catch (error) {
+      return res.status(500).json({
+        error: 'Failed to create catalog-category relationship',
+        details: error.message
+      });
+    }
+
     // 4. Update ServiceNow record
     let snResponse;
     try {
@@ -104,20 +117,6 @@ module.exports = async (req, res) => {
       return handleMongoError(res, snResponse.data, mongoError, 'update');
     }
 
-    // 6. Handle catalog relationship update
-
-    try {
-      await updateCatalogCategoryRelationship(
-        catalogDoc._id,
-        updatedCategory,
-        decodedToken.sn_access_token
-      );
-    } catch (error) {
-      return res.status(500).json({
-        error: 'Failed to create catalog-category relationship',
-        details: error.message
-      });
-    }
 
     // 7. Prepare response
     const result = await getone(updatedCategory._id)

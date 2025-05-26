@@ -17,20 +17,18 @@ const sendVerificationToken = async (req, res) => {
   try {
     const { id, account } = req.body;
 
-    // console.log(id);
-    // console.log(account);
 
     if (!account) {
       return res.status(400).json({ error: 'Email is required in the request body' });
     }
 
     const token = jwt.sign(
-      { account },
+      { id },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRE }
     );
 
-    const verificationLink = `http://localhost:3000/verify-token?token=${token}`;
+    const verificationLink = `${process.env.FRONTEND_URL}/createAccount/?token=${token}`;
 
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
@@ -57,7 +55,7 @@ const verifyToken = (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Token verified!',
-      email: decoded.email,
+      id: decoded.id,
     });
 
   } catch (error) {
