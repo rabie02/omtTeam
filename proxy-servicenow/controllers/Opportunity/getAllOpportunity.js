@@ -3,7 +3,6 @@ const handleMongoError = require('../../utils/handleMongoError');
 
 module.exports = async (req, res) => {
   try {
-
     const { 
       q: searchQuery, 
       number: numberQuery, 
@@ -33,12 +32,12 @@ module.exports = async (req, res) => {
 
     // Fetch data with pagination
     const mongoData = await Opportunity.find(query)
+      .skip(skip)
+      .limit(parseInt(limit))
       .populate('account', 'name email country city industry')
       .populate('price_list')
       .populate('sales_cycle_type')
       .populate('stage')
-      .skip(skip)
-      .limit(parseInt(limit))
       .lean();
 
     // Format response
