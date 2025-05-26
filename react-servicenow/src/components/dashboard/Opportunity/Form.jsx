@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Modal, Steps, notification } from 'antd';
@@ -18,6 +18,8 @@ import {
 } from '../../../features/servicenow/opportunity/opportunitySlice';
 import { getPriceList } from '../../../features/servicenow/price-list/priceListSlice';
 import {getall as getProductOfferings} from '../../../features/servicenow/product-offering/productOfferingSlice';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 const { Step } = Steps;
 
@@ -43,7 +45,7 @@ const validationSchema = Yup.object().shape({
     then: () => Yup.object().shape({
       name: Yup.string().required('Name is required'),
       currency: Yup.string().required('Currency is required'),
-      state: Yup.string().required('State is required'),
+      state: Yup.string(),
       start_date: Yup.string().required('Start date is required'),
     }),
     otherwise: () => Yup.object().nullable(),
@@ -68,6 +70,10 @@ const validationSchema = Yup.object().shape({
     quantity: Yup.number().min(1),
     term_month: Yup.number().min(1),
   }),
+  account: Yup.object().shape({
+    name: Yup.string(),
+    email: Yup.string(),
+  }),
 });
 
 function OpportunityForm({ open, setOpen, dispatch }) {
@@ -82,12 +88,12 @@ function OpportunityForm({ open, setOpen, dispatch }) {
     accounts,
     unitOfMeasures,
     loading,
-    productOfferings,
+    data:productOfferings,
     priceLists
   } = useSelector((state) => ({
     ...state.opportunity,
-    productOfferings: state.productOffering.data || [],
-    priceLists: state.priceList.priceLists || []
+    productOfferings: state.productOffering,
+    priceLists: state.priceList
   }));
 
   // Fetch required data on component mount
@@ -104,6 +110,10 @@ function OpportunityForm({ open, setOpen, dispatch }) {
     initialValues: {
       createNewPriceList: true,
       selectedPriceList: '',
+      account:{
+        name: "",
+        email: ""
+      },
       opportunity: {
         short_description: '',
         estimated_closed_date: formatDateForInput(new Date()),
@@ -162,6 +172,10 @@ function OpportunityForm({ open, setOpen, dispatch }) {
       opportunityLineItem: {
         term_month: '12',
         quantity: '1'
+      },
+      account:{
+        name:"",
+        email:""
       }
     },
     validationSchema,
@@ -257,7 +271,38 @@ function OpportunityForm({ open, setOpen, dispatch }) {
   };
 
 
+  const pdfRef = useRef();
   
+    const downloadPDF = () => {
+      const input = pdfRef.current;
+      
+      html2canvas(input, {
+        scale: 2,
+        windowHeight: input.scrollHeight
+      }).then((canvas) => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgWidth = 190; // mm (A4 width minus margins)
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        let heightLeft = imgHeight;
+        let position = 10; // Start 10mm from top
+        const pageHeight = 277; // A4 height in mm (297 - 20mm margins)
+        
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+        
+        // Add new pages as needed
+        while (heightLeft >= 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+        
+        pdf.save('opportunity_details.pdf');
+      });
+    };
 
   return (
     <Modal
@@ -286,7 +331,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
           <OpportunityStep3 formik={formik} />
         )}
         {currentStep === 3 && (
-          <OpportunityStep4 formik={formik} />
+          <OpportunityStep4 formik={formik} pdfRef={pdfRef} />
         )}
 
         <OpportunityNavigation
@@ -296,6 +341,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
           nextStep={nextStep}
           handleCancel={handleCancel}
           formik={formik}
+          downloadPDF={downloadPDF}
         />
       </form>
     </Modal>

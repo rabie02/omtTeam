@@ -3,7 +3,7 @@ import { Descriptions, Card, Tag } from 'antd';
 import { format } from 'date-fns';
 import {useSelector} from 'react-redux';
 
-const OpportunityStep4 = ({ formik }) => {
+const OpportunityStep4 = ({ formik, pdfRef }) => {
   const { 
     opportunity, 
     priceList, 
@@ -42,8 +42,9 @@ const OpportunityStep4 = ({ formik }) => {
   }
 
   console.log(JSON.stringify(formik.values,null, 2  ));
+  
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" ref={pdfRef}>
       <h3 className="text-lg font-medium">Opportunity Summary</h3>
       
       <Card title="Opportunity Details" variant>

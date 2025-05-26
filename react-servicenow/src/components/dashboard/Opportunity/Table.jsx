@@ -38,6 +38,7 @@ function OpportunityTable({ setOpenForm }) {
         });
     }
   };
+  
 
   const ops = []
   opportunities.map(opp => {
@@ -46,8 +47,6 @@ function OpportunityTable({ setOpenForm }) {
       account: accounts.find(a => a.sys_id === opp.account )
     })
   })
-
-  console.log(ops[1].account.name);
 
   const columns = [
     {

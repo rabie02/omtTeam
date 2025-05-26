@@ -189,7 +189,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         </div>
 
        
-
+          <div class="grid grid-cols-2 gap-4">
         {/* Start Date */}
         <div>
           <label className="block font-medium mb-1">Start Date</label>
@@ -219,6 +219,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
             disabled={formik.isSubmitting}
             className="w-full border rounded px-3 py-2"
           />
+        </div>
         </div>
 
         <div className="columns-3">
@@ -256,7 +257,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           />
         </div>
 
-
+          <div class="grid grid-cols-3 gap-4">
         {/* Product Offering Term */}
         <div>
         <label className="block font-medium mb-1">Contract Term:</label>
@@ -280,7 +281,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
       </div>
 
        {/* {Product Specification} */}
-       <div>
+       <div className="col-span-2">
         <label className="block font-medium mb-1">Product Specification:</label>
         <select
           id="p_spec"
@@ -304,7 +305,8 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         <p className="text-red-500 text-sm mt-1">{formik.errors.p_spec}</p>
      )}
       </div>
-
+      </div>
+      <div class="grid grid-cols-2 gap-4">
        {/* {Product Offering Category} */}
        <div>
         <label className="block font-medium mb-1">Category:</label>
@@ -358,7 +360,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         <p className="text-red-500 text-sm mt-1">{formik.errors.channel}</p>
      )}
       </div>
-
+</div>
         {/* Description */}
         <div>
           <label className="block font-medium mb-1">Description</label>

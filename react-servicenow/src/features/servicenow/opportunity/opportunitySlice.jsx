@@ -20,7 +20,8 @@ export const workflow = createAsyncThunk(
         opportunityData,
         { headers: getHeaders() }
       );
-      return response.data.result;
+      
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }

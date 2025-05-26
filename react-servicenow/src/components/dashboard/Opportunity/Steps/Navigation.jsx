@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from 'antd';
+
 
 const OpportunityNavigation = ({
   currentStep,
@@ -7,7 +7,8 @@ const OpportunityNavigation = ({
   prevStep,
   nextStep,
   handleCancel,
-  formik
+  formik, 
+  downloadPDF
 }) => {
   return (
     <div className="flex justify-between pt-4">
@@ -21,6 +22,18 @@ const OpportunityNavigation = ({
             Previous
           </button>
         )}
+      </div>
+
+      <div>
+        { currentStep == 3 &&
+        <button
+            type="button"
+            className="px-4 py-2 rounded border bg-red-200 hover:bg-gray-300"
+            onClick={downloadPDF}
+          >
+            Download as PDF
+          </button>
+          }
       </div>
       
       <div className="flex space-x-2">
@@ -37,7 +50,7 @@ const OpportunityNavigation = ({
             type="submit"
              onClick={formik.handleSubmit} // manual submit
             disabled={loading}
-            className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700"
+            className="px-4 py-2 rounded bg-cyan-700 text-white hover:bg-cyan-800"
           >
             {loading ? 'Creating...' : 'Create Opportunity'}
           </button>
