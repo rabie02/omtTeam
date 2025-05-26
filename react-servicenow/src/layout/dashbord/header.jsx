@@ -92,7 +92,7 @@ function Header() {
 
   if (loading) {
     return (
-      <header className="sticky top-0 z-50 bg-cyan-700 h-20">
+      <header className="sticky top-0 z-20 bg-cyan-700 h-20">
         {/* Loading skeleton */}
         <div className="animate-pulse h-full w-full"></div>
       </header>
@@ -100,9 +100,9 @@ function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-cyan-700">
+    <header className="sticky top-0 z-20 bg-cyan-700">
       {/* Top Bar */}
-      <div className="bg-[#006080] text-blue-100 px-6 py-2 text-sm flex justify-between items-center">
+      <div className="bg-cyan-800 text-blue-100 px-6 py-2 text-sm flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <span className="font-medium flex items-center">
             <i className="ri-shield-keyhole-line mr-2 text-blue-200" />
@@ -117,7 +117,7 @@ function Header() {
         <div className="flex items-center space-x-4">
           <span>Last login: {currentUser.lastLogin}</span>
           <span className="w-px h-5 bg-blue-200/30"></span>
-          <button 
+          <button
             onClick={handleLogout}
             className="hover:text-blue-200 transition-colors flex items-center"
           >
@@ -132,7 +132,7 @@ function Header() {
         {/* Logo and Navigation */}
         <div className="flex items-center space-x-8">
           <div className="flex items-center">
-            <div className="w-10 h-10 rounded-lg bg-[#006080] flex items-center justify-center text-white mr-3">
+            <div className="w-10 h-10 rounded-lg bg-cyan-800 flex items-center justify-center text-white mr-3">
               <i className="ri-admin-line text-xl" />
             </div>
             <div>
@@ -140,10 +140,10 @@ function Header() {
               <p className="text-xs text-blue-200">System Management</p>
             </div>
           </div>
-          
+
           <nav className="hidden md:flex space-x-6">
             {quickAccessItems.map((item) => (
-              <Link 
+              <Link
                 key={item.path}
                 to={item.path}
                 className="text-white hover:text-blue-200 font-medium transition-colors relative group"
@@ -161,7 +161,7 @@ function Header() {
           <div className="relative">
             {/* <button 
               onClick={() => setNotificationOpen(!notificationOpen)}
-              className="p-2 rounded-full hover:bg-[#006080] text-blue-100 hover:text-white transition-colors relative"
+              className="p-2 rounded-full hover:bg-cyan-800 text-blue-100 hover:text-white transition-colors relative"
             >
               <i className="ri-notification-3-line text-xl"></i>
               {unreadCount > 0 && (
@@ -172,7 +172,7 @@ function Header() {
             </button> */}
 
             {notificationOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-[#007B98] rounded-lg shadow-xl border border-[#006080] z-50 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-80 bg-[#007B98] rounded-lg shadow-xl border border-cyan-800 z-50 overflow-hidden">
                 {/* Notification dropdown content */}
                 {/* ... (same as your existing notification dropdown) ... */}
               </div>
@@ -181,7 +181,7 @@ function Header() {
 
           {/* User Profile */}
           <div className="flex items-center space-x-3 group relative cursor-pointer">
-            <div className="h-10 w-10 rounded-full bg-[#006080] flex items-center justify-center text-white font-medium shadow-sm">
+            <div className="h-10 w-10 rounded-full bg-cyan-800 flex items-center justify-center text-white font-medium shadow-sm">
               {currentUser.name.charAt(0).toUpperCase()}
             </div>
             <div className="hidden md:block text-white">
@@ -190,8 +190,8 @@ function Header() {
             </div>
 
             {/* Profile Dropdown */}
-            <div className="absolute right-0 top-full mt-1 w-64 bg-[#007B98] rounded-md shadow-lg py-1 z-50 hidden group-hover:block border border-[#006080]">
-              <div className="px-4 py-3 border-b border-[#006080] bg-[#006080]">
+            <div className="absolute right-0 top-full mt-1 w-64 bg-[#007B98] rounded-md shadow-lg py-1 z-50 hidden group-hover:block border border-cyan-800">
+              <div className="px-4 py-3 border-b border-cyan-800 bg-cyan-800">
                 <p className="font-medium text-white">{currentUser.name}</p>
                 <p className="text-sm text-blue-200 truncate">{currentUser.email}</p>
                 <div className="mt-2 flex justify-between text-xs">
@@ -199,22 +199,22 @@ function Header() {
                   <span className="text-blue-300">Full Privileges</span>
                 </div>
               </div>
-              <Link 
-                to="/dashboard/profile" 
-                className="block px-4 py-2.5 text-white hover:bg-[#006080] hover:text-blue-200 transition-colors"
+              <Link
+                to="/dashboard/profile"
+                className="block px-4 py-2.5 text-white hover:bg-cyan-800 hover:text-blue-200 transition-colors"
               >
                 <i className="ri-user-settings-line mr-2" /> My Profile
               </Link>
               {/* <Link 
                 to="/settings" 
-                className="block px-4 py-2.5 text-white hover:bg-[#006080] hover:text-blue-200 transition-colors"
+                className="block px-4 py-2.5 text-white hover:bg-cyan-800 hover:text-blue-200 transition-colors"
               >
                 <i className="ri-shield-user-line mr-2" /> Settings
               </Link> */}
-              <div className="border-t border-[#006080]"></div>
-              <button 
+              <div className="border-t border-cyan-800"></div>
+              <button
                 onClick={handleLogout}
-                className="block w-full text-left px-4 py-2.5 text-white hover:bg-[#006080] hover:text-red-400 transition-colors"
+                className="block w-full text-left px-4 py-2.5 text-white hover:bg-cyan-800 hover:text-red-400 transition-colors"
               >
                 <i className="ri-logout-circle-r-line mr-2" /> Sign Out
               </button>
