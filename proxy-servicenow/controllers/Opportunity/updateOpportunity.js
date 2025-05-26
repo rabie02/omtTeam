@@ -1,5 +1,5 @@
 const axios = require('axios');
-const Opportunity = require('../../models/Opportunity');
+const Opportunity = require('../../models/opportunity');
 const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 const Account = require('../../models/account');

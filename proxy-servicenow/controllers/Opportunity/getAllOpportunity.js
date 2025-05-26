@@ -1,4 +1,4 @@
-const Opportunity = require('../../models/Opportunity');
+const Opportunity = require('../../models/opportunity');
 const handleMongoError = require('../../utils/handleMongoError');
 
 module.exports = async (req, res) => {
@@ -7,6 +7,8 @@ module.exports = async (req, res) => {
     const mongoData = await Opportunity.find({})
     .populate('account', 'name email country city industry')
     .populate('price_list')
+    .populate('sales_cycle_type')
+    .populate('stage')
     .lean();
     
     // If we have data in MongoDB, return it

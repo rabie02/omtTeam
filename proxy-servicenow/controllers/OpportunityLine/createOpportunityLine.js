@@ -4,7 +4,7 @@ const handleMongoError = require('../../utils/handleMongoError');
 const OpportunityLine = require('../../models/opportunityLine');
 const PriceList = require('../../models/priceList');
 const ProductOffering = require('../../models/ProductOffering');
-const Opportunity = require('../../models/Opportunity'); 
+const Opportunity = require('../../models/opportunity'); 
 
 
 async function createOpportunityLine(req, res = null) {

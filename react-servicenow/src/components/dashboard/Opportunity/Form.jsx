@@ -304,6 +304,8 @@ function OpportunityForm({ open, setOpen, dispatch }) {
       });
     };
 
+    console.log(stages);
+
   return (
     <Modal
       title="Create New Opportunity"

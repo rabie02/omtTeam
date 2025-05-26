@@ -43,7 +43,7 @@ function OpportunityTable({ setOpenForm }) {
         });
     }
   };
-  
+  console.log(opportunities);
 
   const columns = [
     {
@@ -67,7 +67,13 @@ function OpportunityTable({ setOpenForm }) {
       title: 'Stage',
       dataIndex: 'stage',
       key: 'stage',
-      render: (stage) => stage?.name || 'N/A',
+      render: (stage) => stage?.sys_name || 'N/A',
+    },
+    {
+      title: 'Sales Cycle Type',
+      dataIndex: 'sales_cycle_type',
+      key: 'sales_cycle_type',
+      render: (sales_cycle_type) => sales_cycle_type?.sys_name || 'N/A',
     },
     {
       title: 'Probability',
