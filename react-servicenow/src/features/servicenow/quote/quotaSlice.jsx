@@ -7,6 +7,8 @@ const initialState = {
   data: [],
   loading: false,
   error: null,
+  createLoading: false,
+  createError: null,
   page: 1,
   totalPages: 0,
   total: 0,
@@ -21,9 +23,28 @@ export const getQuotes = createAsyncThunk(
     try {
       const access_token = localStorage.getItem('access_token');
       const response = await axios.get(`${backendUrl}/api/quote`, {
-        headers: { authorization: access_token },
+        headers: { Authorization: `Bearer ${access_token}` },
         params: { page, limit, q }
       });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+export const createQuote = createAsyncThunk(
+  'quotes/create',
+  async (opportunityId, { rejectWithValue }) => {
+    try {
+      const access_token = localStorage.getItem('access_token');
+      const response = await axios.post(
+        `${backendUrl}/api/quote/${opportunityId}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${access_token}` }
+        }
+      );
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -63,6 +84,17 @@ const quoteSlice = createSlice({
         state.data = [];
         state.total = 0;
         state.totalPages = 0;
+      })
+      .addCase(createQuote.pending, (state) => {
+        state.createLoading = true;
+        state.createError = null;
+      })
+      .addCase(createQuote.fulfilled, (state) => {
+        state.createLoading = false;
+      })
+      .addCase(createQuote.rejected, (state, action) => {
+        state.createLoading = false;
+        state.createError = action.payload;
       });
   }
 });

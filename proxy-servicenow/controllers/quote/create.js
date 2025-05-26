@@ -17,9 +17,16 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Opportunity ID is required' });
     }
 
+    // Find opportunity using _id
+    const localOpportunity = await Opportunity.findById(id);
+
+    if (!localOpportunity) {
+      return res.status(404).json({ error: `Opportunity not found with _id: ${id}` });
+    }
+
     const snResponse = await axios.post(
       `${process.env.SERVICE_NOW_URL}/api/sn_prd_pm/quote`,
-      { opty_sys_id: id },
+      { opty_sys_id: localOpportunity.sys_id },
       {
         headers: {
           'Authorization': `Bearer ${decodedToken.sn_access_token}`,
