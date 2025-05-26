@@ -48,4 +48,12 @@ const quoteSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
+// Define the virtual for quote lines
+quoteSchema.virtual('quote_lines', {
+  ref: 'QuoteLine', // The model to use
+  localField: '_id', // Field in the Quote model
+  foreignField: 'quote', // Field in the QuoteLine model
+  justOne: false // Set to false for a 'has many' relationship
+});
+
 module.exports = mongoose.model('Quote', quoteSchema,'quotes');
