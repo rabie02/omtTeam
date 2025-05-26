@@ -92,7 +92,6 @@ const OpportunityStep2 = ({ formik }) => {
           name="selectedPriceList"
           label="Select Price List*"
           options={priceLists
-            .filter(pl => pl.state === 'published')
             .map(pl => ({
               value: pl._id,
               label: `${pl.name} (${pl.currency})`

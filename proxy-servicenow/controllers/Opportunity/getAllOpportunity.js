@@ -4,7 +4,10 @@ const handleMongoError = require('../../utils/handleMongoError');
 module.exports = async (req, res) => {
   try {
     // First try to get data from MongoDB
-    const mongoData = await Opportunity.find({}).lean();
+    const mongoData = await Opportunity.find({})
+    .populate('account', 'name email country city industry')
+    .populate('price_list')
+    .lean();
     
     // If we have data in MongoDB, return it
     if (mongoData) {

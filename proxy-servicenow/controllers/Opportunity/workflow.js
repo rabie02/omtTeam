@@ -1,12 +1,14 @@
 const express = require('express');
 const router = express.Router();
-
+const handleMongoError = require('../../utils/handleMongoError');
 // Import controllers
 const createOpportunity = require('./createOpportunity');
 const createPriceList = require('../PriceList/createPriceList');
 const createPOPrice = require('../ProductOfferingPrice/createProductOfferingPrice');
 const createOpportunityLineItem = require('../OpportunityLine/createOpportunityLine');
+const createAccount = require('../account/create');
 
+const Account = require("../../models/account");
 module.exports = async (req, res) => {
 
   const createNewPriceList = req.body.createNewPriceList;
@@ -15,21 +17,27 @@ module.exports = async (req, res) => {
   const pl = req.body.priceList; // price list JSON body
   const pos = req.body.productOfferings; // product offerings price list items
   const opli = req.body.opportunityLineItem; // opportunity line item
+  const acc = req.body.account;
   const payload = req;
   
   try {
     let priceList = null;
-    
+    let account = null;
+
+    //create account or use an existing one
+    payload.body = acc;
+    account = op.account === "" ? await createAccount(payload) : await Account.findById(op.account);
+
     // Create price list if needed
     if (createNewPriceList) {
-      payload.body = {...pl, "account": op.account};
+      payload.body = {...pl, "account": account._id.toString()};
       priceList = await createPriceList(payload);
     }
     
     const priceListID = createNewPriceList ? priceList._id : selectedPriceList;
 
     // Create opportunity
-    payload.body = {...op, "price_list": priceListID};
+    payload.body = {...op, "price_list": priceListID, "account":account._id.toString()};
     const opportunity = await createOpportunity(payload);
     
     // Process all product offerings and create line items
@@ -98,9 +106,11 @@ module.exports = async (req, res) => {
     console.error('Error in opportunity creation:', error);
     const status = error.response?.status || 500;
     const message = error.response?.data?.error?.message || error.message;
+    const mongoError = handleMongoError(error);
     return res.status(status).json({ 
       success: false,
-      error: message 
+      error: message,
+      mongoErro: mongoError.message
     });
   }
 };
