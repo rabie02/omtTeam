@@ -117,13 +117,7 @@ module.exports = async (req, res) => {
         }
 
         const responseData = {
-            result: {
-                ...snResponse.data,
-                _id: mongoDoc._id,
-                // Include the populated fields
-                productSpecification: populatedDoc.productSpecification,
-                category: populatedDoc.category._id
-            },
+            result: mongoDoc,
         };
 
         res.status(201).json(responseData);

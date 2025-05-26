@@ -7,97 +7,70 @@ const PriceList = require('../../models/priceList');
 
 async function createProductOfferingPrice(req, res = null) {
 
-
+  
   try {
-    let productOffering;
-    let priceList;
+    const [productOffering, priceList] = await Promise.all([
+      ProductOffering.findById(req.body.productOffering.id),
+      PriceList.findById(req.body.priceList.id)
+    ]);
 
-    try {
-      productOffering = await ProductOffering.findById(req.body.productOffering.id);
-      priceList = await PriceList.findById(req.body.priceList.id)
-      let payload = {
-        ...req.body,
-        priceList: {
-          id: priceList.sys_id
-        },
-        productOffering: {
-          id: productOffering.id
-        }
+    if (!productOffering) return res?.status(404).json({ error: 'productOffering not found' });
+    if (!productOffering.id) return res?.status(400).json({ error: 'productOffering not synced with ServiceNow' });
+    if (!priceList) return res?.status(404).json({ error: 'priceList not found' });
+    if (!priceList.sys_id) return res?.status(400).json({ error: 'priceList not synced with ServiceNow' });
 
-      }
-      //1. Create in ServiceNow
-      const connection = snConnection.getConnection(req.user.sn_access_token);
-      const snResponse = await axios.post(
-        `${connection.baseURL}/api/sn_tmf_api/catalogmanagement/productOfferingPrice`,
-        payload,
-        { headers: connection.headers }
-      );
+    const payload = {
+      ...req.body,
+      priceList: { id: priceList.sys_id },
+      productOffering: { id: productOffering.id }
+    };
+    
 
-      // 2. Prepare MongoDB document from ServiceNow response
-      const snData = snResponse.data;
-      const mongoPayload = {
-        "sys_id": snData.id,
-        "name": snData.name,
-        "price": snData.price,
-        "lifecycleStatus": snData.lifecycleStatus,
-        "validFor": snData.validFor,
-        "productOffering": productOffering._id,
-        "priceType": snData.priceType,
-        "recurringChargePeriodType": snData.recurringChargePeriodType,
-        "unitOfMeasure": snData.unitOfMeasure,
-        "priceList": priceList._id,
-        "@type": "ProductOfferingPrice",
-        "id": snData.id,
-        "state": snData.state,
-        "href": snData.href
-      }
-      //console.log(JSON.stringify(mongoPayload,null, 2));
-      const mongoPrice = new ProductOfferingPrice(mongoPayload);
+    const connection = snConnection.getConnection(req.user.sn_access_token);
+    const snResponse = await axios.post(
+      `${connection.baseURL}/api/sn_tmf_api/catalogmanagement/productOfferingPrice`,
+      payload,
+      { headers: connection.headers }
+    );
 
-      // 3. Save to MongoDB
-      try {
-        await mongoPrice.save();
+    const snData = snResponse.data;
+    const mongoPrice = new ProductOfferingPrice({
+      sys_id: snData.id,
+      name: snData.name,
+      price: snData.price,
+      lifecycleStatus: snData.lifecycleStatus,
+      validFor: snData.validFor,
+      productOffering: productOffering._id,
+      priceType: snData.priceType,
+      recurringChargePeriodType: snData.recurringChargePeriodType,
+      unitOfMeasure: snData.unitOfMeasure,
+      priceList: priceList._id,
+      "@type": "ProductOfferingPrice",
+      id: snData.id,
+      state: snData.state,
+      href: snData.href
+    });
 
-        if (res) {
-          // 4. Return success response
-          res.status(201).json({
-            ...snData,
-            _id: mongoPrice._id.toString(), // Include MongoDB ID in the response
-            mongoId: mongoPrice._id.toString() // Alternative field name if preferred
-          });
-        }
-
-      } catch (mongoError) {
-        return handleMongoError(res, snData, mongoError, 'creation');
-      }
-
-    } catch (mongoError) {
-      return handleMongoError(res, snData, mongoError, 'creation');
-    }
-
-
-
-
-
-
+    await mongoPrice.save();
+    if (res) res.status(201).json({ ...snData, _id: mongoPrice._id.toString(), mongoId: mongoPrice._id.toString() });
 
   } catch (error) {
     console.error('Error creating product offering price:', error);
+    if (!res) return;
 
-    // Handle ServiceNow errors
     if (error.response?.data?.error) {
       return res.status(error.response.status).json({
         error: error.response.data.error.message,
         details: error.response.data.error.details
       });
     }
-
+    
     res.status(500).json({
       error: error.message || 'Internal server error',
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
-};
+}
 
 
 

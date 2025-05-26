@@ -7,10 +7,26 @@ import {useSelector} from 'react-redux';
 import { formatDateForInput } from '@/utils/formatDateForInput.js';
 
 const OpportunityStep3 = ({ formik }) => {
-  const { unitOfMeasures, productOfferings: allOfferings } = useSelector((state) => ({
+  
+  const { unitOfMeasures, productOfferings: allOfferings, priceLists } = useSelector((state) => ({
       ...state.opportunity,
       productOfferings: state.productOffering.data || [],
+      priceLists: state.priceList.priceLists || [],
     }));
+    
+  let minDate = "";
+  let maxDate = "";
+  
+  if(formik.values.createNewPriceList){
+    minDate = formik.values.priceList.start_date;
+    maxDate = formik.values.priceList.end_date;
+  }else{
+    const chosenPriceList = priceLists.filter(pl =>  pl._id === formik.values.selectedPriceList );
+    minDate = chosenPriceList[0].start_date;
+    maxDate = chosenPriceList[0].end_date;
+  }
+
+
   const addProductOffering = () => {
     
     formik.setFieldValue('productOfferings', [
@@ -21,7 +37,7 @@ const OpportunityStep3 = ({ formik }) => {
         productOffering: { id: '' },
         unitOfMeasure: { id: '' },
         priceType: 'recurring',
-        recurringChargePeriodType: 'monthly',
+        recurringChargePeriodType: '',
         validFor: {
           startDateTime: formatDateForInput(new Date()),
           endDateTime: ''
@@ -29,7 +45,7 @@ const OpportunityStep3 = ({ formik }) => {
       }
     ]);
   };
-
+  
 
 
   const removeProductOffering = (index) => {
@@ -49,7 +65,7 @@ const OpportunityStep3 = ({ formik }) => {
       {formik.values.productOfferings.map((offering, index) => (
         <div key={index} className="border border-gray-200 p-4 rounded-lg mb-4">
           <div className="flex justify-between items-center mb-4">
-            <h4 className="font-medium text-gray-800">Product Offering #{index + 1}</h4>
+            <h4 className="font-medium text-gray-800">Product Offering Price #{index + 1}</h4>
             {formik.values.productOfferings.length > 1 && (
               <Button
                 type="text"
@@ -118,7 +134,7 @@ const OpportunityStep3 = ({ formik }) => {
               onChange={formik.handleChange}
         onBlur={formik.handleBlur}
               options={allOfferings
-                .filter(po => po.status === "published")
+                .filter(po => po.status.toLowerCase() === "published")
                 .map(po => ({
                   value: po._id,
                   label: po.name
@@ -149,7 +165,7 @@ const OpportunityStep3 = ({ formik }) => {
               onBlur={formik.handleBlur}
               options={[
                 { value: 'recurring', label: 'Recurring' },
-                { value: 'one-time', label: 'One-time' }
+                { value: 'one_time', label: 'One-time' }
               ]}
              
             />
@@ -164,7 +180,6 @@ const OpportunityStep3 = ({ formik }) => {
                 onBlur={formik.handleBlur}
                 options={[
                   { value: 'monthly', label: 'Monthly' },
-                  { value: 'quarterly', label: 'Quarterly' },
                   { value: 'annually', label: 'Annually' }
                 ]}
               />
@@ -178,6 +193,8 @@ const OpportunityStep3 = ({ formik }) => {
               value={offering.validFor.startDateTime}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
+              min={new Date(new Date(minDate).getTime() + 86400000).toISOString().split('T')[0]}
+              max={maxDate != "" ? new Date(new Date(maxDate).getTime() - 86400000*2).toISOString().split('T')[0] : ""}
               description="must be within the price list start/end date"
             />
 
@@ -188,6 +205,9 @@ const OpportunityStep3 = ({ formik }) => {
               type="date"
               value={offering.validFor.endDateTime}
               onChange={formik.handleChange}
+              min={new Date(new Date(offering.validFor.startDateTime).getTime() + 86400000).toISOString().split('T')[0]}
+              max={maxDate != "" ? new Date(new Date(maxDate).getTime() - 86400000).toISOString().split('T')[0] : ""}
+              disabled={!offering.validFor.startDateTime}
             />
           </div>
           <Divider className="my-4" />

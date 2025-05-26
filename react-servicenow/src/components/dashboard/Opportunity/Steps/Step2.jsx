@@ -23,13 +23,17 @@ const OpportunityStep2 = ({ formik }) => {
       
       {formik.values.createNewPriceList ? (
         <>
-          <FormInput
+        <div class="grid grid-cols-4 gap-4">
+          <span className="col-span-3">
+            <FormInput
             formik={formik}
             name="priceList.name"
             label="Name*"
           />
+          </span>
 
-          <FormSelect
+          <span className=''>
+            <FormSelect
                 formik={formik}
                 name="priceList.currency"
                 label="Currency*"
@@ -40,8 +44,10 @@ const OpportunityStep2 = ({ formik }) => {
                 onChange={formik.handleChange}
         onBlur={formik.handleBlur}
             />
+          </span>
+        </div>    
 
-            <FormSelect
+            {/* <FormSelect
                 formik={formik}
                 name="priceList.state"
                 label="State*"
@@ -51,8 +57,8 @@ const OpportunityStep2 = ({ formik }) => {
                 }))}
                 onChange={formik.handleChange}
         onBlur={formik.handleBlur}
-            />
-
+            /> */}
+          <div class="grid grid-cols-2 gap-4">
             <FormInput
             formik={formik}
             name="priceList.start_date"
@@ -62,9 +68,12 @@ const OpportunityStep2 = ({ formik }) => {
           <FormInput
             formik={formik}
             name="priceList.end_date"
-            label="End Date*"
+            label="End Date"
             type="date"
+            min={new Date(new Date(formik.values.priceList.start_date).getTime() + 86400000).toISOString().split('T')[0]}
+            disabled={!formik.values.priceList.start_date} 
           />
+          </div>
           {/* Description */}
             <div>
               <label className="block font-medium mb-1">Description</label>
