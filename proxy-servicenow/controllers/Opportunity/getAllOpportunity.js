@@ -3,35 +3,68 @@ const handleMongoError = require('../../utils/handleMongoError');
 
 module.exports = async (req, res) => {
   try {
-    // First try to get data from MongoDB
-    const mongoData = await Opportunity.find({})
-    .populate('account', 'name email country city industry')
-    .populate('price_list')
-    .populate('sales_cycle_type')
-    .populate('stage')
-    .lean();
+
+    const { 
+      q: searchQuery, 
+      number: numberQuery, 
+      description: descQuery,
+      page = 1, 
+      limit = 10 
+    } = req.query;
     
-    // If we have data in MongoDB, return it
-    if (mongoData) {
-      // Transform the MongoDB data to include string IDs
-      const formattedData = mongoData.map(item => ({
-        ...item,
-        _id: item._id.toString(),
-        mongoId: item._id.toString() // Additional field for clarity
-      }));
-      
-      return res.json(formattedData);
+    let query = {};
+    
+    // Build search query
+    if (searchQuery) {
+      const searchTerm = searchQuery.toLowerCase();
+      query.$or = [
+        { short_description: { $regex: searchTerm, $options: 'i' } },
+        { number: { $regex: searchTerm, $options: 'i' } }
+      ];
+    } else {
+      // Field-specific searches if no general search query
+      if (numberQuery) query.number = { $regex: numberQuery, $options: 'i' };
+      if (descQuery) query.short_description = { $regex: descQuery, $options: 'i' };
     }
-    
-    // If no data in MongoDB, fetch from ServiceNow
-    console.log('No opportunities found in MongoDB, fetching from ServiceNow');
-    
-    
-    return res.json([]);
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const totalCount = await Opportunity.countDocuments(query);
+
+    // Fetch data with pagination
+    const mongoData = await Opportunity.find(query)
+      .populate('account', 'name email country city industry')
+      .populate('price_list')
+      .populate('sales_cycle_type')
+      .populate('stage')
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    // Format response
+    const formattedData = mongoData.map(item => ({
+      ...item,
+      _id: item._id.toString(),
+      mongoId: item._id.toString()
+    }));
+
+    return res.json({
+      success: true,
+      formattedData,
+      pagination: {
+        total: totalCount,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    });
     
   } catch (error) {
     console.error('Error fetching opportunities:', error);
     const mongoError = handleMongoError(error);
-    return res.status(mongoError.status).json({ error: mongoError.message });
+    return res.status(mongoError.status).json({ 
+      success: false,
+      error: mongoError.message 
+    });
   }
 };
