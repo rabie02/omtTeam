@@ -3,13 +3,10 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Popconfirm, Empty, Spin, Tag, Table, Tooltip, notification } from 'antd';
 import { getPriceList, deletePriceList } from '../../../features/servicenow/price-list/priceListSlice';
 
-function PriceListTable({ setData, setOpen }) {
-    const dispatch = useDispatch();
-    const { priceLists, loading, error } = useSelector((state) => state.priceList);
 
-    useEffect(() => {
-        dispatch(getPriceList());
-    }, [dispatch]);
+function PriceListTable({ setData, setOpen, dispatch }) {
+    
+    const { priceLists, loading, error } = useSelector((state) => state.priceList);
 
     // Helper function to extract value from ServiceNow object format
     const getValue = (field) => {

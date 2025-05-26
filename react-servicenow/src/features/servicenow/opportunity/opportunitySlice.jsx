@@ -166,7 +166,7 @@ export const getAccounts = createAsyncThunk(
         `${backendUrl}/api/account`,
         { headers: getHeaders() }
       );
-      return response.data;
+      return response.data.result;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }

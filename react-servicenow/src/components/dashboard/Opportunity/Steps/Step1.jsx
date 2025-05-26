@@ -12,6 +12,7 @@ const OpportunityStep1 = ({ formik }) => {
       shortDescriptionRef.current.focus();
     }
   }, []);
+  console.log(accounts);
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium">Opportunity Details</h3>
