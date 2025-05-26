@@ -56,11 +56,13 @@ module.exports = async (req, res)=>{
           }
         }
       );
-      
       try {
           await ProductOffering.findByIdAndUpdate(
               id,
-              { $set: snResponse.data },
+              { $set:{ 
+                lifecycleStatus: snResponse.data.lifecycleStatus,
+                status: snResponse.data.status 
+              }},
               { runValidators: true }
           );
       } catch (mongoError) {

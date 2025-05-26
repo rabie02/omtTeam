@@ -5,11 +5,7 @@ const accountSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    sys_id: {
-        type: String,
-        required: true,
-        unique: true
-    },
+    sys_id: String,
     country: String,
     sys_created_on: String,
     state: String,
@@ -26,6 +22,7 @@ const accountSchema = new mongoose.Schema({
     customer: String
 }, {
     timestamps: true, // Automatically adds createdAt and updatedAt
+    strict: false
 });
 
 module.exports = mongoose.model('Account', accountSchema, 'accounts');

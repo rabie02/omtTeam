@@ -1,43 +1,67 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Popconfirm, Empty, Spin, Table, Tag, Button } from 'antd';
+import { Popconfirm, Empty, Spin, Table, notification, Tooltip, Modal} from 'antd';
 import { 
   getOpportunities,
   deleteOpportunity,
-  updateOpportunityStatus
+  getAccounts
 } from '../../../features/servicenow/opportunity/opportunitySlice';
+import OpportunityStep4 from './Steps/Step4-1';
 
 
-function OpportunityTable({ setOpenForm }) {
+function OpportunityTable({ setOpenForm, searchQuery }) {
+
+  const [visible, setVisible] = useState(false);
+
+  const showModal = () => setVisible(true);
+  const hideModal = () => setVisible(false);
+
   const dispatch = useDispatch();
   const {
     opportunities,
+    accounts,
     loading,
-    error
+    error,
+    currentPage,
+    totalItems,
+    limit,
+    totalPages
   } = useSelector((state) => state.opportunity);
 
   useEffect(() => {
-    dispatch(getOpportunities());
-  }, [dispatch]);
-  
+    dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
+  }, [dispatch, searchQuery]);
+
+  // Helper function to extract value from ServiceNow object format
+    const getValue = (field) => {
+        if (!field) return '';
+        return typeof field === 'object' ? field.value : field;
+    };
+
   const handleDelete = async (opportunityId) => {
-    await dispatch(deleteOpportunity(opportunityId));
-    dispatch(getOpportunities());
+    try {
+      await dispatch(deleteOpportunity(opportunityId));
+      notification.success({
+          message: 'Opportunuity Deleted',
+          description: 'Opportunuity has been deleted successfully',
+      });
+      dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
+    } catch (error) {
+        console.error('Deletion failed:', error);
+        notification.error({
+            message: 'Deletion Failed',
+            description: error.message || 'Failed to delete Opportunuity. Please try again.',
+        });
+    }
   };
 
-  const handleUpdateStatus = async (opportunityId, newStatus) => {
-    await dispatch(updateOpportunityStatus({
-      id: opportunityId,
-      status: newStatus
-    }));
-    dispatch(getOpportunities());
-  };
 
   const columns = [
     {
       title: 'Number',
       dataIndex: 'number',
       key: 'number',
+      sorter: (a, b) => getValue(a.number).localeCompare(getValue(b.number)),
     },
     {
       title: 'Short Description',
@@ -47,14 +71,20 @@ function OpportunityTable({ setOpenForm }) {
     {
       title: 'Account',
       dataIndex: 'account',
-      key: 'account',
+      key: 'account.sys_id',
       render: (account) => account?.name || 'N/A',
     },
     {
       title: 'Stage',
       dataIndex: 'stage',
       key: 'stage',
-      render: (stage) => stage?.name || 'N/A',
+      render: (stage) => stage?.sys_name || 'N/A',
+    },
+    {
+      title: 'Sales Cycle Type',
+      dataIndex: 'sales_cycle_type',
+      key: 'sales_cycle_type',
+      render: (sales_cycle_type) => sales_cycle_type?.sys_name || 'N/A',
     },
     {
       title: 'Probability',
@@ -67,6 +97,7 @@ function OpportunityTable({ setOpenForm }) {
       dataIndex: 'estimated_closed_date',
       key: 'estimated_closed_date',
       render: (date) => date ? new Date(date).toLocaleDateString() : 'N/A',
+      sorter: (a, b) => getValue(a.estimated_closed_date).localeCompare(getValue(b.estimated_closed_date)),
     },
     {
       title: 'Actions',
@@ -92,24 +123,57 @@ function OpportunityTable({ setOpenForm }) {
               message.info('Edit functionality to be implemented');
             }}
           /> */}
-          
-          <Popconfirm
-            title="Delete Opportunity"
-            description="Are you sure to delete this opportunity?"
-            onConfirm={() => handleDelete(record._id)}
-          >
-            <Button type="text" danger icon={<i className="ri-delete-bin-6-line" />} />
-          </Popconfirm>
+          <Tooltip title={`Delete Opportunity`}>
+            <Popconfirm
+              title="Delete Opportunity"
+              description="Are you sure to delete this opportunity?"
+              onConfirm={() => handleDelete(record._id)}
+            >
+              <button className="mx-2 text-gray-500 hover:text-red-600">
+                  <i className="ri-delete-bin-6-line text-2xl"></i>
+              </button>
+            </Popconfirm>
+          </Tooltip>
+          <>
+            <Tooltip title="See More Details">
+              <button 
+                className="mx-2 text-gray-500 hover:text-green-600"
+                onClick={showModal}
+                disabled
+              >
+                <i className="ri-eye-line text-2xl"></i>
+              </button>
+            </Tooltip>
+            
+            <Modal
+             
+              open={visible}
+              onCancel={hideModal}
+              footer={null}
+              width={800}
+            >
+              <OpportunityStep4 
+                initialData={record}
+              />
+            </Modal>
+          </>
         </div>
       ),
     },
   ];
+  console.log(opportunities)
 
   if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
-  if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
+  if (error) {
+    
+      notification.error({
+              message: 'creation Failed',
+              description: error || 'Failed to create opportunity. Please try again.',
+          });
+  }
 
   return (
-    <div className="space-y-4">
+    <div className="">
       
       <Table
         headerColor="rgba(0, 117, 149, 1)"

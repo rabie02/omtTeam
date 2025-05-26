@@ -35,10 +35,25 @@ const Sidebar = ({ toggleSidebar, open, isSidebarCollapsed }) => {
 
       ]
     },
+    { 
+      path: '/dashboard/product-specification', 
+      icon: 'file-list-line', 
+      text: 'Product Specification' 
+    },
     {
-      path: '/dashboard/quote',
-      icon: 'contract-line',
-      text: 'Quote'
+      path:'/dashboard/opportunity',
+      icon: 'shining-line',
+      text: 'Opportunity'
+    },
+    {
+      path:'/dashboard/price-list',
+      icon: 'price-tag-3-line',
+      text: 'Price List'
+    },
+    { 
+      path: '/dashboard/quote', 
+      icon: 'contract-line', 
+      text: 'Quote' 
     }
   ];
 

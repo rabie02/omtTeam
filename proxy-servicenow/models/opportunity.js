@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-
 const opportunitySchema = new mongoose.Schema({
   sys_id: {
     type: String,
@@ -16,16 +15,28 @@ const opportunitySchema = new mongoose.Schema({
   term_month: Number,
   industry: String,
   source: String,
-  sales_cycle_type: String,
+  sales_cycle_type: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'salesCycleType',
+  },
   score: Number,
   contact: String,
   probability: Number,
   do_not_share: Boolean,
-  stage: String,
+  stage: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Stage',
+  },
   do_not_email: Boolean,
   do_not_call: Boolean,
-  account: String,
-  price_list: String,
+  account: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Account',
+  },
+  price_list: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'PriceList',
+  },
   number: String
 
 }, {

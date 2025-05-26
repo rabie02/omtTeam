@@ -2,7 +2,7 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const ProductOffering = require('../../models/ProductOffering');
 const handleMongoError = require('../../utils/handleMongoError');
-
+const catMongo = require('../../models/ProductOfferingCategory');
 
 // Update Product Offering 
 module.exports = async (req, res) => {
@@ -11,7 +11,8 @@ module.exports = async (req, res) => {
             const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
             const { id } = req.params;
     
-    
+            const catmongoID = req.body.category;
+            const specMongoID = req.body.productSpecification;
             // Find the productOffering by MongoDB _id to get ServiceNow sys_id
             let productOffering;
             try {
@@ -57,18 +58,39 @@ module.exports = async (req, res) => {
                     }
                 }
             );
+
+            let mongoResponse;
     
             try {
+                
+                const mongoPayload = {
+                    "category": [
+                        catmongoID
+                    ],
+                    "name": snResponse.data.name,
+                    "description": snResponse.data.description,
+                    "lifecycleStatus":  snResponse.data.lifecycleStatus,
+                    "productOfferingTerm":  snResponse.data.productOfferingTerm,
+                    "validFor":  snResponse.data.validFor,
+                    "productOfferingPrice":  snResponse.data.productOfferingPrice,
+                    "prodSpecCharValueUse":  snResponse.data.prodSpecCharValueUse,
+                    "channel":  snResponse.data.channel,
+                    "status":  snResponse.data.status,
+                    "productSpecification":  specMongoID,
+                    "href":  snResponse.data.href
+                    }
+                
                 await ProductOffering.findByIdAndUpdate(
                     id,
-                    { $set: snResponse.data },
+                    { $set: mongoPayload },
                     { runValidators: true }
                 );
+                mongoResponse = await ProductOffering.findById(id).populate('productSpecification');
             } catch (mongoError) {
                 return handleMongoError(res, snResponse.data, mongoError, 'update');
             }
             
-            res.json({"_id":id, ...snResponse.data});
+            res.json(mongoResponse);
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 const status = error.response?.status || 500;
