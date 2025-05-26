@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
       { $unwind: '$account' },
       {
         $lookup: {
-          from: 'price_lists',
+          from: 'price_lists', // Fixed collection name
           localField: 'price_list',
           foreignField: '_id',
           as: 'price_list'
@@ -42,10 +42,13 @@ module.exports = async (req, res) => {
       {
         $lookup: {
           from: 'quotelines',
-          localField: '_id',
-          foreignField: 'quote',
-          as: 'quote_lines',
+          let: { quoteId: '$_id' },
           pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$quote', '$$quoteId'] }
+              }
+            },
             {
               $lookup: {
                 from: 'productofferings',
@@ -57,14 +60,15 @@ module.exports = async (req, res) => {
             { $unwind: '$product_offering' },
             {
               $lookup: {
-                from: 'pricelists',
+                from: 'price_lists',
                 localField: 'price_list',
                 foreignField: '_id',
                 as: 'price_list'
               }
             },
             { $unwind: '$price_list' }
-          ]
+          ],
+          as: 'quote_lines'
         }
       }
     ];

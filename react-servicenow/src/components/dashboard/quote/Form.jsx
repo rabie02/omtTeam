@@ -30,17 +30,17 @@ function QuoteInfoForm({ open, setOpen, initialData = {} }) {
         <div>
           <label className="block font-medium mb-1">State</label>
           <input
-            value={initialData?.state || ''}
+            value={initialData?.state || 'N/A'}
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
         </div>
 
-        {/* Short Description - spans both columns */}
+        {/* Short Description */}
         <div className="col-span-2">
           <label className="block font-medium mb-1">Short Description</label>
           <textarea
-            value={initialData?.short_description || ''}
+            value={initialData?.short_description || 'N/A'}
             rows="3"
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
@@ -51,7 +51,7 @@ function QuoteInfoForm({ open, setOpen, initialData = {} }) {
         <div>
           <label className="block font-medium mb-1">Total Amount</label>
           <input
-            value={initialData?.total_amount ? `$${initialData.total_amount}` : ''}
+            value={initialData?.total_amount ? `${initialData.currency || '$'}${initialData.total_amount.toLocaleString()}` : 'N/A'}
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
@@ -61,7 +61,7 @@ function QuoteInfoForm({ open, setOpen, initialData = {} }) {
         <div>
           <label className="block font-medium mb-1">Version</label>
           <input
-            value={initialData?.version || ''}
+            value={initialData?.version || 'N/A'}
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
@@ -71,7 +71,7 @@ function QuoteInfoForm({ open, setOpen, initialData = {} }) {
         <div>
           <label className="block font-medium mb-1">Channel</label>
           <input
-            value={initialData?.channel || ''}
+            value={initialData?.channel || 'N/A'}
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
@@ -92,7 +92,7 @@ function QuoteInfoForm({ open, setOpen, initialData = {} }) {
           <label className="block font-medium mb-1">Subscription Start Date</label>
           <input
             type="date"
-            value={formatDateForInput(initialData?.subscription_start_date) || ''}
+            value={formatDateForInput(initialData?.subscription_start_date) || 'N/A'}
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
@@ -103,7 +103,7 @@ function QuoteInfoForm({ open, setOpen, initialData = {} }) {
           <label className="block font-medium mb-1">Subscription End Date</label>
           <input
             type="date"
-            value={formatDateForInput(initialData?.subscription_end_date) || ''}
+            value={formatDateForInput(initialData?.subscription_end_date) || 'N/A'}
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
@@ -113,7 +113,7 @@ function QuoteInfoForm({ open, setOpen, initialData = {} }) {
         <div>
           <label className="block font-medium mb-1">Assigned To</label>
           <input
-            value={initialData?.assigned_to || ''}
+            value={initialData?.assigned_to || 'N/A'}
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
@@ -123,23 +123,23 @@ function QuoteInfoForm({ open, setOpen, initialData = {} }) {
         <div>
           <label className="block font-medium mb-1">Assignment Group</label>
           <input
-            value={initialData?.assignment_group || ''}
+            value={initialData?.assignment_group || 'N/A'}
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
         </div>
 
-        {/* Account - spans both columns */}
+        {/* Account */}
         <div className="col-span-2">
           <label className="block font-medium mb-1">Account</label>
           <input
-            value={initialData?.account || ''}
+            value={initialData?.account?.name || 'N/A'}
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
         </div>
 
-        {/* Actions - spans both columns */}
+        {/* Close Button */}
         <div className="col-span-2 flex justify-end space-x-2 pt-2">
           <button
             type="button"
