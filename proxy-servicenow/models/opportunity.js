@@ -24,7 +24,10 @@ const opportunitySchema = new mongoose.Schema({
   stage: String,
   do_not_email: Boolean,
   do_not_call: Boolean,
-  account: String,
+  account: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Account',
+  },
   price_list: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'PriceList',

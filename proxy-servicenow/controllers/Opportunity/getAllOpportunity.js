@@ -7,7 +7,7 @@ module.exports = async (req, res) => {
     const mongoData = await Opportunity.find({}).lean();
     
     // If we have data in MongoDB, return it
-    if (mongoData && mongoData.length > 0) {
+    if (mongoData) {
       // Transform the MongoDB data to include string IDs
       const formattedData = mongoData.map(item => ({
         ...item,
