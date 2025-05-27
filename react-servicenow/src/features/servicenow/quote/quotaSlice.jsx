@@ -23,7 +23,7 @@ export const getQuotes = createAsyncThunk(
     try {
       const access_token = localStorage.getItem('access_token');
       const response = await axios.get(`${backendUrl}/api/quote`, {
-        headers: { Authorization: `Bearer ${access_token}` },
+        headers: { authorization: access_token },
         params: { page, limit, q }
       });
       return response.data;
@@ -37,16 +37,17 @@ export const createQuote = createAsyncThunk(
   'quotes/create',
   async (opportunityId, { rejectWithValue }) => {
     try {
-      const access_token = localStorage.getItem('access_token');
+      const access_token = localStorage.getItem('access_token');    
+      
       const response = await axios.post(
-        `${backendUrl}/api/quote/${opportunityId}`,
-        {},
+        `${backendUrl}/api/quote/${opportunityId}`,{},
         {
-          headers: { Authorization: `Bearer ${access_token}` }
+          headers: { authorization: access_token },
         }
       );
+      
       return response.data;
-    } catch (error) {
+    } catch (error) {      
       return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
