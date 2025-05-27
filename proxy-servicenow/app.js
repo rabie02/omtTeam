@@ -23,9 +23,10 @@ const opportunity = require("./api/opportunity/index");
 const ProductOfferingPrice = require("./api/productOfferingPrice/index")
 const opportunityLine = require("./api/OpportunityLine/index")
 const priceList = require("./api/PriceList/index")
-
+//const chatBoot = require("")
 const Quote = require('./api/quote/index');
 const emailroutes = require('./email/router');
+const chatbotRoutes = require('./api/ai-search/chatboot.js');
 const createAccount = require('./api/createAccount')
 require('dotenv').config();
 
@@ -112,7 +113,9 @@ app.use('/api', authjwt , [
   priceList,
   opportunity,
   opportunityLine,
-  ProductOfferingPrice
+  ProductOfferingPrice,
+  chatbotRoutes
+
 ]);
 
 
