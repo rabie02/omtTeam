@@ -1,4 +1,5 @@
 import { Card, Row, Col, Statistic, Progress, Divider } from 'antd';
+import {  Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
 import {getall as getProductOfferings} from '../../features/servicenow/product-offering/productOfferingSlice';
@@ -72,7 +73,9 @@ const Home = () => {
       
       {/* Summary Cards */}
       <Row gutter={16} className="mb-6">
-        <Col span={6}>
+        
+          <Col span={6}>
+          <Link to="/dashboard/product-offering">
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <Statistic 
               title="Product Offerings" 
@@ -86,7 +89,10 @@ const Home = () => {
               strokeColor="#06b6d4"
             />
           </Card>
-        </Col>
+          </Link>
+          </Col>
+        
+        
         <Col span={6}>
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <Statistic 

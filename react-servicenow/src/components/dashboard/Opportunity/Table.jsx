@@ -6,7 +6,7 @@ import {
   deleteOpportunity,
   getAccounts
 } from '../../../features/servicenow/opportunity/opportunitySlice';
-import OpportunityStep4 from './Steps/Step4-1';
+import OpportunityStep4 from './Steps/DetailsModal';
 
 
 function OpportunityTable({ setOpenForm, searchQuery }) {

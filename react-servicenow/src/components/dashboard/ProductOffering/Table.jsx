@@ -106,7 +106,7 @@ function ProductOfferingTable({ setData, setOpen, searchQuery }) {
             dataIndex: 'status',
             key: 'status',
             render: (status) => (
-                <span className={`px-2 py-1 text-xs capitalize rounded ${status === 'published' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                <span className={`px-2 py-1 text-xs capitalize rounded ${status.toLowerCase() === 'published' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                     {status}
                 </span>
             ),
