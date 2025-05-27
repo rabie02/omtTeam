@@ -104,13 +104,13 @@ const fetchOfferings = async (specSysId) => {
             ) : (
               data.map((product) => (
                 <tr key={product.sys_id} className="*:text-gray-900 *:first:font-medium">
-                  <td className="px-3 py-3 whitespace-nowrap">{product.display_name}</td>
+                  <td className="px-3 py-3 whitespace-nowrap">{product.display_name || product.displayName}</td>
                   <td className="px-3 py-3 whitespace-nowrap">{product.specification_type || 'None'}</td>
                   <td className="px-3 py-3 whitespace-nowrap">
-                    {product.start_date ? new Date(product.start_date).toISOString().split("T")[0] : 'N/A'}
+                   {product.start_date ? new Date(product.start_date).toISOString().split("T")[0] : ( product.validFor.startDateTime ? new Date(product.validFor.startDateTime).toISOString().split("T")[0] : 'N/A')}
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap">
-                    {product.end_date ? new Date(product.end_date).toISOString().split("T")[0] : 'N/A'}
+                    {product.end_date ? new Date(product.end_date).toISOString().split("T")[0] : ( product.validFor?.endDateTime ? new Date(product.validFor.endtDateTime).toISOString().split("T")[0] : 'N/A')}
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap">
                     <button
@@ -151,7 +151,7 @@ const fetchOfferings = async (specSysId) => {
       {/* Modal affichant les offerings */}
 {/* Modal affichant les offerings */}
 <Modal
-  title={`Offres liées à : ${currentSpec?.display_name || ''}`}
+  title={`Offres liées à : ${currentSpec?.display_name || (currentSpec?.displayName || '')}`}
   open={isOfferingModalOpen}
   onCancel={() => setIsOfferingModalOpen(false)}
   footer={null}
@@ -174,7 +174,7 @@ const fetchOfferings = async (specSysId) => {
         dataSource={filteredOfferings.slice((currentPage - 1) * 10, currentPage * 10)}
         renderItem={(item) => (
           <List.Item key={item.sys_id}>
-            <List.Item.Meta title={item.display_name || 'Nom inconnu'} />
+            <List.Item.Meta title={item.display_name || (item.displayName || 'Nom inconnu')} />
           </List.Item>
         )}
       />
