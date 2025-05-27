@@ -151,7 +151,7 @@ const fetchOfferings = async (specSysId) => {
       {/* Modal affichant les offerings */}
 {/* Modal affichant les offerings */}
 <Modal
-  title={Offres liées à : ${currentSpec?.display_name || ''}}
+  title={`Offres liées à : ${currentSpec?.display_name || ''}`}
   open={isOfferingModalOpen}
   onCancel={() => setIsOfferingModalOpen(false)}
   footer={null}
