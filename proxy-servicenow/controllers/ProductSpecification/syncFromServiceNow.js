@@ -10,7 +10,7 @@ const syncFromServiceNow = async (req, res) => {
     const specData = req.body;
     
     // Validate required fields
-    if (!specData.sys_id) {
+    if (!specData.id) {
       return res.status(400).json({ 
         success: false, 
         message: 'Missing required field: sys_id' 
@@ -22,7 +22,7 @@ const syncFromServiceNow = async (req, res) => {
     
     // Update or insert the product specification
     const result = await ProductSpecification.updateOne(
-      { sys_id: specData.sys_id },
+      { sys_id: specData.id },
       { $set: specData },
       { upsert: true }
     );
