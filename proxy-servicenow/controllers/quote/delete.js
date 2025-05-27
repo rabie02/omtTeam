@@ -1,46 +1,94 @@
+const axios = require('axios');
+const jwt = require('jsonwebtoken');
 const Quote = require('../../models/quote');
+const QuoteLine = require('../../models/quoteLine');
+const handleMongoError = require('../../utils/handleMongoError');
 
-const deleteQuote = async (req, res) => {
-  console.log('=== DELETE QUOTE REQUEST RECEIVED ===');
-  console.log('Request params:', req.params);
-  console.log('Request headers:', req.headers);
-  console.log('Request IP:', req.ip);
-  console.log('Timestamp:', new Date().toISOString());
-
+module.exports = async (req, res) => {
+  let session;
   try {
-    const { sysId } = req.params;
-    console.log(`Attempting to delete quote with sys_id: ${sysId}`);
+    const { id } = req.params;
+    // Get authorization token
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'Authorization token required' });
+    }
+
+    // Verify JWT and get ServiceNow credentials
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Check if the quote exists
-    const quote = await Quote.findOne({ sys_id: sysId });
+    // Find the quote with associated sys_id
+    const quote = await Quote.findById(id);
 
     if (!quote) {
-      console.log(`Quote with sys_id ${sysId} not found`);
-      return res.status(404).json({
-        success: false,
-        message: `Quote with sys_id ${sysId} not found`
+      return res.status(404).json({ error: 'Quote not found' });
+    }
+
+    if (!quote.sys_id) {
+      return res.status(400).json({ error: 'Quote missing ServiceNow reference' });
+    }
+
+    // Delete from ServiceNow first
+    const snResponse = await axios.delete(
+      `${process.env.SERVICE_NOW_URL}/api/sn_prd_pm/quote/${quote.sys_id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${decodedToken.sn_access_token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    // Verify ServiceNow deletion was successful
+    if (snResponse.status < 200 || snResponse.status >= 300) {
+      return res.status(502).json({
+        error: 'ServiceNow deletion failed',
+        details: snResponse.data
       });
     }
 
-    console.log(`Found quote: ${quote.name || quote.display_name || quote._id}`);
+   
 
-    // Delete the quote
-    const result = await Quote.deleteOne({ sys_id: sysId });
-    console.log('Delete operation result:', result);
+    // Delete associated quote lines
+    const linesDeleteResult = await QuoteLine.deleteMany(
+      { quote: id },
+    );
 
-    console.log(`✅ Successfully deleted quote: ${quote.name || quote._id}`);
+    // Delete main quote document
+    const quoteDeleteResult = await Quote.findByIdAndDelete(
+      id,
+    );
+
+    if (!quoteDeleteResult) {
+      return res.status(404).json({ error: 'Quote not found during deletion' });
+    }
+
 
     res.status(200).json({
-      success: true,
-      message: `Quote with sys_id ${sysId} successfully deleted`
+      message: 'Quote deleted successfully from both systems',
+      serviceNowId: quote.sys_id,
+      localId: id,
+      deletedLines: linesDeleteResult.deletedCount
     });
-  } catch (error) {
-    console.error('❌ ERROR in deleteQuote:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
+
+  } catch (error) { 
+
+    // Handle ServiceNow API errors
+    if (axios.isAxiosError(error)) {
+      return res.status(error.response?.status || 500).json({
+        error: 'ServiceNow integration failed',
+        details: error.response?.data || error.message
+      });
+    }
+
+    // Handle JWT errors
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ error: 'Invalid authorization token' });
+    }
+
+    // Handle other errors
+    handleMongoError(error, res);
+  } finally {
+    if (session) session.endSession();
   }
 };
-
-module.exports = deleteQuote;
