@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { stringSimilarity } from 'string-similarity-js';
+import stringSimilarity from "string-similarity";
 
 const Chatbot = () => {
   // États du chatbot
