@@ -301,40 +301,19 @@ const Chatbot = () => {
   });
 
   // Fonction pour rechercher dans la base de connaissances ServiceNow
- const searchKnowledgeArticles = async (query = '') => {
+  const searchKnowledgeArticles = async (query = '') => {
   try {
-    const response = await axios.get(
-      'https://dev323456.service-now.com/api/now/table/kb_knowledge',
-      {
-        auth: {
-          username: 'admin',
-          password: 'bz!T-1ThIc1L'
-        },
-        headers: {
-          Accept: 'application/json'
-        },
-        params: {
-          sysparm_query: `active=true^workflow_state=published^short_descriptionLIKE${query}^ORtextLIKE${query}`,
-          sysparm_limit: 5,
-          sysparm_fields: 'short_description,number,topic,text,url',
-          sysparm_display_value: true,
-          sysparm_exclude_reference_link: true
-        }
-      }
-    );
-
-    return response.data.result.map(article => ({
-      short_description: article.short_description,
-      number: article.number,
-      topic: article.topic,
-      text: article.text,
-      url: article.url
-    }));
-  } catch (error) {
-    console.error('❌ Erreur recherche KB:', error);
-    throw new Error("Impossible de récupérer les articles de connaissance.");
-  }
-};
+      const response = await axios.get(`${backendUrl}/api/chatbot/kb`, {
+        params: { q: query },
+        ...getAuthHeaders()
+      });
+  
+      return response.data.articles;
+    } catch (error) {
+      console.error('❌ Erreur recherche KB:', error);
+      throw new Error("Impossible de récupérer les articles de connaissance.");
+    }
+  };
 
   // Fonction pour rechercher les spécifications techniques
   const searchSpecifications = async (query = '') => {
