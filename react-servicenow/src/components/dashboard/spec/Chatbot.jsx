@@ -1,12 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-<<<<<<< HEAD
-import stringSimilarity from "string-similarity";
-=======
-import { stringSimilarity } from "string-similarity-js";
 
-
->>>>>>> c4bfa70 (Ajout des modifications du chatbot et correction des dépendances)
 
 const Chatbot = () => {
   // États du chatbot
