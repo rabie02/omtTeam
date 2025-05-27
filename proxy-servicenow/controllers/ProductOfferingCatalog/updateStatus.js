@@ -1,6 +1,6 @@
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
-const ProductOfferingCategory = require('../../models/ProductOfferingCategory');
+const ProductOfferingCatalog = require('../../models/ProductOfferingCatalog');
 const handleMongoError = require('../../utils/handleMongoError');
 const getone = require('./getone');
 
@@ -29,27 +29,27 @@ module.exports = async (req, res) => {
         }
 
         // Category validation
-        let category;
+        let catalog;
         try {
-            category = await ProductOfferingCategory.findById(id);
+            catalog = await ProductOfferingCatalog.findById(id);
         } catch (error) {
             if (error.name === 'CastError') {
-                return res.status(400).json({ error: 'Invalid category ID format' });
+                return res.status(400).json({ error: 'Invalid catalog ID format' });
             }
             throw error;
         }
 
-        if (!category) {
-            return res.status(404).json({ error: 'Category not found' });
+        if (!catalog) {
+            return res.status(404).json({ error: 'Catalog not found' });
         }
 
-        if (!category.sys_id) {
-            return res.status(400).json({ error: 'Category not synced with ServiceNow (missing sys_id)' });
+        if (!catalog.sys_id) {
+            return res.status(400).json({ error: 'Catalog not synced with ServiceNow (missing sys_id)' });
         }
 
         // Prepare update body
         const updateBody = {
-            sys_id: category.sys_id,
+            sys_id: catalog.sys_id,
             status: req.body.status
         };
 
@@ -69,7 +69,7 @@ module.exports = async (req, res) => {
         const updateData = { status: snResponse.data.result.status.toLowerCase() };
         let mongoDoc;
         try {
-            mongoDoc = await ProductOfferingCategory.findByIdAndUpdate(
+            mongoDoc = await ProductOfferingCatalog.findByIdAndUpdate(
                 id,
                 { $set: updateData },
                 { new: true, runValidators: true }
