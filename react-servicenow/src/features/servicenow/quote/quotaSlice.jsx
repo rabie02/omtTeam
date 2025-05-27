@@ -9,6 +9,8 @@ const initialState = {
   error: null,
   createLoading: false,
   createError: null,
+  deleteLoading: false,
+  deleteError: null,
   page: 1,
   totalPages: 0,
   total: 0,
@@ -37,17 +39,29 @@ export const createQuote = createAsyncThunk(
   'quotes/create',
   async (opportunityId, { rejectWithValue }) => {
     try {
-      const access_token = localStorage.getItem('access_token');    
-      
+      const access_token = localStorage.getItem('access_token');
       const response = await axios.post(
-        `${backendUrl}/api/quote/${opportunityId}`,{},
-        {
-          headers: { authorization: access_token },
-        }
+        `${backendUrl}/api/quote/${opportunityId}`, {},
+        { headers: { authorization: access_token } }
       );
-      
       return response.data;
-    } catch (error) {      
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+export const deleteQuote = createAsyncThunk(
+  'quotes/delete',
+  async (quoteId, { rejectWithValue }) => {
+    try {
+      const access_token = localStorage.getItem('access_token');
+      const response = await axios.delete(
+        `${backendUrl}/api/quote/${quoteId}`,
+        { headers: { authorization: access_token } }
+      );
+      return response.data;
+    } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
@@ -96,6 +110,19 @@ const quoteSlice = createSlice({
       .addCase(createQuote.rejected, (state, action) => {
         state.createLoading = false;
         state.createError = action.payload;
+      })
+      .addCase(deleteQuote.pending, (state) => {
+        state.deleteLoading = true;
+        state.deleteError = null;
+      })
+      .addCase(deleteQuote.fulfilled, (state, action) => {
+        state.deleteLoading = false;
+        state.data = state.data.filter(p => p._id !== action.payload._id);
+        state.total -= 1;
+      })
+      .addCase(deleteQuote.rejected, (state, action) => {
+        state.deleteLoading = false;
+        state.deleteError = action.payload;
       });
   }
 });
