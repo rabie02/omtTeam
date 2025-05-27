@@ -18,6 +18,12 @@ function Table({ setData, setOpen, searchQuery }) {
   const [offerings, setOfferings] = useState([]);
   const [isOfferingModalOpen, setIsOfferingModalOpen] = useState(false);
   const [currentSpec, setCurrentSpec] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPageModal, setCurrentPageModal] = useState(1);
+
+  const filteredOfferings = offerings.filter(offering =>
+    offering.display_name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   useEffect(() => {
     dispatch(getPublished({
@@ -50,7 +56,7 @@ const fetchOfferings = async (specSysId) => {
     }
 
     const response = await axios.get(
-      `${import.meta.env.VITE_BACKEND_URL}/api/product-offering/by-spec/${specSysId}`,
+      ${import.meta.env.VITE_BACKEND_URL}/api/product-offering/by-spec/${specSysId},
       {
         headers: {
           Authorization: token // ✅ déjà formaté en Bearer ...
@@ -143,32 +149,52 @@ const fetchOfferings = async (specSysId) => {
       </div>
 
       {/* Modal affichant les offerings */}
-      <Modal
-        title={`Offres liées à : ${currentSpec?.display_name || ''}`}
-        open={isOfferingModalOpen}
-        onCancel={() => setIsOfferingModalOpen(false)}
-        footer={null}
-        width={700}
-      >
-        {offerings.length > 0 ? (
-          <List
-            itemLayout="vertical"
-            dataSource={offerings}
-            renderItem={(item) => (
-              <List.Item key={item.sys_id}>
-                <List.Item.Meta
-                title={item.display_name || 'Nom inconnu'}
-                />
-                <p>{item.description || 'Pas de description'}</p>
-              </List.Item>
-            )}
-          />
-        ) : (
-          <p>Aucune offre liée trouvée.</p>
+{/* Modal affichant les offerings */}
+<Modal
+  title={Offres liées à : ${currentSpec?.display_name || ''}}
+  open={isOfferingModalOpen}
+  onCancel={() => setIsOfferingModalOpen(false)}
+  footer={null}
+  width={700}
+>
+  {/* Recherche */}
+  <input
+    type="text"
+    placeholder="Rechercher une offre..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    className="w-full p-2 mb-4 border border-gray-300 rounded"
+  />
+
+  {/* Pagination + filtre */}
+  {filteredOfferings.length > 0 ? (
+    <>
+      <List
+        itemLayout="vertical"
+        dataSource={filteredOfferings.slice((currentPage - 1) * 10, currentPage * 10)}
+        renderItem={(item) => (
+          <List.Item key={item.sys_id}>
+            <List.Item.Meta title={item.display_name || 'Nom inconnu'} />
+          </List.Item>
         )}
-      </Modal>
+      />
+      <div className="mt-4 flex justify-center">
+        <Pagination
+          current={currentPage}
+          pageSize={10}
+          total={filteredOfferings.length}
+          onChange={(page) => setCurrentPage(page)}
+        />
+      </div>
+    </>
+  ) : (
+    <p>Aucune offre liée trouvée.</p>
+  )}
+</Modal>
+
+
     </div>
   );
 }
 
-export default Table;
+export default Table;
