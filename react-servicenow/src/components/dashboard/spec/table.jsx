@@ -56,7 +56,7 @@ const fetchOfferings = async (specSysId) => {
     }
 
     const response = await axios.get(
-      ${import.meta.env.VITE_BACKEND_URL}/api/product-offering/by-spec/${specSysId},
+      `${import.meta.env.VITE_BACKEND_URL}/api/product-offering/by-spec/${specSysId}`,
       {
         headers: {
           Authorization: token // ✅ déjà formaté en Bearer ...
