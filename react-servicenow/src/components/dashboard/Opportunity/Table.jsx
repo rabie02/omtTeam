@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Popconfirm, Empty, Spin, Table, notification, Tooltip, Modal} from 'antd';
-import { 
+import { Popconfirm, Empty, Spin, Table, notification, Tooltip, Modal } from 'antd';
+import CreateQuote from '../quote/ButtonCreateQuote';
+import {
   getOpportunities,
   deleteOpportunity,
   getAccounts
@@ -33,25 +34,25 @@ function OpportunityTable({ setOpenForm, searchQuery }) {
   }, [dispatch, searchQuery]);
 
   // Helper function to extract value from ServiceNow object format
-    const getValue = (field) => {
-        if (!field) return '';
-        return typeof field === 'object' ? field.value : field;
-    };
+  const getValue = (field) => {
+    if (!field) return '';
+    return typeof field === 'object' ? field.value : field;
+  };
 
   const handleDelete = async (opportunityId) => {
     try {
       await dispatch(deleteOpportunity(opportunityId));
       notification.success({
-          message: 'Opportunuity Deleted',
-          description: 'Opportunuity has been deleted successfully',
+        message: 'Opportunuity Deleted',
+        description: 'Opportunuity has been deleted successfully',
       });
       dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
     } catch (error) {
-        console.error('Deletion failed:', error);
-        notification.error({
-            message: 'Deletion Failed',
-            description: error.message || 'Failed to delete Opportunuity. Please try again.',
-        });
+      console.error('Deletion failed:', error);
+      notification.error({
+        message: 'Deletion Failed',
+        description: error.message || 'Failed to delete Opportunuity. Please try again.',
+      });
     }
   };
 
@@ -102,8 +103,9 @@ function OpportunityTable({ setOpenForm, searchQuery }) {
     {
       title: 'Actions',
       key: 'actions',
-      render: (_, record) => ( record!==undefined &&
+      render: (_, record) => (record !== undefined &&
         <div className="flex space-x-2">
+          <CreateQuote opportunityId={record._id} />
           {/* <Popconfirm
             title="Change Status"
             description={`Are you sure you want to ${record.state === 'published' ? 'retire' : 'publish'} this opportunity?`}
@@ -123,20 +125,10 @@ function OpportunityTable({ setOpenForm, searchQuery }) {
               message.info('Edit functionality to be implemented');
             }}
           /> */}
-          <Tooltip title={`Delete Opportunity`}>
-            <Popconfirm
-              title="Delete Opportunity"
-              description="Are you sure to delete this opportunity?"
-              onConfirm={() => handleDelete(record._id)}
-            >
-              <button className="mx-2 text-gray-500 hover:text-red-600">
-                  <i className="ri-delete-bin-6-line text-2xl"></i>
-              </button>
-            </Popconfirm>
-          </Tooltip>
+
           <>
             <Tooltip title="See More Details">
-              <button 
+              <button
                 className="mx-2 text-gray-500 hover:text-green-600"
                 onClick={showModal}
                 disabled
@@ -144,15 +136,26 @@ function OpportunityTable({ setOpenForm, searchQuery }) {
                 <i className="ri-eye-line text-2xl"></i>
               </button>
             </Tooltip>
-            
+            <Tooltip title={`Delete Opportunity`}>
+              <Popconfirm
+                title="Delete Opportunity"
+                description="Are you sure to delete this opportunity?"
+                onConfirm={() => handleDelete(record._id)}
+              >
+                <button className="mx-2 text-gray-500 hover:text-red-600">
+                  <i className="ri-delete-bin-6-line text-2xl"></i>
+                </button>
+              </Popconfirm>
+            </Tooltip>
+
             <Modal
-             
+
               open={visible}
               onCancel={hideModal}
               footer={null}
               width={800}
             >
-              <OpportunityStep4 
+              <OpportunityStep4
                 initialData={record}
               />
             </Modal>
@@ -165,16 +168,16 @@ function OpportunityTable({ setOpenForm, searchQuery }) {
 
   if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
   if (error) {
-    
-      notification.error({
-              message: 'creation Failed',
-              description: error || 'Failed to create opportunity. Please try again.',
-          });
+
+    notification.error({
+      message: 'creation Failed',
+      description: error || 'Failed to create opportunity. Please try again.',
+    });
   }
 
   return (
     <div className="">
-      
+
       <Table
         headerColor="rgba(0, 117, 149, 1)"
         columns={columns}

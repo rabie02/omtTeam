@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { createQuote } from './quoteSlice';
-import { notification } from 'antd'; 
+import { createQuote } from '../../../features/servicenow/quote/quotaSlice';
+import { notification, Tooltip, Popconfirm } from 'antd';
 
 const CreateQuoteButton = ({ opportunityId }) => {
   const dispatch = useDispatch();
@@ -11,9 +11,8 @@ const CreateQuoteButton = ({ opportunityId }) => {
       await dispatch(createQuote(opportunityId)).unwrap();
       notification.success({
         message: 'Quote Created',
-        description: 'The quote and its line items has been created successfully.',
+        description: 'The quote and its line items have been created successfully.',
       });
-      // Optionally refetch quotes or update state here
     } catch (error) {
       notification.error({
         message: 'Creation Failed',
@@ -24,9 +23,20 @@ const CreateQuoteButton = ({ opportunityId }) => {
 
   return (
     <div>
-      <button onClick={handleCreate} disabled={createLoading} className='group'>
-        <i class="ri-file-edit-line text-2xl group-hover:text-green-600"></i>
-      </button>
+      <Popconfirm
+        title={`Create Quote`}
+        description={`Are you sure you want to create this quote?`}
+        onConfirm={handleCreate}
+        okText="Yes"
+        cancelText="No"
+        disabled={createLoading}
+      >
+        <Tooltip title="Create Quote">
+          <button disabled={createLoading} className='group'>
+            <i className="ri-file-edit-line text-gray-500 text-2xl group-hover:text-green-600"></i>
+          </button>
+        </Tooltip>
+      </Popconfirm>
     </div>
   );
 };

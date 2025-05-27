@@ -35,11 +35,6 @@ const Sidebar = ({ toggleSidebar, open, isSidebarCollapsed }) => {
 
       ]
     },
-    { 
-      path: '/dashboard/product-specification', 
-      icon: 'file-list-line', 
-      text: 'Product Specification' 
-    },
     {
       path:'/dashboard/opportunity',
       icon: 'shining-line',

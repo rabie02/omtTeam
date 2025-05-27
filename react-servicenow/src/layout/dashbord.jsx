@@ -1,7 +1,7 @@
 // Dashboard.jsx
 import { useState, useEffect } from 'react';
 import { Outlet } from "react-router-dom";
-import Sidebar from "./dashbord/Sidebar";
+import Sidebar from "./dashbord/sidebar";
 import Header from "./dashbord/header";
 import Chatbot from '../components/dashboard/spec/Chatbot';
 
