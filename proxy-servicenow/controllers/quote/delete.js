@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
 
     // Delete from ServiceNow first
     const snResponse = await axios.delete(
-      `${process.env.SERVICE_NOW_URL}/api/sn_prd_pm/quote/${quote.sys_id}`,
+      `${process.env.SERVICE_NOW_URL}/api/now/table/sn_quote_mgmt_core_quote/${quote.sys_id}`,
       {
         headers: {
           'Authorization': `Bearer ${decodedToken.sn_access_token}`,

@@ -9,7 +9,7 @@ const deleteQuote = require('../../controllers/Quote/delete')
 
 router.get('/quote', getAll);
 router.post('/quote/:id', create);
-router.delete('/quote', deleteQuote);
+router.delete('/quote/:id', deleteQuote);
 router.patch('/quote', update);
 
 module.exports = router;

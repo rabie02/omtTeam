@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Table, Empty, Spin, Pagination, Tooltip } from 'antd';
-import { getQuotes } from '../../../features/servicenow/quote/quotaSlice';
+import { Table, Empty, Spin, Pagination, Tooltip, Popconfirm, notification } from 'antd';
+import { getQuotes, deleteQuote } from '../../../features/servicenow/quote/quotaSlice';
 
 function QuoteTable({ setData, setOpen, searchQuery }) {
     const dispatch = useDispatch();
@@ -27,6 +27,23 @@ function QuoteTable({ setData, setOpen, searchQuery }) {
         setOpen(true);
     };
 
+    const handleDelete = async (id) => {
+        try {
+            await dispatch(deleteQuote(id));
+            notification.success({
+                message: 'Quote Deleted',
+                description: 'Quote has been deleted successfully'
+            });
+            dispatch(getQuotes({ page: currentPage, limit, q: searchQuery }));
+        } catch (error) {
+            notification.error({
+                message: 'Deletion Failed',
+                description: error.message || 'Failed to delete quote'
+            });
+        }
+    };
+
+
     const mainColumns = [
         {
             title: 'Number',
@@ -50,11 +67,10 @@ function QuoteTable({ setData, setOpen, searchQuery }) {
             title: 'Status',
             key: 'state',
             render: (_, record) => (
-                <span className={`px-2 py-1 capitalize rounded ${
-                    record.state === 'published' 
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-700'
-                }`}>
+                <span className={`px-2 py-1 capitalize rounded ${record.state === 'published'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-700'
+                    }`}>
                     {record.state || 'N/A'}
                 </span>
             ),
@@ -63,14 +79,14 @@ function QuoteTable({ setData, setOpen, searchQuery }) {
         {
             title: 'Client',
             key: 'client',
-            render: (_, record) => record.account?.name  || 'N/A',
+            render: (_, record) => record.account?.name || 'N/A',
             width: 150,
         },
         {
             title: 'Expiration Date',
             key: 'expiration_date',
             sorter: (a, b) => new Date(a.expiration_date) - new Date(b.expiration_date),
-            render: (_, record) => record.expiration_date 
+            render: (_, record) => record.expiration_date
                 ? new Date(record.expiration_date).toLocaleDateString()
                 : 'N/A',
             width: 150,
@@ -79,14 +95,29 @@ function QuoteTable({ setData, setOpen, searchQuery }) {
             title: 'Actions',
             key: 'actions',
             render: (_, record) => (
-                <Tooltip title="View Quote Details">
-                    <button
-                        className="text-gray-500 hover:text-blue-600"
-                        onClick={() => seeData(record)}
-                    >
-                        <i className="ri-eye-line text-2xl"></i>
-                    </button>
-                </Tooltip>
+                <>
+                    <Tooltip title="View Quote Details">
+                        <button
+                            className="text-gray-500 hover:text-blue-600"
+                            onClick={() => seeData(record)}
+                        >
+                            <i className="ri-eye-line text-2xl"></i>
+                        </button>
+                    </Tooltip>
+                    <Tooltip title="Delete This Quote">
+                        <Popconfirm
+                            title="Delete Quote"
+                            description="Are you sure you want to delete this quote?"
+                            onConfirm={() => handleDelete(record._id)}
+                            okText="Yes"
+                            cancelText="No"
+                        >
+                            <button className="text-gray-500 hover:text-red-600 ml-2">
+                                <i className="ri-delete-bin-6-line text-2xl"></i>
+                            </button>
+                        </Popconfirm>
+                    </Tooltip>
+                </>
             ),
             width: 100,
         },
@@ -107,7 +138,7 @@ function QuoteTable({ setData, setOpen, searchQuery }) {
         {
             title: 'Unit Price',
             key: 'unit_price',
-            render: (_, record) => record.unit_price 
+            render: (_, record) => record.unit_price
                 ? `$${Number(record.unit_price).toFixed(2)}`
                 : 'N/A',
             align: 'right',
@@ -135,7 +166,6 @@ function QuoteTable({ setData, setOpen, searchQuery }) {
             Error: {error.message || 'Failed to load quotes'}
         </div>
     );
-    
 
     return (
         <div className='w-full justify-center flex'>
@@ -148,7 +178,7 @@ function QuoteTable({ setData, setOpen, searchQuery }) {
                     expandable={{
                         expandedRowRender: (record) => (
                             <div className="ml-8 bg-gray-50 rounded">
-                                {record.quote_lines.length > 0 ? (
+                                {record.quote_lines?.length > 0 ? (
                                     <Table
                                         columns={quoteLineColumns}
                                         dataSource={record.quote_lines}
@@ -169,7 +199,7 @@ function QuoteTable({ setData, setOpen, searchQuery }) {
                                 )}
                             </div>
                         ),
-                        rowExpandable: (record) => record.quote_lines.length > 0,
+                        rowExpandable: (record) => record.quote_lines?.length > 0,
                     }}
                     pagination={false}
                     locale={{
