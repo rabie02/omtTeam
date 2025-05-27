@@ -4,10 +4,10 @@ import * as Yup from 'yup';
 import { Modal, Steps, notification } from 'antd';
 import { useSelector } from 'react-redux';
 import OpportunityNavigation from './Steps/Navigation';
-import OpportunityStep1 from './Steps/Step1';
-import OpportunityStep2 from './Steps/Step2';
-import OpportunityStep3 from './Steps/Step3';
-import OpportunityStep4 from './Steps/Step4';
+import OpportunityStep1 from './Steps/Step1_CreateOpportunity';
+import OpportunityStep2 from './Steps/Step2_SelectPriceList';
+import OpportunityStep3 from './Steps/Step3_ProductOfferingPrice';
+import OpportunityStep4 from './Steps/Step4_Summary';
 import { formatDateForInput } from '@/utils/formatDateForInput.js';
 import {
   getSalesCycleTypes,
