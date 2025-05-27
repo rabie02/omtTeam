@@ -1,27 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { stringSimilarity } from 'string-similarity-js';
 
 const Chatbot = () => {
+  // États du chatbot
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      text: "Bonjour! Je suis votre assistant ServiceNow. Comment puis-je vous aider aujourd'hui?",
-      sender: 'bot',
-      options: [
-        "Lister les spécifications produits",
-        "Rechercher un article de connaissance",
-        "Voir les offres produits",
-        "Aide sur OMT",
-        "Créer un ticket"
-      ]
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [context, setContext] = useState(null);
   const [currentStep, setCurrentStep] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [loadingIntents, setLoadingIntents] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const messagesEndRef = useRef(null);
 
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  // 🔽 Ajoutez cette fonction ici
+  const getAuthHeaders = () => {
+    let token = localStorage.getItem('access_token');
+  
+    // Si le token commence déjà par "Bearer ", on le nettoie
+    if (token && token.startsWith("Bearer ")) {
+      token = token.replace("Bearer ", "");
+    }
+  
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    };
+  };
   // Configuration ServiceNow
   const SN_CONFIG = {
     baseURL: 'https://dev323456.service-now.com',
@@ -30,56 +40,78 @@ const Chatbot = () => {
       password: 'bz!T-1ThIc1L'
     },
     endpoints: {
-      searchSpecs: '/api/now/table/sn_prd_pm_product_specification',
       searchKB: '/api/now/table/kb_knowledge',
-      searchProducts: '/api/now/table/cmdb_ci_product',
-      createIncident: '/api/now/table/incident'
+      searchSpecs: '/api/now/table/sn_prd_pm_product_specification'
     }
   };
 
-  // Articles par défaut pour requêtes spéciales
-  const DEFAULT_ARTICLES = {
-    "omt": {
-      name: "Guide complet OMT (Order Management Template)",
-      number: "KB0012345",
-      topic: "Order Management",
-      text: "L'OMT est un template standard pour la gestion des commandes dans ServiceNow. Il inclut des workflows prédéfinis et des bonnes pratiques pour le processus de commande."
-    },
-    "produit": {
-      name: "Catalogue des produits disponibles",
-      number: "KB0023456",
-      topic: "Produits",
-      text: "Notre catalogue contient tous les produits disponibles avec leurs spécifications techniques. Consultez la liste complète dans la section Produits."
-    }
+  // Mappage des intentions
+  const INTENT_MAP = {
+    product_search: 'search_products',
+    quote_request: 'request_quote',
+    price_check: 'check_price',
+    opportunity_check: 'check_opportunity',
+    channel_info: 'get_channel_info',
+    product_by_spec: 'search_products_by_spec',
+    category_list: 'list_categories',
+    knowledge_base: 'search_kb',
+    product_specs: 'search_specs'
   };
 
+  // Chargement initial des catégories
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await axios.get(`${backendUrl}/api/product-offering-catalog-publish/categories`, getAuthHeaders());
+        setCategories(response.data.data || []); // Accéder à response.data.data
+        initializeChat();
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        initializeChat();
+      }
+    };
+    loadCategories();
+  }, []);
+
+  // Scroll automatique
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const toggleChatbot = () => {
-    setIsOpen(!isOpen);
-    if (!isOpen) {
-      setMessages([{
-        text: "Bonjour! Je suis votre assistant ServiceNow. Comment puis-je vous aider aujourd'hui?",
-        sender: 'bot',
-        options: [
-          "Lister les spécifications produits",
-          "Rechercher un article de connaissance",
-          "Voir les offres produits",
-          "Aide sur OMT",
-          "Créer un ticket"
-        ]
-      }]);
-    }
+  // Initialisation du chat
+  const initializeChat = () => {
+    setMessages([{
+      text: "Bonjour! Je suis votre assistant commercial. Je peux vous aider à trouver des produits, des devis, des prix et plus encore. Comment puis-je vous aider aujourd'hui?", 
+      sender: 'bot',
+      options: generateDefaultOptions()
+    }]);
   };
 
+  // Détection d'intention améliorée
+  const detectIntent = (text) => {
+    text = text.toLowerCase().trim();
+    
+    // Détection basée sur le contenu du message
+    if (/(bonjour|salut)/.test(text)) return 'greeting';
+    if (/(produit|offre|article)/.test(text)) return 'search_products';
+    if (/(prix|tarif)/.test(text)) return 'check_price';
+    if (/(opportunit|affaire)/.test(text)) return 'check_opportunity';
+    if (/(canal|channel)/.test(text)) return 'get_channel_info';
+    if (/(liste.*spécification|voir.*spécification|spécifications?$)/.test(text)) return 'list_specs';
+    if (/(catégorie|type|famille)/.test(text)) return 'list_categories';
+    if (/(article|connaissance)/.test(text)) return 'search_kb';
+    if (/(spécification|caractéristique)/.test(text)) return 'search_specs';
+    if (/(voir.*devis|mes devis|liste.*devis)/.test(text)) return 'view_quotes';
+
+
+    return 'help';
+  };
+
+  // Gestion de l'envoi de message
   const handleSendMessage = async () => {
     if (!input.trim() || loading) return;
 
@@ -95,8 +127,8 @@ const Chatbot = () => {
         const response = await processUserInput(input);
         setMessages(prev => [...prev, response]);
         if (response.data) {
-          setMessages(prev => [...prev, {
-            text: response.text || "Voici les résultats:",
+          setMessages(prev => [...prev, { 
+            text: response.text || "Voici les résultats:", 
             sender: 'bot',
             isData: true,
             data: response.data,
@@ -106,379 +138,592 @@ const Chatbot = () => {
       }
     } catch (error) {
       console.error("Erreur chatbot:", error);
-      addBotMessage("Désolé, je n'ai pas compris. Pouvez-vous reformuler votre demande?");
+      addBotMessage("Désolé, une erreur est survenue. Pouvez-vous reformuler votre demande?");
     } finally {
       setLoading(false);
     }
   };
 
+  // Traitement de l'input utilisateur
   const processUserInput = async (userInput) => {
     const intent = detectIntent(userInput);
-    let response;
-
-    switch (intent) {
-      case 'search_specs':
-        const specs = await searchSpecifications();
-        response = {
-          text: specs.length ? "Voici les spécifications disponibles:" : "Aucune spécification trouvée.",
-          data: specs,
-          intent: 'search_specs'
-        };
-        break;
-
-      case 'search_kb':
-        setCurrentStep('knowledge_query');
-        return {
-          text: "Sur quel sujet souhaitez-vous chercher dans la base de connaissances?",
-          sender: 'bot',
-          intent: 'search_kb'
-        };
-
+    
+    switch(intent) {
       case 'search_products':
-        const products = await searchProducts();
-        response = {
-          text: products.length ? "Voici nos offres produits disponibles:" : "Aucun produit trouvé.",
-          data: products,
-          intent: 'search_products'
-        };
-        break;
-
-      case 'omt_help':
-        // Vérifie d'abord si on a un article par défaut
-        if (DEFAULT_ARTICLES.omt) {
-          response = {
-            text: "Voici des informations sur OMT (Order Management Template):",
-            data: [DEFAULT_ARTICLES.omt],
-            intent: 'omt_help'
-          };
-        } else {
-          const omtArticles = await searchKnowledgeArticles("OMT");
-          response = {
-            text: omtArticles.length ? "Voici des articles sur OMT:" : "Aucun article trouvé sur OMT.",
-            data: omtArticles,
-            intent: 'omt_help'
-          };
-        }
-        break;
-
-      case 'create_ticket':
-        setCurrentStep('ticket_short_description');
-        return {
-          text: "Je vais vous aider à créer un ticket. Quel est le résumé du problème?",
-          sender: 'bot',
-          intent: 'create_ticket'
-        };
-
+        return handleSearchProducts();
+      case 'request_quote':
+        return handleRequestQuote();
+      case 'check_price':
+        return handleCheckPrice();
+      case 'check_opportunity':
+        return handleCheckOpportunity();
+      case 'get_channel_info':
+        return handleGetChannelInfo();
+      case 'search_products_by_spec':
+        return handleSearchProductsBySpec();
+      case 'list_categories':
+        return handleListCategories();
+      case 'search_kb':
+        return handleSearchKB();
+      case 'search_specs':
+        return handleSearchSpecs();
       case 'greeting':
-        return {
-          text: "Bonjour! Comment puis-je vous aider aujourd'hui?",
-          sender: 'bot',
-          options: [
-            "Lister les spécifications produits",
-            "Rechercher un article de connaissance",
-            "Voir les offres produits",
-            "Aide sur OMT",
-            "Créer un ticket"
-          ]
-        };
-
-      case 'help':
+        return handleGreeting();
+      case 'view_quotes':
+        return handleViewQuotes();
+      case 'list_specs':
+        return handleListAllSpecs();
       default:
-        return {
-          text: "Je peux vous aider avec:",
-          sender: 'bot',
-          options: [
-            "Lister les spécifications produits",
-            "Rechercher un article de connaissance",
-            "Voir les offres produits",
-            "Aide sur OMT",
-            "Créer un ticket"
-          ]
-        };
+        return handleHelp();
     }
-
-    return response;
   };
-
-  const processStepResponse = async (input) => {
-    // Recherche dans la base de connaissances
-    if (currentStep === 'knowledge_query') {
-      // Vérifie d'abord les requêtes spéciales
-      if (input.toLowerCase().includes("omt")) {
-        setCurrentStep(null);
-        addBotMessage("Voici des informations sur OMT:", [], DEFAULT_ARTICLES.omt);
-        return;
-      }
-
-      if (input.toLowerCase().includes("produit")) {
-        setCurrentStep(null);
-        addBotMessage("Voici des informations sur nos produits:", [], [DEFAULT_ARTICLES.produit]);
-        return;
-      }
-
-      const articles = await searchKnowledgeArticles(input);
-      setCurrentStep(null);
-
-      if (articles.length > 0) {
-        addBotMessage(`Voici les articles trouvés pour "${input}":`);
-        setMessages(prev => [
-          ...prev,
-          {
-            text: '',
-            sender: 'bot',
-            data: articles,
-            intent: 'search_kb'
-          }
-        ]);
-      } else {
-        addBotMessage(`Aucun article trouvé pour "${input}". Voulez-vous essayer avec d'autres mots-clés?`, [
-          "Oui, chercher à nouveau",
-          "Non, merci"
-        ]);
-      }
-      return;
-    }
-
-    // Création de ticket
-    if (currentStep === 'ticket_short_description') {
-      setContext({ ticket: { short_description: input } });
-      setCurrentStep('ticket_priority');
-      addBotMessage("Merci. Quelle est la priorité de ce ticket?", [
-        "1 - Critique",
-        "2 - Élevée",
-        "3 - Moyenne",
-        "4 - Faible"
-      ]);
-      return;
-    }
-
-    if (currentStep === 'ticket_priority') {
-      const priorityMap = {
-        "1": "1",
-        "critique": "1",
-        "2": "2",
-        "élevée": "2",
-        "3": "3",
-        "moyenne": "3",
-        "4": "4",
-        "faible": "4"
-      };
-
-      const priority = priorityMap[input.toLowerCase().split(" - ")[0]];
-
-      if (!priority) {
-        addBotMessage("Priorité non reconnue. Veuillez choisir une priorité entre 1 (Critique) et 4 (Faible).", [
-          "1 - Critique",
-          "2 - Élevée",
-          "3 - Moyenne",
-          "4 - Faible"
-        ]);
-        return;
-      }
-
-      setContext(prev => ({
-        ticket: {
-          ...prev.ticket,
-          priority
-        }
-      }));
-
-      setCurrentStep('ticket_description');
-      addBotMessage("Merci. Pouvez-vous décrire le problème plus en détail?");
-      return;
-    }
-
-    if (currentStep === 'ticket_description') {
-      const ticketData = {
-        ...context.ticket,
-        description: input,
-        caller_id: "user", // À remplacer par l'utilisateur réel
-        category: "inquiry"
-      };
-
-      try {
-        const ticket = await createIncident(ticketData);
-        setCurrentStep(null);
-        setContext(null);
-
-        addBotMessage(`Ticket créé avec succès! Numéro: ${ticket.number}. Que souhaitez-vous faire maintenant?`, [
-          "Voir le statut du ticket",
-          "Rechercher un article de connaissance",
-          "Retour au menu principal"
-        ]);
-      } catch (error) {
-        addBotMessage("Désolé, je n'ai pas pu créer le ticket. Veuillez réessayer ou contacter l'administrateur.");
-        console.error("Erreur création ticket:", error);
-      }
-      return;
-    }
-
-    addBotMessage("Je n'ai pas compris. Pouvez-vous répéter?");
-  };
-
-  // Détection d'intention améliorée avec tolérance aux fautes
-  const detectIntent = (text) => {
-    text = text.toLowerCase().trim();
-
-    // Salutations
-    if (/(bonjour|salut|coucou|hello|hi)/.test(text)) {
-      return 'greeting';
-    }
-
-    // Recherche article de connaissance (KB)
-    if (
-      /^rechercher un article( de connaissance)?$/.test(text) ||
-      /(article de connaissance|base de connaissance|faq|kb|question|solution|problème|connaissance)/.test(text)
-    ) {
-      return 'search_kb';
-    }
-
-    // Aide spécifique OMT
-    if (/(omt|order management|template|commande)/.test(text)) {
-      return 'omt_help';
-    }
-
-    // Lister ou afficher les spécifications produits
-    if (
-      /^lister les spécifications( produits)?$/.test(text) ||
-      /(spécification|fiche produit|fiche technique|specification)/.test(text)
-    ) {
-      return 'search_specs';
-    }
-
-    // Produits et offres
-    if (/(produit|offre|service|forfait|abonnement)/.test(text)) {
-      return 'search_products';
-    }
-
-    // Création de ticket
-    if (/(ticket|incident|bug|erreur|souci|demande d'assistance|demande)/.test(text)) {
-      return 'create_ticket';
-    }
-
-    // Par défaut
-    return 'help';
-  };
-
-
-  // Fonctions ServiceNow
-  const searchSpecifications = async (query = '') => {
+  const handleViewQuotes = async () => {
     try {
-      const params = {
-        sysparm_limit: 10,
-        sysparm_query: 'status=published',
-        sysparm_fields: 'name,number,category,type,status,sys_id,short_description'
+      const response = await axios.get(`${backendUrl}/api/quote`, getAuthHeaders());
+      const quotes = response.data.data || [];
+      console.log("📄 Devis reçus :", quotes);
+      return {
+        text: quotes.length ? "Voici vos devis :" : "Aucun devis trouvé.",
+        data: quotes,
+        intent: 'view_quotes'
       };
-
-      if (query) {
-        params.sysparm_query = `status=published^nameLIKE${query}^ORdescriptionLIKE${query}`;
-      }
-
-      const response = await axios.get(SN_CONFIG.endpoints.searchSpecs, {
-        baseURL: SN_CONFIG.baseURL,
-        auth: SN_CONFIG.auth,
-        params
-      });
-
-      return response.data.result;
     } catch (error) {
-      console.error("Erreur recherche specs:", error);
-      throw new Error("Impossible de récupérer les spécifications.");
+      console.error("❌ Erreur lors de la récupération des devis :", error);
+      return handleError("Erreur de récupération des devis");
+    }
+  };
+  // Fonctions de gestion des intentions
+  const handleSearchProducts = async () => {
+    try {
+      const response = await axios.get(`${backendUrl}/api/product-offering-catalog-publish`, getAuthHeaders());
+      console.log("🧪 Réponse brute du backend :", response.data);
+      
+      const products = response.data.data;
+      console.log("🔍 Produits extraits :", products); // 👈 Tu dois voir ici les 2 produits
+  
+      return {
+        text: products.length ? "Voici nos offres produits disponibles:" : "Aucun produit trouvé.",
+        data: products,
+        intent: 'search_products'
+      };
+    } catch (error) {
+      console.error("❌ Erreur handleSearchProducts:", error);
+      return handleError("Erreur de recherche des produits");
+    }
+  };
+  const handleListAllSpecs = async () => {
+    try {
+      const response = await axios.get(`${SN_CONFIG.baseURL}${SN_CONFIG.endpoints.searchSpecs}`, {
+        auth: SN_CONFIG.auth,
+        params: {
+          sysparm_query: "status=published",
+          sysparm_limit: 50,
+          sysparm_fields: 'name,number,specification_type,display_name,description,status'
+        }
+      });
+  
+      const specs = response.data.result || [];
+  
+      return {
+        text: specs.length ? "Voici les spécifications techniques publiées :" : "Aucune spécification trouvée.",
+        data: specs,
+        intent: 'list_specs'
+      };
+    } catch (error) {
+      console.error("Erreur lors de la récupération des spécifications :", error);
+      return handleError("Erreur lors du chargement des spécifications");
+    }
+  };
+  
+  const handleRequestQuote = () => {
+    setCurrentStep('quote_product_selection');
+    return {
+      text: "Pour quel produit souhaitez-vous un devis?",
+      sender: 'bot',
+      options: ["Annuler"]
+    };
+  };
+
+  const handleCheckPrice = async () => {
+    try {
+      const response = await axios.get(`${backendUrl}/api/price-list`, getAuthHeaders());
+      console.log("✅ Prix reçus du backend :", response.data); // déjà un tableau
+      return {
+        text: "Voici la liste des prix:",
+        data: response.data, // ✅ utilise directement le tableau ici
+        intent: 'check_price'
+      };
+    } catch (error) {
+      console.error("❌ Erreur Axios:", error);
+      return handleError("Erreur de récupération des prix");
+    }
+  };
+  
+  const handleCheckOpportunity = async () => {
+    try {
+      const response = await axios.get(`${backendUrl}/api/opportunity`, getAuthHeaders());
+      return {
+        text: "Voici les opportunités disponibles:",
+        data: response.data, // Ici response.data est déjà le tableau
+        intent: 'check_opportunity'
+      };
+    } catch (error) {
+      return handleError("Erreur de récupération des opportunités");
     }
   };
 
+  const handleGetChannelInfo = async () => {
+    try {
+      const response = await axios.get(`${backendUrl}/api/channel`, getAuthHeaders());
+      return {
+        text: "Voici les informations sur les canaux:",
+        data: response.data,
+        intent: 'get_channel_info'
+      };
+    } catch (error) {
+      return handleError("Erreur de récupération des canaux");
+    }
+  };
+
+  const handleSearchProductsBySpec = () => {
+    setCurrentStep('spec_input');
+    return {
+      text: "Veuillez entrer la spécification technique pour laquelle vous souhaitez trouver des produits:",
+      sender: 'bot',
+      options: ["Annuler"]
+    };
+  };
+
+  const handleListCategories = () => ({
+    text: "Voici les catégories disponibles:",
+    data: categories,
+    intent: 'list_categories'
+  });
+
+  // Fonction pour rechercher dans la base de connaissances ServiceNow
   const searchKnowledgeArticles = async (query = '') => {
     try {
-      const response = await axios.get(
-        'https://dev268291.service-now.com/api/now/table/kb_knowledge',
-        {
-          auth: {
-            username: 'group2',
-            password: 'K5F/Uj/lDbo9YAS'
-          },
-          headers: {
-            Accept: 'application/json'
-          },
-          params: {
-            sysparm_query: `workflow=published^short_descriptionLIKE${query}^ORtextLIKE${query}`,
-            sysparm_limit: 5,
-            sysparm_fields: 'short_description,display_number,topic,text,url',
-            sysparm_display_value: true,
-            sysparm_exclude_reference_link: true
-          }
+      const response = await axios.get(SN_CONFIG.endpoints.searchKB, {
+        baseURL: SN_CONFIG.baseURL,
+        auth: SN_CONFIG.auth,
+        params: {
+          sysparm_query: `active=true^workflow_state=published^${query ? `(short_descriptionLIKE${query}^ORtextLIKE${query})` : ''}`,
+          sysparm_limit: 5,
+          sysparm_fields: 'short_description,number,topic,text,url',
+          sysparm_display_value: true
         }
-      );
-
+      });
+      
       return response.data.result.map(article => ({
         short_description: article.short_description,
-        number: article.display_number,
+        number: article.number,
         topic: article.topic,
         text: article.text,
         url: article.url
       }));
     } catch (error) {
-      console.error("Erreur recherche KB:", error);
-      throw new Error("Impossible de récupérer les articles de connaissance.");
+      console.error('Error searching knowledge base:', error);
+      throw error;
     }
   };
 
-  const searchProducts = async () => {
+  // Fonction pour rechercher les spécifications techniques
+  const searchSpecifications = async (query = '') => {
     try {
-      const response = await axios.get(SN_CONFIG.endpoints.searchProducts, {
+      const response = await axios.get(SN_CONFIG.endpoints.searchSpecs, {
         baseURL: SN_CONFIG.baseURL,
         auth: SN_CONFIG.auth,
         params: {
+          sysparm_query: `status=published^${query ? `(nameLIKE${query}^ORshort_descriptionLIKE${query})` : ''}`,
           sysparm_limit: 10,
-          sysparm_query: 'install_status=1', // 1 = Installé
-          sysparm_fields: 'name,model_number,version,sys_id,short_description'
+          sysparm_fields: 'name,number,category,type,status,sys_id,short_description'
         }
       });
-
+      
       return response.data.result;
     } catch (error) {
-      console.error("Erreur recherche produits:", error);
-      throw new Error("Impossible de récupérer les produits.");
+      console.error('Error searching specifications:', error);
+      throw error;
     }
   };
 
-  const createIncident = async (ticketData) => {
+  const handleSearchKB = async (query = '') => {
     try {
-      const response = await axios.post(SN_CONFIG.endpoints.createIncident, ticketData, {
-        baseURL: SN_CONFIG.baseURL,
-        auth: SN_CONFIG.auth
-      });
-
-      return response.data.result;
+      const articles = await searchKnowledgeArticles(query);
+      return {
+        text: articles.length ? "Voici les articles correspondants :" : "Aucun article trouvé.",
+        data: articles,
+        intent: 'search_kb'
+      };
     } catch (error) {
-      console.error("Erreur création incident:", error);
-      throw new Error("Impossible de créer le ticket.");
+      return handleError("Désolé, une erreur est survenue lors de la recherche dans la base de connaissances.");
+    }
+  };
+
+  const handleSearchSpecs = async (query = '') => {
+    try {
+      const specs = await searchSpecifications(query);
+      return {
+        text: specs.length ? "Voici les spécifications techniques :" : "Aucune spécification trouvée.",
+        data: specs,
+        intent: 'search_specs'
+      };
+    } catch (error) {
+      return handleError("Désolé, une erreur est survenue lors de la recherche des spécifications.");
+    }
+  };
+
+  const handleGreeting = () => ({
+    text: "Bonjour! Comment puis-je vous aider aujourd'hui?",
+    sender: 'bot',
+    options: generateDefaultOptions()
+  });
+
+  const handleHelp = () => ({
+    text: "Je peux vous aider avec:",
+    sender: 'bot',
+    options: generateDefaultOptions()
+  });
+
+  const handleError = (message) => ({
+    text: message,
+    sender: 'bot',
+    options: ["Réessayer", "Menu principal"]
+  });
+
+  // Traitement des étapes
+  const processStepResponse = async (input) => {
+    if (input.toLowerCase() === 'annuler') {
+      setCurrentStep(null);
+      addBotMessage("Opération annulée. Que souhaitez-vous faire?", generateDefaultOptions());
+      return;
+    }
+
+    switch(currentStep) {
+      case 'quote_product_selection':
+        await processQuoteProductSelection(input);
+        break;
+      case 'spec_input':
+        await processSpecInput(input);
+        break;
+      case 'knowledge_query':
+        await processKnowledgeQuery(input);
+        break;
+      default:
+        addBotMessage("Je n'ai pas compris. Pouvez-vous répéter?");
+    }
+  };
+
+  // Fonctions de traitement des étapes
+  const processQuoteProductSelection = async (productName) => {
+    try {
+      // Trouver le produit correspondant
+      const productsResponse = await axios.get(`${backendUrl}/api/product-offering-catalog-publish`, getAuthHeaders());
+      const product = productsResponse.data.find(p => 
+        p.name.toLowerCase().includes(productName.toLowerCase())
+      );
+
+      if (!product) {
+        addBotMessage(`Aucun produit trouvé avec le nom "${productName}". Voulez-vous réessayer?`, [
+          "Oui, réessayer",
+          "Non, merci"
+        ]);
+        return;
+      }
+
+      // Créer le devis
+      const quoteResponse = await axios.post(
+        `${backendUrl}/api/quote`,
+        {
+          productId: product.id,
+          productName: product.name
+        },
+        getAuthHeaders()
+      );
+
+      setCurrentStep(null);
+      addBotMessage(`Devis créé pour le produit ${product.name}. Numéro de devis: ${quoteResponse.data.quoteNumber}. Que souhaitez-vous faire maintenant?`, [
+        "Voir d'autres produits",
+        "Voir les prix",
+        "Menu principal"
+      ]);
+    } catch (error) {
+      addBotMessage("Désolé, une erreur est survenue lors de la création du devis.");
+    }
+  };
+
+  const processSpecInput = async (spec) => {
+    try {
+      // Rechercher les produits correspondant à la spécification
+      const response = await axios.get(`${backendUrl}/api/product-offering-catalog-publish?spec=${encodeURIComponent(spec)}`, getAuthHeaders());
+      setCurrentStep(null);
+      if (response.data.length > 0) {
+        addBotMessage(`Voici les produits correspondant à la spécification "${spec}":`);
+        setMessages(prev => [
+          ...prev,
+          {
+            text: '',
+            sender: 'bot',
+            data: response.data,
+            intent: 'search_products'
+          }
+        ]);
+      } else {
+        addBotMessage(`Aucun produit trouvé pour la spécification "${spec}". Voulez-vous essayer avec une autre spécification?`, [
+          "Oui, chercher à nouveau",
+          "Non, merci"
+        ]);
+      }
+    } catch (error) {
+      addBotMessage("Désolé, une erreur est survenue lors de la recherche.");
+    }
+  };
+
+  const processKnowledgeQuery = async (query) => {
+    try {
+      const response = await handleSearchKB(query);
+      setCurrentStep(null);
+      setMessages(prev => [...prev, response]);
+    } catch (error) {
+      addBotMessage("Désolé, une erreur est survenue lors de la recherche.");
+    }
+  };
+
+  // Fonctions utilitaires
+  const addBotMessage = (text, options = [], data = null) => {
+    const newMessage = { text, sender: 'bot', options };
+    if (data) {
+      newMessage.data = Array.isArray(data) ? data : [data];
+    }
+    setMessages(prev => [...prev, newMessage]);
+  };
+
+  const generateDefaultOptions = () => {
+    return [
+      "Rechercher produits",
+      "Demander un devis",
+      "Voir les prix",
+      "Liste des catégories",
+      "Voir mes devis",
+      "Lister les spécifications",
+      "Base de connaissances",
+      "Aide"
+    ];
+  };
+
+  const getFollowUpOptions = (intent) => {
+    switch(intent) {
+      case 'search_products':
+        return ["Filtrer par catégorie", "Demander un devis", "Menu principal"];
+      case 'request_quote':
+        return ["Créer un autre devis", "Voir les produits", "Menu principal"];
+      case 'check_price':
+        return ["Voir les produits", "Demander un devis", "Menu principal"];
+      case 'check_opportunity':
+        return ["Voir plus d'opportunités", "Menu principal"];
+      case 'get_channel_info':
+        return ["Voir les produits", "Menu principal"];
+      case 'search_products_by_spec':
+        return ["Rechercher une autre spécification", "Voir toutes les spécifications", "Menu principal"];
+      case 'list_categories':
+        return ["Voir produits par catégorie", "Menu principal"];
+      case 'search_kb':
+        return ["Chercher un autre article", "Menu principal"];
+      case 'search_specs':
+        return ["Rechercher produits par spécification", "Menu principal"];
+      default:
+        return generateDefaultOptions();
+    }
+  };
+
+  const handleQuickOption = (option) => {
+    if (option === "Aide") {
+      setShowHelp(true);
+      return;
+    }
+    
+    setInput(option);
+    setTimeout(() => {
+      handleSendMessage();
+    }, 300);
+  };
+
+  const toggleChatbot = () => {
+    setIsOpen(!isOpen);
+    if (!isOpen && messages.length === 0) {
+      initializeChat();
     }
   };
 
   // Formatage des données
-  const formatSpecifications = (specs) => {
-    if (!specs || !Array.isArray(specs)) {
-      return <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">Aucune donnée disponible</div>;
+  const formatProducts = (products) => {
+    if (!products?.length) {
+      return <div className="no-data">Aucun produit trouvé</div>;
+    }
+  
+    return (
+      <div className="products-grid">
+        {products.map(product => (
+          <div key={product._id || product.id} className="product-card"> 
+            <h4>{product.name}</h4>
+            <div className="product-details">
+              {product.description && <p>{product.description}</p>}
+              {product.number && <div>Numéro: {product.number}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const formatCategories = (categories) => {
+    if (!categories?.length) {
+      return <div className="no-data">Aucune catégorie disponible</div>;
     }
 
     return (
-      <div className="w-full overflow-x-auto my-3 text-sm rounded-lg shadow-sm">
-        <table className="w-full border-collapse border-spacing-0 min-w-[420px]">
+      <div className="categories-list">
+        <ul>
+          {categories.map(category => (
+            <li key={category.id}>
+              <button 
+                onClick={() => {
+                  setInput(`Produits dans la catégorie ${category.name}`);
+                  setTimeout(() => handleSendMessage(), 300);
+                }}
+                className="category-button"
+              >
+                {category.name} ({category.productCount || 0})
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  const formatQuotes = (quotes) => {
+    if (!quotes?.length) {
+      return <div className="no-data">Aucun devis trouvé</div>;
+    }
+  
+    return (
+      <div className="quotes-list">
+        {quotes.map((quote) => (
+          <div key={quote._id} className="quote-card">
+            <h4>Devis #{quote.number}</h4>
+            <div className="quote-details">
+              <div>Description : {quote.short_description || 'N/A'}</div>
+              <div>Statut : {quote.state}</div>
+              <div>Devise : {quote.currency}</div>
+              <div>Expiration : {quote.expiration_date}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const formatPrices = (prices) => {
+    if (!prices?.length) {
+      return <div className="no-data">Aucun prix disponible</div>;
+    }
+  
+    return (
+      <div className="prices-table">
+        <table>
           <thead>
             <tr>
-              <th className="sticky top-0 bg-gray-50 font-semibold text-gray-700 p-2.5 border-b-2 border-gray-200">Nom</th>
-              <th className="sticky top-0 bg-gray-50 font-semibold text-gray-700 p-2.5 border-b-2 border-gray-200">Numéro</th>
-              <th className="sticky top-0 bg-gray-50 font-semibold text-gray-700 p-2.5 border-b-2 border-gray-200">Catégorie</th>
-              <th className="sticky top-0 bg-gray-50 font-semibold text-gray-700 p-2.5 border-b-2 border-gray-200">Type</th>
+              <th>Nom</th>
+              <th>Devise</th>
+              <th>Date début</th>
+              <th>Date fin</th>
+            </tr>
+          </thead>
+          <tbody>
+            {prices.map((price) => (
+              <tr key={price._id}>
+                <td>{price.name}</td>
+                <td>{price.currency}</td>
+                <td>{price.start_date}</td>
+                <td>{price.end_date}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+  
+
+  const formatOpportunities = (opportunities) => {
+    if (!opportunities?.length) {
+      return <div className="no-data">Aucune opportunité disponible</div>;
+    }
+
+    return (
+      <div className="opportunities-grid">
+        {opportunities.map(opp => (
+          <div key={opp.id} className="opportunity-card">
+            <h4>{opp.name}</h4>
+            <div className="opportunity-details">
+              <div>Client: {opp.customer}</div>
+              <div>Montant: {opp.amount} €</div>
+              <div>Probabilité: {opp.probability}%</div>
+              <div>Échéance: {opp.dueDate}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const formatChannels = (channels) => {
+    if (!channels?.length) {
+      return <div className="no-data">Aucun canal disponible</div>;
+    }
+
+    return (
+      <div className="channels-list">
+        {channels.map(channel => (
+          <div key={channel.id} className="channel-card">
+            <h4>{channel.name}</h4>
+            <div className="channel-details">
+              <div>Type: {channel.type}</div>
+              <div>Contact: {channel.contact}</div>
+              <div>Disponibilité: {channel.availability}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const formatSpecs = (specs) => {
+    if (!specs?.length) {
+      return <div className="no-data">Aucune spécification disponible</div>;
+    }
+
+    return (
+      <div className="specs-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Numéro</th>
+              <th>Catégorie</th>
+              <th>Type</th>
+              <th>Description</th>
             </tr>
           </thead>
           <tbody>
             {specs.map(spec => (
-              <tr key={spec.sys_id} className="hover:bg-blue-50">
-                <td className="p-2 border-b border-gray-100 align-top">{spec.name}</td>
-                <td className="font-mono text-sm p-2 border-b border-gray-100 align-top">{spec.number}</td>
-                <td className="p-2 border-b border-gray-100 align-top">{spec.category || 'N/A'}</td>
-                <td className="p-2 border-b border-gray-100 align-top">{spec.type || 'N/A'}</td>
+              <tr key={spec.sys_id}>
+                <td>{spec.name}</td>
+                <td>{spec.number}</td>
+                <td>{spec.category || 'N/A'}</td>
+                <td>{spec.type || 'N/A'}</td>
+                <td>{spec.short_description || 'N/A'}</td>
               </tr>
             ))}
           </tbody>
@@ -488,43 +733,36 @@ const Chatbot = () => {
   };
 
   const formatArticles = (articles) => {
-    if (!articles || !Array.isArray(articles) || articles.length === 0) {
-      return (
-        <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">
-          Aucun article trouvé.
-        </div>
-      );
+    if (!articles?.length) {
+      return <div className="no-data">Aucun article trouvé.</div>;
     }
 
     return (
-      <div className="grid grid-cols-1 gap-3 mt-3">
+      <div className="articles-grid">
         {articles.map((article, index) => (
-          <div
-            key={index}
-            className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 text-sm"
-          >
-            <h4 className="font-semibold text-blue-700 mb-2">{article.short_description}</h4>
-            <table className="table-auto text-left w-full text-gray-700 text-sm">
+          <div key={index} className="article-card">
+            <h4>{article.short_description}</h4>
+            <table>
               <tbody>
-                {article.number && (
-                  <tr>
-                    <td className="font-medium pr-2 py-1">Numéro :</td>
-                    <td>{article.number}</td>
-                  </tr>
-                )}
+                <tr>
+                  <td>Numéro :</td>
+                  <td>{article.number}</td>
+                </tr>
                 {article.topic && (
                   <tr>
-                    <td className="font-medium pr-2 py-1">Sujet :</td>
+                    <td>Sujet :</td>
                     <td>{article.topic}</td>
                   </tr>
                 )}
               </tbody>
             </table>
             {article.text && (
-              <div className="mt-2 text-gray-800 leading-6">
-                <hr className="my-2" />
-                <div dangerouslySetInnerHTML={{ __html: article.text }} />
-              </div>
+              <div className="article-text" dangerouslySetInnerHTML={{ __html: article.text }} />
+            )}
+            {article.url && (
+              <a href={article.url} target="_blank" rel="noopener noreferrer">
+                Voir l'article complet
+              </a>
             )}
           </div>
         ))}
@@ -532,151 +770,84 @@ const Chatbot = () => {
     );
   };
 
-
-  const formatProducts = (products) => {
-    if (!products || !Array.isArray(products)) {
-      return <div className="p-4 text-center italic text-gray-500 bg-gray-50 rounded-lg my-2.5">Aucun produit trouvé</div>;
-    }
-
-    return (
-      <div className="grid grid-cols-1 gap-3 mt-3">
-        {products.map(product => (
-          <div key={product.sys_id} className="bg-white border border-gray-200 rounded-lg p-4">
-            <h4 className="font-semibold text-blue-700 m-0">{product.name}</h4>
-            <div className="text-gray-600 text-sm mt-1">
-              {product.model_number && <div>Modèle: {product.model_number}</div>}
-              {product.version && <div>Version: {product.version}</div>}
-            </div>
-            {product.short_description && (
-              <p className="text-gray-700 mt-2 text-sm">{product.short_description}</p>
-            )}
-          </div>
-        ))}
+  // Composant Popup d'aide
+  const HelpPopup = () => (
+    <div className="help-popup-overlay">
+      <div className="help-popup">
+        <h3>Comment utiliser le chatbot</h3>
+        <p>Notre assistant peut vous aider avec :</p>
+        <ul>
+          <li>Recherche de produits et offres</li>
+          <li>Demande de devis</li>
+          <li>Consultation des prix</li>
+          <li>Gestion des opportunités</li>
+          <li>Information sur les canaux</li>
+          <li>Recherche par spécifications techniques</li>
+          <li>Consultation de la base de connaissances</li>
+        </ul>
+        <p>Exemples de requêtes :</p>
+        <ul>
+          <li>"Je veux voir les produits disponibles"</li>
+          <li>"Créez un devis pour le produit X"</li>
+          <li>"Quels sont les prix pour les produits Y ?"</li>
+          <li>"Quelles sont les opportunités en cours ?"</li>
+          <li>"Rechercher des produits avec la spécification Z"</li>
+          <li>"Rechercher dans la base de connaissances"</li>
+          <li>"Lister les spécifications techniques"</li>
+        </ul>
+        <button onClick={() => setShowHelp(false)}>Fermer</button>
       </div>
-    );
-  };
-
-  // Fonctions utilitaires
-  const addBotMessage = (text, options = [], data = null) => {
-    const newMessage = { text, sender: 'bot', options };
-    if (data) {
-      newMessage.data = Array.isArray(data) ? data : [data];
-      newMessage.intent = 'search_kb';
-    }
-    setMessages(prev => [...prev, newMessage]);
-  };
-
-  const getFollowUpOptions = (intent) => {
-    switch (intent) {
-      case 'search_specs':
-        return ["Filtrer les résultats", "Voir les produits", "Menu principal"];
-      case 'search_kb':
-        return ["Chercher un autre article", "Créer un ticket", "Menu principal"];
-      case 'search_products':
-        return ["Voir les spécifications", "Chercher un article", "Menu principal"];
-      case 'omt_help':
-        return ["Voir plus d'articles", "Créer un ticket OMT", "Menu principal"];
-      case 'create_ticket':
-        return ["Voir mes tickets", "Chercher un article", "Menu principal"];
-      default:
-        return [
-          "Lister les spécifications produits",
-          "Rechercher un article de connaissance",
-          "Voir les offres produits",
-          "Aide sur OMT",
-          "Créer un ticket"
-        ];
-    }
-  };
-
-  const handleQuickOption = (option) => {
-    setInput(option);
-    setTimeout(() => {
-      handleSendMessage();
-    }, 300);
-  };
+    </div>
+  );
 
   return (
-    <div className={`fixed bottom-8 right-8 z-[1000] transition-all duration-300 ease-in-out ${isOpen ? 'open' : ''}`}>
-      {/* <button 
-        className="flex items-center bg-cyan-700 text-white border-none rounded-[50px] py-3.5 px-6 cursor-pointer shadow-md transition-all duration-300 ease-in-out font-medium hover:bg-cyan-600 hover:scale-105"
-        onClick={toggleChatbot}
-      >
-        <div className="w-6 h-6">
+    <div className={`chatbot-container ${isOpen ? 'open' : ''}`}>
+      <button className="chatbot-toggle" onClick={toggleChatbot}>
+        <div className="chatbot-icon">
           <svg viewBox="0 0 24 24" fill="white">
             <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
           </svg>
         </div>
-        
-      </button> */}
-
-
-      <button
-        class="group relative flex justify-center items-center text-white text-sm font-bold "
-        onClick={toggleChatbot}
-      >
-
-
-        <div
-          class="shadow-md flex items-center group-hover:gap-2 bg-cyan-700 group-hover:bg-cyan-600 p-3 transition-all cursor-pointer duration-300"
-        >
-          <svg
-            fill="none"
-            viewBox="0 0 24 24"
-            height="25px"
-            width="25px"
-            xmlns="http://www.w3.org/2000/svg"
-            class="fill-white"
-          >
-            <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" /></svg >
-          <span class="text-[0px]  group-hover:text-sm duration-300"
-          >Assistant ServiceNow</span>
-        </div>
+        <span>Assistant Commercial</span>
       </button>
 
-
       {isOpen && (
-        <div className="absolute bottom-20 right-0 w-[550px] h-[500px] bg-white rounded-2xl shadow-lg flex flex-col overflow-hidden origin-bottom-right animate-fadeIn">
-          <div className="bg-blue-600 text-white p-4 relative">
-            <h2 className="m-0 text-xl font-semibold">Assistant ServiceNow</h2>
-            <p className="mt-2 mb-0 text-sm opacity-90">Je peux vous aider avec les produits, KB et tickets</p>
-            <button
-              className="absolute top-3.5 right-3.5 bg-transparent border-none text-white text-2xl cursor-pointer p-1 transition-transform duration-200 hover:scale-110"
-              onClick={toggleChatbot}
-            >
+        <div className="chatbot-window">
+          <div className="chatbot-header">
+            <h2>Assistant Commercial</h2>
+            <p>Je peux vous aider avec les produits, devis, prix et opportunités</p>
+            <button className="close-button" onClick={toggleChatbot}>
               &times;
             </button>
           </div>
 
-          <div className="flex-1 p-5 overflow-y-auto bg-gray-50 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          <div className="chatbot-messages">
             {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`mb-4 max-w-[85%] animate-messageAppear ${msg.sender === 'user' ? 'ml-auto' : 'mr-auto'
-                  }`}
-              >
-                <div className={`px-4 py-3 rounded-2xl leading-6 text-sm shadow-sm ${msg.sender === 'user'
-                  ? 'bg-blue-600 text-white rounded-br-sm'
-                  : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm'
-                  }`}>
+              <div key={index} className={`message ${msg.sender}`}>
+                <div className="message-content">
                   {msg.text}
-
+                  
                   {msg.data && (
                     <>
-                      {msg.intent === 'search_kb' && formatArticles(msg.data)}
-                      {msg.intent === 'search_specs' && formatSpecifications(msg.data)}
                       {msg.intent === 'search_products' && formatProducts(msg.data)}
-                      {msg.intent === 'omt_help' && formatArticles(msg.data)}
+                      {msg.intent === 'list_categories' && formatCategories(msg.data)}
+                      {msg.intent === 'view_quotes' && formatQuotes(msg.data)}
+                      {msg.intent === 'list_specs' && formatSpecs(msg.data)}
+                      {msg.intent === 'check_price' && formatPrices(msg.data)}
+                      {msg.intent === 'check_opportunity' && formatOpportunities(msg.data)}
+                      {msg.intent === 'get_channel_info' && formatChannels(msg.data)}
+                      {msg.intent === 'search_specs' && formatSpecs(msg.data)}
+                      {msg.intent === 'search_kb' && formatArticles(msg.data)}
                     </>
                   )}
-
+                  
                   {msg.options && (
-                    <div className="flex flex-wrap gap-2.5 mt-3">
+                    <div className="message-options">
                       {msg.options.map((option, i) => (
-                        <button
-                          key={i}
+                        <button 
+                          key={i} 
                           onClick={() => handleQuickOption(option)}
-                          className="bg-blue-50 border border-blue-200 text-blue-800 rounded-2xl px-3.5 py-2 text-sm cursor-pointer transition-all duration-200 hover:bg-blue-100 hover:-translate-y-px whitespace-nowrap"
+                          className="option-button"
                         >
                           {option}
                         </button>
@@ -686,20 +857,18 @@ const Chatbot = () => {
                 </div>
               </div>
             ))}
-
+            
             {loading && (
-              <div className="mr-auto max-w-[85%]">
-                <div className="flex px-4 py-3">
-                  <span className="h-2 w-2 bg-gray-600 rounded-full inline-block mx-1 animate-bounce"></span>
-                  <span className="h-2 w-2 bg-gray-600 rounded-full inline-block mx-1 animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                  <span className="h-2 w-2 bg-gray-600 rounded-full inline-block mx-1 animate-bounce" style={{ animationDelay: '0.4s' }}></span>
-                </div>
+              <div className="loading-indicator">
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="flex p-3.5 border-t border-gray-200 bg-white">
+          <div className="chatbot-input">
             <input
               type="text"
               value={input}
@@ -707,15 +876,14 @@ const Chatbot = () => {
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
               placeholder="Tapez votre message ici..."
               disabled={loading}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-3xl outline-none text-sm transition-colors duration-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
             />
-            <button
-              onClick={handleSendMessage}
+            <button 
+              onClick={handleSendMessage} 
               disabled={loading || !input.trim()}
-              className="ml-2.5 px-5 bg-blue-600 text-white border-none rounded-3xl cursor-pointer text-sm font-medium transition-colors duration-200 min-w-[80px] flex items-center justify-center hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="send-button"
             >
               {loading ? (
-                <span className="inline-block w-4.5 h-4.5 border-2 border-white/30 rounded-full border-t-white animate-spin mr-2"></span>
+                <span className="spinner"></span>
               ) : (
                 <span>Envoyer</span>
               )}
@@ -723,8 +891,449 @@ const Chatbot = () => {
           </div>
         </div>
       )}
-    </div>
+      {showHelp && <HelpPopup />}
+      <style jsx>{`
+        .chatbot-container {
+          position: fixed;
+          bottom: 2rem;
+          right: 2rem;
+          z-index: 1000;
+        }
+        
+        .chatbot-toggle {
+          display: flex;
+          align-items: center;
+          background: #2563eb;
+          color: white;
+          border: none;
+          border-radius: 50px;
+          padding: 0.875rem 1.5rem;
+          cursor: pointer;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s ease;
+          font-weight: 500;
+        }
+        
+        .chatbot-toggle:hover {
+          background: #1d4ed8;
+          transform: scale(1.05);
+        }
+        
+        .chatbot-icon {
+          width: 1.5rem;
+          height: 1.5rem;
+          margin-right: 0.625rem;
+        }
+        
+        .chatbot-window {
+          position: absolute;
+          bottom: 5rem;
+          right: 0;
+          width: 28rem;
+          height: 32rem;
+          background: white;
+          border-radius: 1rem;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .chatbot-header {
+          background: #2563eb;
+          color: white;
+          padding: 1rem;
+          position: relative;
+        }
+        
+        .chatbot-header h2 {
+          margin: 0;
+          font-size: 1.25rem;
+        }
+        
+        .chatbot-header p {
+          margin: 0.5rem 0 0;
+          font-size: 0.875rem;
+          opacity: 0.9;
+        }
+        
+        .close-button {
+          position: absolute;
+          top: 0.875rem;
+          right: 0.875rem;
+          background: transparent;
+          border: none;
+          color: white;
+          font-size: 1.5rem;
+          cursor: pointer;
+          padding: 0.25rem;
+          transition: transform 0.2s;
+        }
+        
+        .close-button:hover {
+          transform: scale(1.1);
+        }
+        
+        .chatbot-messages {
+          flex: 1;
+          padding: 1.25rem;
+          overflow-y: auto;
+          background: #f9fafb;
+        }
+        
+        .message {
+          margin-bottom: 1rem;
+          max-width: 85%;
+          animation: messageAppear 0.3s ease;
+        }
+
+        @keyframes messageAppear {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .message.user {
+          margin-left: auto;
+        }
+
+        .message.bot {
+          margin-right: auto;
+        }
+
+        .message-content {
+          padding: 0.75rem 1rem;
+          border-radius: 1rem;
+          line-height: 1.4;
+        }
+
+        .user .message-content {
+          background: #2563eb;
+          color: white;
+          border-bottom-right-radius: 0.25rem;
+        }
+
+        .bot .message-content {
+          background: #e5e7eb;
+          color: #111827;
+          border-bottom-left-radius: 0.25rem;
+        }
+
+        .message-options {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin-top: 0.75rem;
+        }
+
+        .option-button {
+          background: white;
+          border: 1px solid #d1d5db;
+          border-radius: 1rem;
+          padding: 0.375rem 0.75rem;
+          font-size: 0.75rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .option-button:hover {
+          background: #f3f4f6;
+          border-color: #9ca3af;
+        }
+
+        .loading-indicator {
+          display: flex;
+          justify-content: center;
+          gap: 0.5rem;
+          padding: 1rem;
+        }
+
+        .dot {
+          width: 0.5rem;
+          height: 0.5rem;
+          background: #9ca3af;
+          border-radius: 50%;
+          animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .dot:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+
+        .dot:nth-child(3) {
+          animation-delay: 0.4s;
+        }
+
+        @keyframes bounce {
+          0%, 80%, 100% { 
+            transform: scale(0);
+          }  
+          40% { 
+            transform: scale(1);
+          }
+        }
+
+        .chatbot-input {
+          display: flex;
+          padding: 1rem;
+          background: white;
+          border-top: 1px solid #e5e7eb;
+        }
+
+        .chatbot-input input {
+          flex: 1;
+          padding: 0.75rem 1rem;
+          border: 1px solid #d1d5db;
+          border-radius: 0.5rem;
+          outline: none;
+          transition: border-color 0.2s;
+        }
+
+        .chatbot-input input:focus {
+          border-color: #2563eb;
+        }
+
+        .send-button {
+          margin-left: 0.75rem;
+          padding: 0 1.25rem;
+          background: #2563eb;
+          color: white;
+          border: none;
+          border-radius: 0.5rem;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .send-button:hover {
+          background: #1d4ed8;
+        }
+
+        .send-button:disabled {
+          background: #9ca3af;
+          cursor: not-allowed;
+        }
+
+        .spinner {
+          display: inline-block;
+          width: 1rem;
+          height: 1rem;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-radius: 50%;
+          border-top-color: white;
+          animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        /* Styles pour les données formatées */
+        .products-grid, .categories-list, .quotes-list, 
+        .prices-table, .opportunities-grid, .channels-list,
+        .specs-list, .articles-grid {
+          margin-top: 1rem;
+        }
+
+        .product-card, .quote-card, .opportunity-card, 
+        .channel-card, .article-card {
+          background: white;
+          border: 1px solid #e5e7eb;
+          border-radius: 0.5rem;
+          padding: 1rem;
+          margin-bottom: 1rem;
+        }
+
+        .product-card h4, .quote-card h4, 
+        .opportunity-card h4, .channel-card h4,
+        .article-card h4 {
+          margin: 0 0 0.5rem;
+          font-size: 0.9rem;
+        }
+
+        .product-details, .quote-details, 
+        .opportunity-details, .channel-details {
+          font-size: 0.8rem;
+          color: #4b5563;
+        }
+
+        .specs {
+          margin-top: 0.5rem;
+          font-size: 0.8rem;
+        }
+
+        .specs ul {
+          padding-left: 1rem;
+          margin: 0.25rem 0;
+        }
+
+        .category-button, .spec-button {
+          background: none;
+          border: none;
+          color: #2563eb;
+          text-align: left;
+          padding: 0.25rem 0;
+          cursor: pointer;
+          font-size: 0.9rem;
+        }
+
+        .category-button:hover, .spec-button:hover {
+          text-decoration: underline;
+        }
+
+        .categories-list ul, .specs-list ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+
+        .categories-list li, .specs-list li {
+          margin-bottom: 0.5rem;
+        }
+
+        .prices-table table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 0.8rem;
+        }
+
+        .prices-table th, .prices-table td {
+          padding: 0.5rem;
+          text-align: left;
+          border-bottom: 1px solid #e5e7eb;
+        }
+
+        .prices-table th {
+          background: #f3f4f6;
+          font-weight: 500;
+        }
+
+        .article-content {
+          font-size: 0.8rem;
+          line-height: 1.5;
+          color: #4b5563;
+          max-height: 6rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .no-data {
+          text-align: center;
+          color: #6b7280;
+          font-size: 0.9rem;
+          padding: 1rem;
+        }
+
+        /* Styles pour le popup d'aide */
+        .help-popup-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 2000;
+        }
+        .help-popup {
+  background: white;
+  border-radius: 0.75rem;
+  width: 32rem;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: popupFadeIn 0.3s ease;
+}
+
+@keyframes popupFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.help-popup h3 {
+  margin: 0 0 1rem;
+  color: #1e40af;
+  font-size: 1.25rem;
+}
+
+.help-popup p {
+  margin: 0.75rem 0;
+  color: #374151;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.help-popup ul {
+  margin: 0.75rem 0;
+  padding-left: 1.25rem;
+}
+
+.help-popup li {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.help-popup button {
+  display: block;
+  margin: 1.5rem auto 0;
+  padding: 0.5rem 1.5rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.help-popup button:hover {
+  background: #1d4ed8;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .chatbot-container {
+    bottom: 1rem;
+    right: 1rem;
+  }
+  
+  .chatbot-window {
+    width: 90vw;
+    height: 70vh;
+    bottom: 4.5rem;
+    right: 0.5rem;
+  }
+  
+  .help-popup {
+    width: 85vw;
+    padding: 1rem;
+  }
+    
+}
+ `}
+      </style>
+    </div> // ← fermeture correcte du return principal du composant
   );
 };
-
-export default Chatbot;
+export default Chatbot;
