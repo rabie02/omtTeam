@@ -23,7 +23,7 @@ const opportunity = require("./api/opportunity/index");
 const ProductOfferingPrice = require("./api/productOfferingPrice/index")
 const opportunityLine = require("./api/OpportunityLine/index")
 const priceList = require("./api/PriceList/index")
-
+const nlpRoutes = require('./api/ai-search/nlp');
 const Quote = require('./api/quote/index');
 const emailroutes = require('./email/router');
 const createAccount = require('./api/createAccount')
@@ -96,6 +96,7 @@ app.use('/api', [
     Quote
 ]);
 
+
 // Protected routes
 app.use('/api', authjwt , [
   // logout
@@ -112,7 +113,8 @@ app.use('/api', authjwt , [
   priceList,
   opportunity,
   opportunityLine,
-  ProductOfferingPrice
+  ProductOfferingPrice,
+  nlpRoutes
 ]);
 
 
