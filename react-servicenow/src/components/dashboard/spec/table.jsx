@@ -110,7 +110,7 @@ const fetchOfferings = async (specSysId) => {
                    {product.start_date ? new Date(product.start_date).toISOString().split("T")[0] : ( product.validFor.startDateTime ? new Date(product.validFor.startDateTime).toISOString().split("T")[0] : 'N/A')}
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap">
-                    {product.end_date ? new Date(product.end_date).toISOString().split("T")[0] : ( product.validFor?.endDateTime ? new Date(product.validFor.endtDateTime).toISOString().split("T")[0] : 'N/A')}
+                    {product.end_date ? new Date(product.end_date).toISOString().split("T")[0] : ( product.validFor?.endDateTime ? new Date(product.validFor.endDateTime).toISOString().split("T")[0] : 'N/A')}
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap">
                     <button
