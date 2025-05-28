@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import ReactDOM from 'react-dom';
 import { useDispatch } from "react-redux";
 import { createAccount } from "../../features/auth/authActions";
+import { useSearchParams } from 'react-router-dom';
+const API_URL = import.meta.env.VITE_BACKEND_URL
+
 import {
   Card,
   CardHeader,
@@ -99,7 +102,7 @@ const LocationMarker = React.memo(({ location, setLocation, setLocationLoading, 
 
       try {
         const { lat, lng } = e.latlng;
-        const response = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`);
+        const response = await fetch(`${API_URL}/api/reverse-geocode?lat=${lat}&lng=${lng}`);
 
         if (!response.ok) {
           const errorBody = await response.json().catch(() => ({ message: 'Unknown error fetching address' }));
@@ -154,6 +157,8 @@ const LocationMarker = React.memo(({ location, setLocation, setLocationLoading, 
 });
 
 export function CreateAcc() {
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
   const [type, setType] = useState("individual");
   const [companyName, setCompanyName] = useState("");
   const [location, setLocation] = useState(null);
@@ -449,6 +454,7 @@ export function CreateAcc() {
         country: location.country || '',
         postalCode: location.postalCode || '',
       },
+      token: token || null
     };
   
     try {
@@ -498,7 +504,7 @@ export function CreateAcc() {
     } finally {
       setLoading(false);
     }
-  }, [formData, type, companyName, location, validateAllFields, validationErrors, dispatch]);
+  }, [formData, type, companyName, location, validateAllFields, validationErrors, dispatch, token]);
 
   // Helper function to determine if error should be shown
   const shouldShowError = (fieldName) => {
