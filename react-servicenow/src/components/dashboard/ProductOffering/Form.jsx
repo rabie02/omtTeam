@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Modal, notification } from 'antd';
+import { Modal, notification, Select } from 'antd';
 import { updateProductOffering, createProductOffering } from '../../../features/servicenow/product-offering/productOfferingSlice';
 
 
@@ -20,9 +20,9 @@ const validationSchema = Yup.object().shape({
     category: Yup.string().required('Category is required'), // Category ID
 });
 
-function ProductOfferingForm({ open, setOpen, initialData = null, options=null, dispatch }) {
-
-  const isEditMode = Boolean(initialData);
+function ProductOfferingForm({ open, setOpen, initialData = null, options=null, dispatch, setSearchTerm }) {
+  console.log(initialData?.productSpecification);
+  const isEditMode = Boolean(initialData); 
   const formik = useFormik({
     initialValues: {
         name: initialData?.name || '',
@@ -34,12 +34,12 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         po_term: initialData?.productOfferingTerm || 'not_applicable',
         p_spec: initialData?.productSpecification._id || '', // Get ID from nested object
         channel: initialData?.channel?.[0]?.id || '', // Get ID from first item in array
-        category: initialData?.category[0] || '', // Get ID from nested object
+        category: initialData?.category[0]?._id || '', // Get ID from nested object
     },
     validationSchema,
     onSubmit: async (values, {resetForm}) => {
       try {
-       
+       console.log(values.p_spec)
         // Find the selected Product Specification object
         const selectedSpec = options.specifications.find(spec => 
           (spec._id) === values.p_spec
@@ -160,9 +160,8 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
   });
 
 
-
   const handleCancel = () => setOpen(false);
-
+  
   return (
     <Modal
       title={isEditMode ? 'Edit Record ' : 'Add New Record'}
@@ -222,39 +221,45 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         </div>
         </div>
 
-        <div className="columns-3">
-          <label className="block font-medium mb-1">Recurring Price</label>
-          <input
-            type="number"
-            name="recurring_price"
-            value={formik.values.recurring_price}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            disabled={formik.isSubmitting}
+        <div className="grid grid-cols-5 gap-3">
+          <div className="col-span-2">
+            <label className="block font-medium mb-1">Recurring Price</label>
+            <input
+              type="number"
+              name="recurring_price"
+              value={formik.values.recurring_price}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              disabled={formik.isSubmitting}
+              className="w-full border rounded px-3 py-2"
+              placeholder='USD'
+              step="0.01"
+            />
+          </div>
+          <div className="col-span-2">
+            <label className="block font-medium mb-1">Non Recurring Price</label>
+            <input
+              type="number"
+              name="non_recurring_price"
+              value={formik.values.non_recurring_price}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              disabled={formik.isSubmitting}
+              className="w-full border rounded px-3 py-2"
+              placeholder='USD'
+              step="0.01"
+            />
+          </div>
+          <div>
+            <label className="block font-medium mb-1">Currency</label>
+            <input
             className="w-full border rounded px-3 py-2"
-            placeholder='USD'
-            step="0.01"
-          />
-          <label className="block font-medium mb-1">Non Recurring Price</label>
-          <input
-            type="number"
-            name="non_recurring_price"
-            value={formik.values.non_recurring_price}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            disabled={formik.isSubmitting}
-            className="w-full border rounded px-3 py-2"
-            placeholder='USD'
-            step="0.01"
-          />
-          <label className="block font-medium mb-1">Currency (unavailable)</label>
-          <input
-           className="w-full border rounded px-3 py-2"
-            type="string"
-            readOnly
-            disabled
-            placeholder='USD'
-          />
+              type="string"
+              readOnly
+              disabled
+              placeholder='USD'
+            />
+          </div>
         </div>
 
           <div class="grid grid-cols-3 gap-4">
@@ -283,23 +288,24 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
        {/* {Product Specification} */}
        <div className="col-span-2">
         <label className="block font-medium mb-1">Product Specification:</label>
-        <select
-          id="p_spec"
-          name="p_spec"
-          value={formik.values.p_spec}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          disabled={formik.isSubmitting || isEditMode}
-          className="w-full border rounded px-3 py-2 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500"
-        >
-          <option value="">Select a product specification</option>
-          {/* Map over the specs passed via props */}
-          {options.specifications.map(spec => ( spec.status ==="published"?
-                <option key={spec._id} value={spec._id}> {/* Use correct ID field */}
-                    {spec.display_name || spec.name} {/* Use correct Name field */}
-                </option> : ""
-                ))}
-          </select>
+        
+          <Select
+            id="p_spec"
+            name="p_spec"
+            showSearch
+            placeholder="Select Product Specification"
+            value={formik.values.p_spec || undefined} // Use undefined instead of empty string for better Select behavior
+            onChange={(value) => formik.setFieldValue('p_spec', value)}
+            onBlur={formik.handleBlur}
+            onSearch={(value) => setSearchTerm(value)}
+            options={options.specifications.map(spec => ({
+              value: spec._id,
+              label: spec.displayName
+            }))}
+            filterOption={false}
+            disabled={formik.isSubmitting || isEditMode}
+            className="w-full border rounded px-3 py-2"
+          />
            {/* Add validation message display */}
      {formik.touched.p_spec && formik.errors.p_spec && (
         <p className="text-red-500 text-sm mt-1">{formik.errors.p_spec}</p>

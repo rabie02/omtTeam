@@ -4,7 +4,7 @@ import { Popconfirm, Empty, Spin, Table, notification, Tooltip, Modal} from 'ant
 import { 
   getOpportunities,
   deleteOpportunity,
-  getAccounts
+  getProductOfferingPrice
 } from '../../../features/servicenow/opportunity/opportunitySlice';
 import OpportunityStep4 from './Steps/DetailsModal';
 
@@ -25,12 +25,15 @@ function OpportunityTable({ setOpenForm, searchQuery }) {
     currentPage,
     totalItems,
     limit,
-    totalPages
+    totalPages,
+    productOfferingPrices
   } = useSelector((state) => state.opportunity);
 
   useEffect(() => {
     dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
+    dispatch(getProductOfferingPrice());
   }, [dispatch, searchQuery]);
+
 
   // Helper function to extract value from ServiceNow object format
     const getValue = (field) => {
@@ -139,7 +142,7 @@ function OpportunityTable({ setOpenForm, searchQuery }) {
               <button 
                 className="mx-2 text-gray-500 hover:text-green-600"
                 onClick={showModal}
-                disabled
+                
               >
                 <i className="ri-eye-line text-2xl"></i>
               </button>

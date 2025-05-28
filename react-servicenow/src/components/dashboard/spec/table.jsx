@@ -22,7 +22,7 @@ function Table({ setData, setOpen, searchQuery }) {
   useEffect(() => {
     dispatch(getPublished({
       page: 1,
-      limit: 6,
+      limit: 1,
       q: searchQuery
     }));
   }, [dispatch, searchQuery]);
@@ -66,7 +66,7 @@ const fetchOfferings = async (specSysId) => {
 };
 
 
-
+console.log(data);
 
   if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
   if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
@@ -96,15 +96,15 @@ const fetchOfferings = async (specSysId) => {
                 </td>
               </tr>
             ) : (
-              data.map((product) => (
+              data.map((product) => ( product !== undefined &&
                 <tr key={product.sys_id} className="*:text-gray-900 *:first:font-medium">
-                  <td className="px-3 py-3 whitespace-nowrap">{product.display_name}</td>
+                  <td className="px-3 py-3 whitespace-nowrap">{product.displayName}</td>
                   <td className="px-3 py-3 whitespace-nowrap">{product.specification_type || 'None'}</td>
                   <td className="px-3 py-3 whitespace-nowrap">
-                    {product.start_date ? new Date(product.start_date).toISOString().split("T")[0] : 'N/A'}
+                    {product.validFor.startDateTime ? new Date(product.validFor.startDateTime).toISOString().split("T")[0] : 'N/A'}
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap">
-                    {product.end_date ? new Date(product.end_date).toISOString().split("T")[0] : 'N/A'}
+                    {product.validFor?.endDateTime ? new Date(product.validFor.endDateTime).toISOString().split("T")[0] : 'N/A'}
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap">
                     <button
@@ -144,7 +144,7 @@ const fetchOfferings = async (specSysId) => {
 
       {/* Modal affichant les offerings */}
       <Modal
-        title={`Offres liées à : ${currentSpec?.display_name || ''}`}
+        title={`Offres liées à : ${currentSpec?.displayName || ''}`}
         open={isOfferingModalOpen}
         onCancel={() => setIsOfferingModalOpen(false)}
         footer={null}
@@ -157,7 +157,7 @@ const fetchOfferings = async (specSysId) => {
             renderItem={(item) => (
               <List.Item key={item.sys_id}>
                 <List.Item.Meta
-                title={item.display_name || 'Nom inconnu'}
+                title={item.displayName || 'Nom inconnu'}
                 />
                 <p>{item.description || 'Pas de description'}</p>
               </List.Item>

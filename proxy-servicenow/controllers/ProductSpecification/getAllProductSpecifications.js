@@ -17,7 +17,7 @@ const getAllProductSpecifications = async (req, res) => {
       const searchTerm = searchQuery.toLowerCase();
       query = {
         $or: [
-          { display_name: { $regex: `.*${searchTerm}.*`, $options: 'i' } },
+          { displayName: { $regex: `.*${searchTerm}.*`, $options: 'i' } },
           { specification_type: { $regex: `.*${searchTerm}.*`, $options: 'i' } },
         ]
       };

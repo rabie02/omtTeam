@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
 
     // Create price list if needed
     if (createNewPriceList) {
-      payload.body = {...pl, "account": account._id.toString()};
+      payload.body = {...pl, "account": account.sys_id.toString()};
       priceList = await createPriceList(payload);
     }
     

@@ -23,11 +23,11 @@ const syncFromServiceNow = async (req, res) => {
     // Update or insert the product specification
     const result = await ProductSpecification.updateOne(
       { sys_id: specData.sys_id },
-      { $set: specData },
+      { $set: { ...specData.tmf_data, specification_type: specData.specification_type} },
       { upsert: true }
     );
     
-    console.log(`Product specification synchronized: ${specData.display_name}`);
+    console.log(`Product specification synchronized: ${specData.tmf_data.display_name}`);
     
     res.status(200).json({ 
       success: true, 

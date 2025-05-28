@@ -13,7 +13,8 @@ const PageLayout = ({
   TableComponent,
   FormComponent,
   options,
-  dispatch
+  dispatch,
+  setSearchTerm
 }) => {
   return (
     <div className='h-svh'>
@@ -67,6 +68,7 @@ const PageLayout = ({
           initialData={data} 
           options={options} 
           dispatch={dispatch} 
+          setSearchTerm={setSearchTerm}
         />
       )}
     </div>

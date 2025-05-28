@@ -1,9 +1,11 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import { Descriptions, Card, Tag } from 'antd';
 import { format } from 'date-fns';
 import {useSelector} from 'react-redux';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
-const OpportunityStep4 = ({ formik, pdfRef, initialData=null }) => {
+const OpportunityStep4 = ({ initialData=null }) => {
   console.log(initialData);
   const { 
     opportunity, 
@@ -12,17 +14,17 @@ const OpportunityStep4 = ({ formik, pdfRef, initialData=null }) => {
     createNewPriceList, 
     productOfferings,
     opportunityLineItem
-  } = formik === undefined ? {
+  } = {
     opportunity: initialData,
     priceList: initialData.price_list,
     selectedPriceList: initialData.price_list._id, 
     createNewPriceList:false,
     productOfferings: initialData.line_items.map(item => ({...item.productOffering, unit_of_measurement: item.unit_of_measurement})),
     opportunityLineItem: initialData.line_items
-  } : formik.values ;
+  };
 
 
-  const { unitOfMeasures, accounts } = useSelector(
+  const { unitOfMeasures, accounts, productOfferingPrices } = useSelector(
     (state) =>   state.opportunity
   );
   const { priceLists } = useSelector((state) => state.priceList);
@@ -49,9 +51,49 @@ const OpportunityStep4 = ({ formik, pdfRef, initialData=null }) => {
     return account ? account.name : 'Not found';
   }
 
+  const pops = productOfferingPrices.filter(p=> p.priceList === opportunity.price_list._id);
+  
+  const pdfRef = useRef();
+    
+  const downloadPDF = () => {
+    const input = pdfRef.current;
+    
+    if (!input) {
+      console.error("PDF ref element not found");
+      return;
+    }
+    
+    html2canvas(input, {
+      scale: 2,
+      windowHeight: input.scrollHeight
+    }).then((canvas) => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 190;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      let heightLeft = imgHeight;
+      let position = 10;
+      const pageHeight = 277;
+      
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      pdf.save('opportunity_details.pdf');
+    });
+  };
+
   //console.log(JSON.stringify(formik.values,null, 2  ));
   //console.log(productOfferings[0].name)
   return (
+    <>
     <div className="space-y-6" ref={pdfRef}>
       <h3 className="text-lg font-medium">Opportunity Summary</h3>
       
@@ -64,7 +106,7 @@ const OpportunityStep4 = ({ formik, pdfRef, initialData=null }) => {
             {format(new Date(opportunity.estimated_closed_date), 'MMM dd, yyyy')}
           </Descriptions.Item>
           <Descriptions.Item label="Account">
-            {getAccountName(opportunity.account)}
+            {opportunity.account.name}
           </Descriptions.Item>
           <Descriptions.Item label="Probability">
             {opportunity.probability}%
@@ -78,53 +120,61 @@ const OpportunityStep4 = ({ formik, pdfRef, initialData=null }) => {
       <Card title="Price List" variant>
         <Descriptions column={1}>
           <Descriptions.Item label="Name">
-            {currentPriceList?.name || 'N/A'}
+            {opportunity.price_list.name || 'N/A'}
           </Descriptions.Item>
           <Descriptions.Item label="Currency">
-            {currentPriceList?.currency || 'N/A'}
+            {opportunity.price_list.currency || 'N/A'}
           </Descriptions.Item>
           <Descriptions.Item label="Status">
-            <Tag color={currentPriceList?.state === 'published' ? 'green' : 'blue'}>
-              {currentPriceList?.state || 'N/A'}
+            <Tag color={opportunity.price_list.state === 'published' ? 'green' : 'blue'}>
+              {opportunity.price_list.state || 'N/A'}
             </Tag>
           </Descriptions.Item>
           <Descriptions.Item label="Start Date">
-            {currentPriceList?.start_date ? 
-              format(new Date(currentPriceList.start_date), 'MMM dd, yyyy') : 'N/A'}
+            {opportunity.price_list.start_date ? 
+              format(new Date(opportunity.price_list.start_date), 'MMM dd, yyyy') : 'N/A'}
           </Descriptions.Item>
           <Descriptions.Item label="End Date">
-            {currentPriceList?.end_date ? 
-              format(new Date(currentPriceList.end_date), 'MMM dd, yyyy') : 'N/A'}
+            {opportunity.price_list.end_date ? 
+              format(new Date(opportunity.price_list.end_date), 'MMM dd, yyyy') : 'N/A'}
+          </Descriptions.Item>
+        </Descriptions>
+      </Card>
+
+      <Card title="Line Item Details" variant>
+        <Descriptions column={1}>
+          <Descriptions.Item label="Quantity">
+            {opportunityLineItem[0].quantity}
+          </Descriptions.Item>
+          <Descriptions.Item label="Term (Months)">
+            {opportunityLineItem[0].term_month}
           </Descriptions.Item>
         </Descriptions>
       </Card>
 
       <Card title="Product Offerings" variant>
-        {productOfferings.map((offering, index) => (
+        {pops.map((offering, index) => (
           <div key={index} className="mb-6 last:mb-0">
             <Descriptions 
-              title={`Offering #${index + 1}`} 
+              title={`Price #${index + 1}`} 
               column={1} 
               bordered
               className="mb-4"
             >
-              <Descriptions.Item label="Product">
-                {offering.name || getOfferingName(offering.productOffering.id)}
+              <Descriptions.Item label="Product Offering">
+                {offering.productOffering.name}
               </Descriptions.Item>
               <Descriptions.Item label="Price">
-                {offering.productOfferingPrice[0].price.taxIncludedAmount.value || offering.price.value} {offering.productOfferingPrice[0].price.taxIncludedAmount.unit || offering.price.unit}
+                {offering.price.value} {offering.price.unit}
               </Descriptions.Item>
-              <Descriptions.Item label="Unit of Measure">
-                {getUomName( offering.unit_of_measurement || offering.unitOfMeasure.id)}
-              </Descriptions.Item>
-              <Descriptions.Item label="Price Type">
+              <Descriptions.Item label="Payment Type">
                 <Tag color={offering.priceType === 'recurring' ? 'blue' : 'purple'}>
-                  {offering.pricing_method || offering.priceType}
+                  {offering.priceType}
                 </Tag>
               </Descriptions.Item>
               {offering.priceType === 'recurring' && (
                 <Descriptions.Item label="Recurring Period">
-                  {offering.periodicity || offering.recurringChargePeriodType}
+                  {offering.recurringChargePeriodType}
                 </Descriptions.Item>
               )}
               <Descriptions.Item label="Valid From">
@@ -140,17 +190,19 @@ const OpportunityStep4 = ({ formik, pdfRef, initialData=null }) => {
         ))}
       </Card>
 
-      <Card title="Line Item Details" variant>
-        <Descriptions column={1}>
-          <Descriptions.Item label="Quantity">
-            {opportunityLineItem[0].quantity}
-          </Descriptions.Item>
-          <Descriptions.Item label="Term (Months)">
-            {opportunityLineItem[0].term_month}
-          </Descriptions.Item>
-        </Descriptions>
-      </Card>
     </div>
+    <div className="grid grid-cols-3 gap-5 mt-5">
+      <div></div>
+      <button
+            type="button"
+            className="px-4 py-2 rounded border bg-red-200 hover:bg-gray-300"
+            onClick={downloadPDF}
+          >
+            Download as PDF
+        </button>
+        <div></div>
+    </div>
+    </>
   );
 };
 

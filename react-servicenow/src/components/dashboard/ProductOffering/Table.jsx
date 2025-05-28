@@ -92,12 +92,12 @@ function ProductOfferingTable({ setData, setOpen, searchQuery }) {
         },
         {
             title: 'Product Specification',
-            dataIndex: ['productSpecification', 'display_name'],
+            dataIndex: ['productSpecification', 'displayName'] ,
             key: 'productSpecification',
             render: (text) => text || 'N/A',
             sorter: (a, b) => {
-                const nameA = a.productSpecification?.display_name || '';
-                const nameB = b.productSpecification?.display_name || '';
+                const nameA = a.productSpecification?.displayName || '';
+                const nameB = b.productSpecification?.displayName || '';
                 return nameA.localeCompare(nameB);
             }
         },
@@ -177,6 +177,7 @@ function ProductOfferingTable({ setData, setOpen, searchQuery }) {
         }
     ];
     
+    console.log(products)
 
     if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
     if (error) {

@@ -115,6 +115,22 @@ export const createProductOfferingPrice = createAsyncThunk(
   }
 );
 
+//get Product offering prices
+export const getProductOfferingPrice = createAsyncThunk(
+  'opportunity/getProductOfferingPrice',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(
+        `${backendUrl}/api/product-offering-price`,
+        { headers: getHeaders() }
+      );
+      return response.data.result;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 // 4. Opportunity Line Item CRUD operations
 export const createOpportunityLineItem = createAsyncThunk(
   'opportunity/createOpportunityLineItem',
@@ -216,6 +232,7 @@ const initialState = {
   accounts: [],
   unitOfMeasures: [],
   productOfferings: [],
+  productOfferingPrices:[],
   loading: false,
   error: null,
   currentPage: 1,
@@ -325,6 +342,19 @@ const opportunitySlice = createSlice({
       .addCase(createProductOfferingPrice.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.error?.message || 'Failed to create product offering price';
+      })
+
+      // Get Product Offering Prices
+      .addCase(getProductOfferingPrice.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getProductOfferingPrice.fulfilled, (state, action) => {
+        state.loading = false;
+        state.productOfferingPrices = action.payload;
+      })
+      .addCase(getProductOfferingPrice.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.error?.message || 'Failed to fetch sales cycle types';
       })
 
       // Create Opportunity Line Item
