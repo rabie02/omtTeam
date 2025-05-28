@@ -28,7 +28,7 @@ const sendVerificationToken = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRE }
     );
 
-    const verificationLink = `https://delightful-sky-0cdf0611e.6.azurestaticapps.net/createAccount/?token=${token}`;
+    const verificationLink = `${process.env.FRONTEND_URL}/createAccount/?token=${token}`;
 
     await transporter.sendMail({
       from: process.env.EMAIL_USER,

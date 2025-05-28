@@ -3,7 +3,7 @@ import { createPriceList } from '../../../features/servicenow/price-list/priceLi
 import { useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Modal } from 'antd';
+import { Modal, notification } from 'antd';
 import { formatDateForInput } from '@/utils/formatDateForInput.js';
 
 const validationSchema = Yup.object().shape({
@@ -33,11 +33,21 @@ function PriceListForm({ open, setOpen, initialData = null, dispatch }) {
         const action = isEditMode
           ? updatePriceList({ id: initialData._id, ...values })
           : createPriceList(values);
-        setTimeout(await dispatch(action).unwrap(), 3000);
-        setOpen(false);
-        resetForm();
-      } catch (error) {
-        console.error('Submission error:', error);
+        await dispatch(action).unwrap();
+        notification.success({
+              message: isEditMode ? 'Price List Updated' : 'Price List Created',
+              description: isEditMode 
+                ? 'Price List has been updated successfully'
+                : 'New Price List has been created successfully',
+            });
+            setOpen(false);
+            resetForm();
+        } catch (error) {
+          console.error('Submission error:', error);
+          notification.error({
+            message: 'Operation Failed',
+            description: error.message || 'Something went wrong. Please try again.',
+          });
       }
     },
     enableReinitialize: true,

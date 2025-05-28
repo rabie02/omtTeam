@@ -1,6 +1,6 @@
 
 
-const FormInput = ({ formik, name, label, type = 'text', ...props }) => {
+const FormInput = ({ formik, name, label, type = 'text', inputRef, autoFocus, ...props }) => {
   const value = name.split('.').reduce((o, i) => o?.[i], formik.values);
   const touched = name.split('.').reduce((o, i) => o?.[i], formik.touched);
   const error = name.split('.').reduce((o, i) => o?.[i], formik.errors);
@@ -15,6 +15,8 @@ const FormInput = ({ formik, name, label, type = 'text', ...props }) => {
         onChange={formik.handleChange}
         onBlur={formik.handleBlur}
         className="w-full border rounded px-3 py-2"
+        ref={inputRef}
+        autoFocus={autoFocus}
         {...props}
       />
       {props.description && <p className="text-gray-400 text-sm">{props.description}</p>}

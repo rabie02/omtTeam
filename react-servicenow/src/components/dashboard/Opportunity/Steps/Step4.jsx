@@ -3,7 +3,7 @@ import { Descriptions, Card, Tag } from 'antd';
 import { format } from 'date-fns';
 import {useSelector} from 'react-redux';
 
-const OpportunityStep4 = ({ formik }) => {
+const OpportunityStep4 = ({ formik, pdfRef }) => {
   const { 
     opportunity, 
     priceList, 
@@ -13,21 +13,19 @@ const OpportunityStep4 = ({ formik }) => {
     opportunityLineItem
   } = formik.values;
 
-  const { productOfferings: allOfferings, unitOfMeasures, accounts } = useSelector(
-    (state) => state.opportunity
+
+  const { unitOfMeasures, accounts } = useSelector(
+    (state) =>   state.opportunity
   );
   const { priceLists } = useSelector((state) => state.priceList);
-
-
+  const { data: allOfferings } = useSelector((state) => state.productOffering);
   const getSelectedPriceList = () => {
     if (createNewPriceList) return priceList;
-    return priceLists.find(pl => pl.sys_id === selectedPriceList);
+    return priceLists.find(pl => pl._id === selectedPriceList);
   };
 
   const getOfferingName = (id) => {
-    console.log(allOfferings)
-    const offering = allOfferings.find(o => o.sys_id||o.id === id);
-    console.log(offering)
+    const offering = allOfferings.find(o => o._id === id);
     return offering ? offering.name : 'Not found';
   };
 
@@ -43,10 +41,10 @@ const OpportunityStep4 = ({ formik }) => {
     return account ? account.name : 'Not found';
   }
 
-  console.log(JSON.stringify(productOfferings,null, 2));
+  console.log(JSON.stringify(formik.values,null, 2  ));
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" ref={pdfRef}>
       <h3 className="text-lg font-medium">Opportunity Summary</h3>
       
       <Card title="Opportunity Details" variant>
@@ -75,7 +73,7 @@ const OpportunityStep4 = ({ formik }) => {
             {currentPriceList?.name || 'N/A'}
           </Descriptions.Item>
           <Descriptions.Item label="Currency">
-            {currentPriceList?.currency.value || 'N/A'}
+            {currentPriceList?.currency || 'N/A'}
           </Descriptions.Item>
           <Descriptions.Item label="Status">
             <Tag color={currentPriceList?.state === 'published' ? 'green' : 'blue'}>

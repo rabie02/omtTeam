@@ -23,10 +23,11 @@ const opportunity = require("./api/opportunity/index");
 const ProductOfferingPrice = require("./api/productOfferingPrice/index")
 const opportunityLine = require("./api/OpportunityLine/index")
 const priceList = require("./api/PriceList/index")
-
+//const chatBoot = require("")
 const Quote = require('./api/quote/index');
 const emailroutes = require('./email/router');
 const createAccount = require('./api/createAccount/index')
+const chatbotRoutes = require('./api/ai-search/chatboot.js');
 require('dotenv').config();
 
 const app = express();
@@ -38,7 +39,7 @@ connectDB();
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,  // 15 minutes
-  max: 100                   // Limit each IP to 100 requests per window
+  max: 1000                   // Limit each IP to 100 requests per window
 });
 
 
@@ -112,7 +113,9 @@ app.use('/api', authjwt , [
   priceList,
   opportunity,
   opportunityLine,
-  ProductOfferingPrice
+  ProductOfferingPrice,
+  chatbotRoutes
+
 ]);
 
 

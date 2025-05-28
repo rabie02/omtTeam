@@ -1,12 +1,12 @@
 // Dashboard.jsx
 import { useState, useEffect } from 'react';
 import { Outlet } from "react-router-dom";
-import Sidebar from "./dashbord/Sidebar";
+import Sidebar from "./dashbord/sidebar";
 import Header from "./dashbord/header";
 import Chatbot from '../components/dashboard/spec/Chatbot';
 
 function Dashboard() {
-    const [open, setOpen] = useState();
+    const [open, setOpen] = useState(true);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isSidebarhovered, setIsSidebarhovered] = useState(false);
     const handleMouseEnter = () => setIsSidebarhovered(false); // Expand on hover

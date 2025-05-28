@@ -1,70 +1,91 @@
-const axios = require('axios');
-const Opportunity = require('../../models/Opportunity');
-const snConnection = require('../../utils/servicenowConnection');
+const Opportunity = require('../../models/opportunity');
 const handleMongoError = require('../../utils/handleMongoError');
 
 module.exports = async (req, res) => {
   try {
-    // First try to get data from MongoDB
-    const mongoData = await Opportunity.find({}).lean();
+    const { 
+      q: searchQuery, 
+      number: numberQuery, 
+      description: descQuery,
+      page = 1, 
+      limit = 6 
+    } = req.query;
     
-    // If we have data in MongoDB, return it
-    if (mongoData && mongoData.length > 0) {
-      // Transform the MongoDB data to include string IDs
-      const formattedData = mongoData.map(item => ({
-        ...item,
-        _id: item._id.toString(),
-        mongoId: item._id.toString() // Additional field for clarity
-      }));
-      
-      return res.json(formattedData);
+    let query = {};
+    
+    // Build search query
+    if (searchQuery) {
+      const searchTerm = searchQuery.toLowerCase();
+      query.$or = [
+        { short_description: { $regex: searchTerm, $options: 'i' } },
+        { number: { $regex: searchTerm, $options: 'i' } }
+      ];
+    } else {
+      // Field-specific searches if no general search query
+      if (numberQuery) query.number = { $regex: numberQuery, $options: 'i' };
+      if (descQuery) query.short_description = { $regex: descQuery, $options: 'i' };
     }
-    
-    // If no data in MongoDB, fetch from ServiceNow
-    console.log('No opportunities found in MongoDB, fetching from ServiceNow');
-    
-    // Use the user's authentication token
-    const connection = snConnection.getConnection(req.user.sn_access_token);
-    
-    // Get data from ServiceNow
-    const snResponse = await axios.get(
-      `${connection.baseURL}/api/now/table/sn_opty_mgmt_core_opportunity`,
-      { headers: connection.headers }
-    );
-    
-    // If we got data from ServiceNow, save it to MongoDB for future use
-    const serviceNowData = snResponse.data.result;
-    if (serviceNowData && serviceNowData.length > 0) {
-      // Save each item to MongoDB
-      const savePromises = serviceNowData.map(async (item) => {
-        try {
-          const opportunity = new Opportunity({
-            sys_id: item.sys_id,
-            ...item
-          });
-          const savedDoc = await opportunity.save();
-          // Add MongoDB ID to the response
-          item._id = savedDoc._id.toString();
-          item.mongoId = savedDoc._id.toString();
-          return item;
-        } catch (error) {
-          console.error(`Error saving opportunity ${item.sys_id} to MongoDB:`, error);
-          return item; // Return original item if save fails
-        }
-      });
-      
-      // Wait for all saves to complete
-      const savedData = await Promise.all(savePromises);
-      return res.json(savedData);
-    }
-    
-    // If nothing found in either database, return empty array
-    return res.json([]);
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const totalCount = await Opportunity.countDocuments(query);
+
+    // Fetch data with pagination
+    const mongoData = await Opportunity.find(query)
+      .skip(skip)
+      .limit(parseInt(limit))
+      .populate('account', 'name email country city industry')
+      .populate('price_list')
+      .populate('sales_cycle_type')
+      .populate('stage')
+      .lean();
+
+    // Get all opportunity IDs
+    const opportunityIds = mongoData.map(opp => opp._id);
+
+    // Lookup all line items for these opportunities
+    const OpportunityLineItem = require('../../models/opportunityLine');
+    const lineItems = await OpportunityLineItem.find({
+      opportunity: { $in: opportunityIds }
+    })
+    .populate('productOffering')
+    .lean();
+
+    // Group line items by opportunity ID
+    const lineItemsByOpportunity = {};
+    lineItems.forEach(item => {
+      const oppId = item.opportunity.toString();
+      if (!lineItemsByOpportunity[oppId]) {
+        lineItemsByOpportunity[oppId] = [];
+      }
+      lineItemsByOpportunity[oppId].push(item);
+    });
+
+    // Format response with line items attached
+    const formattedData = mongoData.map(item => ({
+      ...item,
+      _id: item._id.toString(),
+      mongoId: item._id.toString(),
+      line_items: lineItemsByOpportunity[item._id.toString()] || [] // Add line items here
+    }));
+
+    return res.json({
+      success: true,
+      data: formattedData,
+      pagination: {
+        total: totalCount,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    });
     
   } catch (error) {
     console.error('Error fetching opportunities:', error);
-    const status = error.response?.status || 500;
-    const message = error.response?.data?.error?.message || error.message;
-    res.status(status).json({ error: message });
+    const mongoError = handleMongoError(error);
+    return res.status(mongoError.status).json({ 
+      success: false,
+      error: mongoError.message 
+    });
   }
 };

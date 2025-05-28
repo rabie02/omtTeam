@@ -2,14 +2,14 @@ const express = require('express');
 const router = express.Router();
 
 // Import controllers
-const getAll = require('../../controllers/quote/getall')
-const update = require('../../controllers/quote/update')
-const create = require('../../controllers/quote/create')
-const deleteQuote = require('../../controllers/quote/delete')
+const getAll = require('../../controllers/Quote/getall')
+const update = require('../../controllers/Quote/update')
+const create = require('../../controllers/Quote/create')
+const deleteQuote = require('../../controllers/Quote/delete')
 
 router.get('/quote', getAll);
-router.post('/quote', create);
-router.delete('/quote/:sysId', deleteQuote);
+router.post('/quote/:id', create);
+router.delete('/quote/:id', deleteQuote);
 router.patch('/quote', update);
 
 module.exports = router;

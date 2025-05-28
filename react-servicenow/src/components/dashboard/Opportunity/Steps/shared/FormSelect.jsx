@@ -28,7 +28,7 @@ const FormSelect = ({
         className={`w-full border rounded px-3 py-2 ${error ? 'border-red-500' : 'border-gray-300'}`}
         {...props}
       >
-        <option key="" value="">Select {label}</option>
+        <option value="">Select {label}</option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
