@@ -151,6 +151,7 @@ const ProductOfferingSlice = createSlice({
         state.error = null;
       })
       .addCase(createProductOffering.fulfilled, (state, action) => {
+        console.log(action.payload);
         state.data.unshift(action.payload);
         state.totalItems += 1;
         state.loading = false;

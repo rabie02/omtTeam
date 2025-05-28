@@ -5,7 +5,7 @@ const productSpecificationSchema = new mongoose.Schema({
   // Store ServiceNow's sys_id as a separate field
   sys_id: {
     type: String,
-    required: true,
+    //required: true,
     unique: true,
     index: true  // Add index for faster queries
   },

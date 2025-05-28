@@ -5,6 +5,7 @@ const ProductOfferingCategory = require('../../models/ProductOfferingCategory');
 const ProductOfferingCatalog = require('../../models/ProductOfferingCatalog');
 const handleMongoError = require('../../utils/handleMongoError');
 const createCatalogCategoryRelationship = require('../CatalogCategroyRelationship/create');
+const getone = require('./getone')
 
 require('dotenv').config();
 
@@ -58,7 +59,7 @@ module.exports = async (req, res) => {
           is_leaf: is_leaf,
           start_date: start_date || new Date().toISOString(),
           end_date: end_date || null,
-          description: description
+          description: description || null
         },
         {
           headers: {
@@ -101,12 +102,10 @@ module.exports = async (req, res) => {
 
 
     
-    const responseData = {
-      result: {
-        ...snResponse.data.result,
-        _id: mongoDoc._id,
-      },
-    };
+    const result = await getone(mongoDoc._id)
+       const responseData = {
+         result
+       };
 
     return res.status(201).json(responseData);
 

@@ -1,5 +1,5 @@
 const axios = require('axios');
-const Quote = require('../../models/Quote');
+const Quote = require('../../models/quote');
 const handleMongoError = require('../../utils/handleMongoError');
 
 module.exports = async (req, res) => {

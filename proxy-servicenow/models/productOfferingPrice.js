@@ -36,15 +36,29 @@ const productOfferingPriceSchema = new mongoose.Schema({
   price: priceSchema,
   lifecycleStatus: String,
   validFor: validForSchema,
-  productOffering: productOfferingSchema,
+  // MongoDB reference to ProductOffering collection
+  productOffering: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ProductOffering'
+  },
+  // Keep the original productOffering schema for ServiceNow data
+  productOfferingData: productOfferingSchema,
   priceType: String,
   recurringChargePeriodType: String,
   unitOfMeasure: unitOfMeasureSchema,
-  priceList: priceListSchema,
+  // MongoDB reference to PriceList collection
+  priceList: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PriceList'
+  },
+  // Keep the original priceList schema for ServiceNow data
+  priceListData: priceListSchema,
   "@type": String,
   state: String,
   href: String
 }, {
+  timestamps: true,
+  strict: false,
   // Handle the @type field properly
   toJSON: { 
     virtuals: true,
@@ -70,5 +84,9 @@ productOfferingPriceSchema.virtual('type').get(function() {
 }).set(function(value) {
   this['@type'] = value;
 });
+
+// Add indexes for better performance
+productOfferingPriceSchema.index({ priceList: 1 });
+productOfferingPriceSchema.index({ productOffering: 1 });
 
 module.exports = mongoose.model('ProductOfferingPrice', productOfferingPriceSchema, 'product_offering_prices');

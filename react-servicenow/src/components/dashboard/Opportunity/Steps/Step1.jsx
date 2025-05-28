@@ -2,11 +2,17 @@ import React from 'react';
 import FormInput from './shared/FormInput';
 import FormSelect from './shared/FormSelect';
 import {useSelector} from 'react-redux';
-
+import { useRef, useEffect } from 'react';
 const OpportunityStep1 = ({ formik }) => {
   const { salesCycleTypes, stages, accounts } = useSelector((state) => state.opportunity);
-  console.log(JSON.stringify(stages,null, 2));
-  console.log(JSON.stringify(salesCycleTypes,null,2));
+   // Focus the input when the component mounts
+   const shortDescriptionRef = useRef(null);
+  useEffect(() => {
+    if (shortDescriptionRef.current) {
+      shortDescriptionRef.current.focus();
+    }
+  }, []);
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium">Opportunity Details</h3>
@@ -15,21 +21,31 @@ const OpportunityStep1 = ({ formik }) => {
         formik={formik}
         name="opportunity.short_description"
         label="Short Description*"
+        inputRef={shortDescriptionRef}
+        autoFocus
       />
-      
+      <div className="grid grid-cols-2 gap-4">
       <FormInput
         formik={formik}
         name="opportunity.estimated_closed_date"
         label="Estimated Close Date*"
         type="date"
       />
-      
+
+      <FormInput
+        formik={formik}
+        name="opportunity.probability"
+        label="Probability"
+        type="number"
+      />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
       <FormSelect
         formik={formik}
         name="opportunity.sales_cycle_type"
         label="Sales Cycle Type*"
         options={salesCycleTypes.map(type => ({
-          value: type.sys_id,
+          value: type._id,
           label: type.sys_name
         }))}
         onChange={formik.handleChange}
@@ -41,31 +57,43 @@ const OpportunityStep1 = ({ formik }) => {
         name="opportunity.stage"
         label="Stage*"
         options={stages.map(stage => ({
-          value: stage.sys_id,
+          value: stage._id,
           label: stage.sys_name
         }))}
         onChange={formik.handleChange}
         onBlur={formik.handleBlur}
       />
-
+      </div>
+      {salesCycleTypes.filter(s=> s._id === formik.values.opportunity.sales_cycle_type)?.[0]?.["sys_name"] === "NEWCUST" && 
+      <div className="grid grid-cols-2 gap-4">
+         <FormInput
+          formik={formik}
+          name="account.name"
+          label="Account Name*"
+        />
+        <FormInput
+          formik={formik}
+          name="account.email"
+          label="Account Email*"
+          type="email"
+        />
+      </div>}
+      
+      {salesCycleTypes.filter(s=> s._id === formik.values.opportunity.sales_cycle_type)?.[0]?.["sys_name"] !== "NEWCUST" &&
       <FormSelect
         formik={formik}
         name="opportunity.account"
         label="Account*"
         options={accounts.map(account => ({
-          value: account.sys_id,
+          value: account._id,
           label: account.name
         }))}
         onChange={formik.handleChange}
         onBlur={formik.handleBlur}
       />
+      }
 
-      <FormInput
-        formik={formik}
-        name="opportunity.probability"
-        label="Probability"
-        type="number"
-      />
+      
       {/* Description */}
         <div>
             <label className="block font-medium mb-1">Description</label>
