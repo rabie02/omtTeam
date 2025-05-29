@@ -7,7 +7,7 @@ const ProductSpecification = require ('../../models/productSpecification');
 
 // Create Product Offering 
 module.exports = async (req, res) => {
-
+    
     try {
         let category;
         let prodSpec;
@@ -59,7 +59,7 @@ module.exports = async (req, res) => {
             productSpecification: {
                 id: prodSpec.id || prodSpec.sys_id,
             },
-            prodSpecCharValueUse: req.body.prodSpecCharValueUse,
+            //prodSpecCharValueUse: req.body.prodSpecCharValueUse,
             channel: req.body.channel,
             category: {
                 id: req.body.category.id,

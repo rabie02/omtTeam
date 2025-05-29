@@ -44,7 +44,7 @@ const limiter = rateLimit({
 
 // connection Kafka
 // const producer = require('./utils/connectionKafka');
-
+//app.set('trust proxy', 1);
 
 // Configuration
 

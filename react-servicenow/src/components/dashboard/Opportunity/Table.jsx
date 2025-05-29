@@ -168,9 +168,9 @@ function OpportunityTable({ setOpenForm, searchQuery }) {
 
   if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
   if (error) {
-    
       notification.error({
-              message: 'creation Failed',
+        
+              message: 'Error',
               description: error || 'Failed to create opportunity. Please try again.',
           });
   }

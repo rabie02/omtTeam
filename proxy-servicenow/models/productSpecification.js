@@ -26,6 +26,7 @@ const productSpecificationSchema = new Schema({
   status: { type: String, enum: ['active', 'retired', 'pending'] }
 }, {
   timestamps: true,
+  strict:false,
   toJSON: {
     virtuals: true,
     transform: (doc, ret) => {
