@@ -177,7 +177,7 @@ function ProductOfferingTable({ setData, setOpen, searchQuery }) {
         }
     ];
     
-    console.log(products)
+    //console.log(products)
 
     if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
     if (error) {

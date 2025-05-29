@@ -22,7 +22,7 @@ function Table({ setData, setOpen, searchQuery }) {
   useEffect(() => {
     dispatch(getPublished({
       page: 1,
-      limit: 1,
+      limit: 6,
       q: searchQuery
     }));
   }, [dispatch, searchQuery]);

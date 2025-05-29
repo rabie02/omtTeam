@@ -296,7 +296,7 @@ const opportunitySlice = createSlice({
       })
       .addCase(getOpportunities.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.error?.message || 'Failed to fetch opportunities';
+        state.error = action.payload?.error || 'Failed to fetch opportunities';
       })
 
       // Update Opportunity Status
