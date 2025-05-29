@@ -16,16 +16,17 @@ const productSpecificationSchema = new Schema({
   internalId: { type: String },
   description: { type: String },
   lastUpdate: { type: Date },
-  lifecycleStatus: { type: String, enum: ['Active', 'Inactive', 'Pending'] },
+  lifecycleStatus: String,
   isBundle: { type: Boolean, default: false },
   validFor: { type: validForSchema },
   serviceSpecification: { type: [Schema.Types.Mixed], default: [] },
   productSpecificationRelationship: { type: [Schema.Types.Mixed], default: [] },
   resourceSpecification: { type: [Schema.Types.Mixed], default: [] },
   productSpecCharacteristic: { type: [Schema.Types.Mixed], default: [] },
-  status: { type: String, enum: ['active', 'retired', 'pending'] }
+  status: String
 }, {
   timestamps: true,
+  strict:false,
   toJSON: {
     virtuals: true,
     transform: (doc, ret) => {
