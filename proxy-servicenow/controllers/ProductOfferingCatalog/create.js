@@ -13,13 +13,17 @@ module.exports = async (req, res) => {
     if (!req.body.name || !req.body.code) {
       return res.status(400).json({ error: 'Name and code are required' });
     }
+    
+    const body = req.body;
 
     const snResponse = await axios.post(
       `${process.env.SERVICE_NOW_URL}/api/now/table/sn_prd_pm_product_offering_catalog`,
       {
         name: req.body.name,
         code: req.body.code,
+        description: req.body.description || '',
         start_date: req.body.start_date || new Date().toISOString(),
+        start_end : req.body.start_end || null,
         status: "draft"
       },
       {

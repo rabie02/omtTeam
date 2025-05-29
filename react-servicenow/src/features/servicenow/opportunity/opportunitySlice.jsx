@@ -20,7 +20,8 @@ export const workflow = createAsyncThunk(
         opportunityData,
         { headers: getHeaders() }
       );
-      return response.data.result;
+      
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -46,12 +47,17 @@ export const createOpportunity = createAsyncThunk(
 
 export const getOpportunities = createAsyncThunk(
   'opportunity/getOpportunities',
-  async (_, { rejectWithValue }) => {
+  async ({ page = 1, limit = 6, q }, { rejectWithValue }) => {
     try {
       const response = await axios.get(
         `${backendUrl}/api/opportunity`,
-        { headers: getHeaders() }
+        { 
+          headers: getHeaders(),
+          params: { page, limit, q }
+         },
+        
       );
+      console.log(response);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -165,7 +171,7 @@ export const getAccounts = createAsyncThunk(
         `${backendUrl}/api/account`,
         { headers: getHeaders() }
       );
-      return response.data;
+      return response.data.result;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -214,7 +220,8 @@ const initialState = {
   error: null,
   currentPage: 1,
   totalItems: 0,
-  limit: 10,
+  limit: 6,
+  totalPages: 1
 };
 
 const opportunitySlice = createSlice({
@@ -261,8 +268,13 @@ const opportunitySlice = createSlice({
         state.loading = true;
       })
       .addCase(getOpportunities.fulfilled, (state, action) => {
+       
         state.loading = false;
-        state.opportunities = action.payload;
+        state.currentPage = action.payload.pagination.page;
+        state.totalPages = action.payload.pagination.totalPages;
+        state.totalItems = action.payload.pagination.total;
+        state.limit = action.payload.pagination.limit || 6;
+        state.opportunities = action.payload.data;
         state.totalItems = action.payload.length;
       })
       .addCase(getOpportunities.rejected, (state, action) => {

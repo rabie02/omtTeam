@@ -2,41 +2,62 @@ const axios = require('axios');
 const ProductOfferingPrice = require('../../models/productOfferingPrice');
 const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
+const ProductOffering = require('../../models/ProductOffering');
+const PriceList = require('../../models/priceList');
 
 async function createProductOfferingPrice(req, res = null) {
+
+  
   try {
-    // 1. Create in ServiceNow
+    const [productOffering, priceList] = await Promise.all([
+      ProductOffering.findById(req.body.productOffering.id),
+      PriceList.findById(req.body.priceList.id)
+    ]);
+
+    if (!productOffering) return res?.status(404).json({ error: 'productOffering not found' });
+    if (!productOffering.id) return res?.status(400).json({ error: 'productOffering not synced with ServiceNow' });
+    if (!priceList) return res?.status(404).json({ error: 'priceList not found' });
+    if (!priceList.sys_id) return res?.status(400).json({ error: 'priceList not synced with ServiceNow' });
+
+    const payload = {
+      ...req.body,
+      priceList: { id: priceList.sys_id },
+      productOffering: { id: productOffering.id }
+    };
+    
+
     const connection = snConnection.getConnection(req.user.sn_access_token);
     const snResponse = await axios.post(
       `${connection.baseURL}/api/sn_tmf_api/catalogmanagement/productOfferingPrice`,
-      req.body,
+      payload,
       { headers: connection.headers }
     );
 
-    // 2. Prepare MongoDB document from ServiceNow response
     const snData = snResponse.data;
-    const mongoPrice = new ProductOfferingPrice({sys_id: snData.id, ...snData});
+    const mongoPrice = new ProductOfferingPrice({
+      sys_id: snData.id,
+      name: snData.name,
+      price: snData.price,
+      lifecycleStatus: snData.lifecycleStatus,
+      validFor: snData.validFor,
+      productOffering: productOffering._id,
+      priceType: snData.priceType,
+      recurringChargePeriodType: snData.recurringChargePeriodType,
+      unitOfMeasure: snData.unitOfMeasure,
+      priceList: priceList._id,
+      "@type": "ProductOfferingPrice",
+      id: snData.id,
+      state: snData.state,
+      href: snData.href
+    });
 
-    // 3. Save to MongoDB
-    try {
-      await mongoPrice.save();
-      
-      if(res){
-        // 4. Return success response
-        res.status(201).json({
-          serviceNow: snData,
-          mongoDB: mongoPrice.toObject()
-        });
-      }
-      
-    } catch (mongoError) {
-      return handleMongoError(res, snData, mongoError, 'creation');
-    }
+    await mongoPrice.save();
+    if (res) res.status(201).json({ ...snData, _id: mongoPrice._id.toString(), mongoId: mongoPrice._id.toString() });
 
   } catch (error) {
     console.error('Error creating product offering price:', error);
-    
-    // Handle ServiceNow errors
+    if (!res) return;
+
     if (error.response?.data?.error) {
       return res.status(error.response.status).json({
         error: error.response.data.error.message,
@@ -44,12 +65,12 @@ async function createProductOfferingPrice(req, res = null) {
       });
     }
     
-    res.status(500).json({ 
+    res.status(500).json({
       error: error.message || 'Internal server error',
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
-};
+}
 
 
 

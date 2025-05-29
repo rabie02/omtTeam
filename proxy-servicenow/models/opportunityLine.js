@@ -1,29 +1,20 @@
 const mongoose = require('mongoose');
 
-const productOfferingSchema = new mongoose.Schema({
-  link: String,
-  value: String
-});
 
-const priceListSchema = new mongoose.Schema({
-  link: String,
-  value: String
-});
 
 const unitOfMeasurementSchema = new mongoose.Schema({
   link: String,
   value: String
 });
 
-const opportunitySchema = new mongoose.Schema({
-  link: String,
-  value: String
-});
 
 const opportunityLineItemSchema = new mongoose.Schema({
   cumulative_acv: String,
   service_location: String,
-  product_offering: productOfferingSchema,
+  productOffering: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ProductOffering'
+  },
   term_month: String,
   external_id: String,
   sys_updated_on: String,
@@ -34,7 +25,10 @@ const opportunityLineItemSchema = new mongoose.Schema({
     unique: true,
     index: true
   },
-  price_list: priceListSchema,
+  priceList: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'PriceList'
+  },
   unit_of_measurement: unitOfMeasurementSchema,
   cumulative_tcv: String,
   sys_updated_by: String,
@@ -45,7 +39,10 @@ const opportunityLineItemSchema = new mongoose.Schema({
   quantity: String,
   sys_mod_count: String,
   cumulative_mrr: String,
-  opportunity: opportunitySchema,
+  opportunity: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Opportunity'
+  },
   sys_tags: String,
   unit_list_price: String,
   total_one_time_price: String,

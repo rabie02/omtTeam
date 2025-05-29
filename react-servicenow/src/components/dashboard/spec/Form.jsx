@@ -19,7 +19,7 @@ function ProductSpecificationForm({ open, setOpen, initialData = {} }) {
           <label className="block font-medium mb-1">Name</label>
           <input
             name="name"
-            value={initialData?.display_name || ''}
+            value={initialData?.display_name || (initialData?.displayName || '')}
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
@@ -42,7 +42,7 @@ function ProductSpecificationForm({ open, setOpen, initialData = {} }) {
           <input
             type="date"
             name="start_date"
-            value={formatDateForInput(initialData?.start_date) || ''}
+            value={formatDateForInput(initialData?.start_date) || formatDateForInput(initialData?.validFor.startDateTime)}
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
@@ -54,7 +54,7 @@ function ProductSpecificationForm({ open, setOpen, initialData = {} }) {
           <input
             type="date"
             name="end_date"
-            value={initialData?.end_date ? formatDateForInput(initialData?.end_date) : ''}
+            value={initialData?.end_date ? formatDateForInput(initialData?.end_date) : formatDateForInput(initialData?.validFor.endtDateTime)}
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />

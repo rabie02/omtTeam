@@ -24,10 +24,23 @@
 
 /* modal */
 
+/* .ant-modal-wrap {
+  display: flex !important;
+
+}
+
+.ant-modal{
+    top:1px !important;
+} */
 
 .ant-table-thead .ant-table-cell {
     background-color: oklch(52% 0.105 223.128) !important;
     color: white !important;
+}
+:where(.css-dev-only-do-not-override-1261szd).ant-steps .ant-steps-item-process .ant-steps-item-icon {
+   background-color: oklch(52% 0.105 223.128) !important;
+  color:white !important;
+  border-color: oklch(52% 0.105 223.128) !important;
 }
 
 /* select */

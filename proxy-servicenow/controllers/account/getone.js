@@ -1,52 +1,48 @@
 const axios = require('axios');
-const jwt = require('jsonwebtoken');
+const Account = require('../../models/account');
+const snConnection = require('../../utils/servicenowConnection');
+const handleMongoError = require('../../utils/handleMongoError');
 
-
-// Create Product Offering 
 module.exports = async (req, res) => {
-    try {
-      // Verify JWT
-      const authHeader = req.headers.authorization;
-      const sys_id = req.params.id;
-      const token = authHeader.split(' ')[1];
-      let decodedToken;
-      try {
-        decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-      } catch (jwtError) {
-        return res.status(401).json({ error: 'Invalid token', details: jwtError.message });
-      }
-  
-      // ServiceNow configuration
-      const serviceNowUrl = `${process.env.SERVICE_NOW_URL}/api/now/account/${sys_id}`;
-      const serviceNowHeaders = {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${decodedToken.sn_access_token}` // or 'Token' as needed
-      };
-  
-      // ServiceNow API call with query parameters
-      const response = await axios.get(serviceNowUrl, {
-        headers: serviceNowHeaders,
-        params: req.query // Forward client query parameters to ServiceNow
-      });
-  
-      // Forward successful response
-      res.status(response.status).json(response.data.result);
-  
-    } catch (error) {
-      console.error('ServiceNow API error:', error);
-  
-      // Handle Axios errors
-      if (axios.isAxiosError(error)) {
-        return res.status(error.response?.status || 500).json({
-          error: 'ServiceNow API request failed',
-          details: error.response?.data || error.message
-        });
-      }
-  
-      // Handle other errors
-      res.status(500).json({
-        error: 'Internal server error',
-        details: error.message
+  try {
+    const mongoId = req.params.id; // MongoDB _id
+    
+    // Try to find account in MongoDB first
+    const account = await Account.findById(mongoId).lean();
+    
+    if (account) {
+      return res.json({
+        result: account,
+        source: 'mongodb'
       });
     }
-}
+    
+    // This would require a different approach since we don't have sys_id
+    return res.status(404).json({ 
+      error: 'Account not found in MongoDB',
+      mongoId: mongoId
+    });
+    
+  } catch (error) {
+    console.error('Error fetching account by ID:', error);
+    
+    // Handle invalid MongoDB ObjectId
+    if (error.name === 'CastError') {
+      return res.status(400).json({ 
+        error: 'Invalid MongoDB ID format',
+        mongoId: req.params.id
+      });
+    }
+    
+    // Handle MongoDB errors
+    if (error.name && error.name.includes('Mongo')) {
+      const mongoError = handleMongoError(error);
+      return res.status(mongoError.status).json({ error: mongoError.message });
+    }
+    
+    // Handle other errors
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.error?.message || error.message;
+    res.status(status).json({ error: message });
+  }
+};

@@ -1,86 +1,93 @@
 const express = require('express');
 const router = express.Router();
-
+const handleMongoError = require('../../utils/handleMongoError');
 // Import controllers
 const createOpportunity = require('./createOpportunity');
 const createPriceList = require('../PriceList/createPriceList');
 const createPOPrice = require('../ProductOfferingPrice/createProductOfferingPrice');
 const createOpportunityLineItem = require('../OpportunityLine/createOpportunityLine');
+const createAccount = require('../account/create');
 
+const Account = require("../../models/account");
 module.exports = async (req, res) => {
+
   const createNewPriceList = req.body.createNewPriceList;
   const selectedPriceList = req.body.selectedPriceList;
   const op = req.body.opportunity; // opportunity JSON body
   const pl = req.body.priceList; // price list JSON body
   const pos = req.body.productOfferings; // product offerings price list items
   const opli = req.body.opportunityLineItem; // opportunity line item
+  const acc = req.body.account;
   const payload = req;
   
   try {
     let priceList = null;
-    
+    let account = null;
+
+    //create account or use an existing one
+    payload.body = acc;
+    account = op.account === "" ? await createAccount(payload) : await Account.findById(op.account);
+
     // Create price list if needed
     if (createNewPriceList) {
-      payload.body = {...pl, "account": op.account};
+      payload.body = {...pl, "account": account._id.toString()};
       priceList = await createPriceList(payload);
     }
     
-    const priceListID = createNewPriceList ? priceList.sys_id : selectedPriceList;
+    const priceListID = createNewPriceList ? priceList._id : selectedPriceList;
 
     // Create opportunity
-    payload.body = {...op, "price_list": priceListID};
+    payload.body = {...op, "price_list": priceListID, "account":account._id.toString()};
     const opportunity = await createOpportunity(payload);
     
     // Process all product offerings and create line items
-    const results = await Promise.all(pos.map(async (po) => {
-      try {
-        // Prepare product offering price JSON body
-        payload.body = {
-          ...po,
-          priceList: { id: priceListID },
-          "lifecycleStatus": "Active",
-          '@type': 'ProductOfferingPrice'
-        };
-        
-        // Create Product Offering price
-        const pricing = await createPOPrice(payload);
-        
-        // Prepare opportunity line item JSON body
-        payload.body = {
-          ...opli,
-          price_list: priceListID,
-          product_offering: po.productOffering.id,
-          opportunity: opportunity.sys_id,
-          unit_of_measurement: po.unitOfMeasure.id,
-        };
-        
-        // Create opportunity line item
-        const opLineItem = await createOpportunityLineItem(payload);
-        
-        return {
-          success: true,
-          productOfferingPrice: pricing,
-          opportunityLineItem: opLineItem
-        };
-      } catch (error) {
-        // Return error details for this specific item
-        return {
-          success: false,
-          error: {
-            status: error.response?.status || 500,
-            message: error.response?.data?.error?.message || error.message,
-            productOffering: po
-          }
-        };
+    const results = await pos.reduce(async (previousPromise, po) => {
+  const accumulatedResults = await previousPromise;
+  
+  try {
+    // Prepare product offering price JSON body
+    payload.body = {
+      ...po,
+      priceList: { id: priceListID },
+      "lifecycleStatus": "Active",
+      '@type': 'ProductOfferingPrice'
+    };
+
+    const pricing = await createPOPrice(payload);
+    
+    payload.body = {
+      ...opli,
+      price_list: priceListID,
+      product_offering: po.productOffering.id,
+      opportunity: opportunity._id,
+      unit_of_measurement: po.unitOfMeasure.id,
+    };
+
+    const opLineItem = await createOpportunityLineItem(payload);
+    
+    return [...accumulatedResults, {
+      success: true,
+      productOfferingPrice: pricing,
+      opportunityLineItem: opLineItem
+    }];
+  } catch (error) {
+    return [...accumulatedResults, {
+      success: false,
+      error: {
+        status: error.response?.status || 500,
+        message: error.response?.data?.error?.message || error.message,
+        productOffering: po
       }
-    }));
+    }];
+  }
+}, Promise.resolve([]));
 
     // Check if all operations were successful
     const allSuccessful = results.every(result => result.success);
-    
     if (allSuccessful) {
       // All items created successfully
       return res.status(201).json({
+        data: opportunity,
         success: true,
         message: 'Opportunity created successfully',
         
@@ -99,9 +106,11 @@ module.exports = async (req, res) => {
     console.error('Error in opportunity creation:', error);
     const status = error.response?.status || 500;
     const message = error.response?.data?.error?.message || error.message;
+    const mongoError = handleMongoError(error);
     return res.status(status).json({ 
       success: false,
-      error: message 
+      error: message,
+      mongoErro: mongoError.message
     });
   }
 };

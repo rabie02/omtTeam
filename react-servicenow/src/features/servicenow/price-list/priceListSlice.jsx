@@ -27,11 +27,13 @@ export const createPriceList = createAsyncThunk(
 
 export const getPriceList = createAsyncThunk(
   'opportunity/getPriceList',
-  async (_, { rejectWithValue }) => {
+  async ({q}, { rejectWithValue }) => {
     try {
       const response = await axios.get(
         `${backendUrl}/api/price-list`,
-        { headers: getHeaders() }
+        { headers: getHeaders(),
+          params: {q}
+        }
       );
       return response.data;
     } catch (error) {
@@ -81,7 +83,6 @@ const priceListSlice = createSlice({
         state.loading = true;
       })
       .addCase(createPriceList.fulfilled, (state, action) => {
-        console.log(action)
         state.priceLists.unshift(action.payload);
         state.loading = false;
       })
@@ -95,10 +96,12 @@ const priceListSlice = createSlice({
         state.loading = true;
       })
       .addCase(getPriceList.fulfilled, (state, action) => {
+        
         state.loading = false;
         state.priceLists = action.payload;
       })
       .addCase(getPriceList.rejected, (state, action) => {
+        console.log(action);
         state.loading = false;
         state.error = action.payload?.error?.message || 'Failed to fetch Price List';
       })
@@ -108,6 +111,9 @@ const priceListSlice = createSlice({
         state.loading = true;
       })
       .addCase(deletePriceList.fulfilled, (state, action) => {
+        console.log(action.payload)
+        console.log(state.priceLists)
+        state.priceLists = state.priceLists.filter(p => p.id !== action.payload.mongoId);
         state.loading = false;
         
       })

@@ -129,7 +129,6 @@ export const fetchUserInfo = createAsyncThunk(
         },
         withCredentials: true // Optional: Only if you rely on cookies too
       });
-      console.log(data);
       return data;
     } catch (err) {
       return rejectWithValue(err.response?.data || {

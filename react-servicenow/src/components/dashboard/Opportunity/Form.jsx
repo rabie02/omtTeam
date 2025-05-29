@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Modal, Steps, message } from 'antd';
+import { Modal, Steps, notification } from 'antd';
 import { useSelector } from 'react-redux';
 import OpportunityNavigation from './Steps/Navigation';
 import OpportunityStep1 from './Steps/Step1';
@@ -18,6 +18,8 @@ import {
 } from '../../../features/servicenow/opportunity/opportunitySlice';
 import { getPriceList } from '../../../features/servicenow/price-list/priceListSlice';
 import {getall as getProductOfferings} from '../../../features/servicenow/product-offering/productOfferingSlice';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 const { Step } = Steps;
 
@@ -43,7 +45,7 @@ const validationSchema = Yup.object().shape({
     then: () => Yup.object().shape({
       name: Yup.string().required('Name is required'),
       currency: Yup.string().required('Currency is required'),
-      state: Yup.string().required('State is required'),
+      state: Yup.string(),
       start_date: Yup.string().required('Start date is required'),
     }),
     otherwise: () => Yup.object().nullable(),
@@ -68,6 +70,10 @@ const validationSchema = Yup.object().shape({
     quantity: Yup.number().min(1),
     term_month: Yup.number().min(1),
   }),
+  account: Yup.object().shape({
+    name: Yup.string(),
+    email: Yup.string(),
+  }),
 });
 
 function OpportunityForm({ open, setOpen, dispatch }) {
@@ -82,12 +88,12 @@ function OpportunityForm({ open, setOpen, dispatch }) {
     accounts,
     unitOfMeasures,
     loading,
-    productOfferings,
+    data:productOfferings,
     priceLists
   } = useSelector((state) => ({
     ...state.opportunity,
-    productOfferings: state.productOffering.data || [],
-    priceLists: state.priceList.priceLists || []
+    productOfferings: state.productOffering,
+    priceLists: state.priceList
   }));
 
   // Fetch required data on component mount
@@ -96,16 +102,18 @@ function OpportunityForm({ open, setOpen, dispatch }) {
     dispatch(getStages());
     dispatch(getAccounts());
     dispatch(getUnitOfMeasures());
-    dispatch(getProductOfferings());
+    dispatch(getProductOfferings({ page: 1, limit: 6}));
     dispatch(getPriceList());
   }, [dispatch]);
-
-  
 
   const formik = useFormik({
     initialValues: {
       createNewPriceList: true,
       selectedPriceList: '',
+      account:{
+        name: "",
+        email: ""
+      },
       opportunity: {
         short_description: '',
         estimated_closed_date: formatDateForInput(new Date()),
@@ -169,98 +177,26 @@ function OpportunityForm({ open, setOpen, dispatch }) {
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
       try {
-        
         dispatch(workflow(values));
-        // // Step 1: Create opportunity
-        // const opportunityResponse = await dispatch(createOpportunity(values.opportunity)).unwrap();
+        notification.success({
+              message: 'Opportunity Created',
+              description: 'New Opportunity has been created successfully',
+            });
         
-        // // Step 2: Use existing or create new price list
-        // let priceListId;
-        // if (values.createNewPriceList) {
-        //   const priceListResponse = await dispatch(createPriceList({
-        //     ...values.priceList,
-        //     account: values.opportunity.account
-        //   })).unwrap();
-        //   priceListId = priceListResponse.sys_id;
-        // } else {
-        //   priceListId = values.selectedPriceList;
-        // }
-
-        // // Step 3: Create product offering prices
-        // const productOfferingPrices = await Promise.all(
-        //   values.productOfferings.map(async (productOffering) => {
-        //     const response = await dispatch(createProductOfferingPrice({
-        //       ...productOffering,
-        //       priceList: { id: priceListId }
-        //     })).unwrap();
-        //     return response.id;
-        //   })
-        // );
-
-        // // Step 4: Create opportunity line items
-        // await Promise.all(
-        //   values.productOfferings.map((productOffering, index) => (
-        //     dispatch(createOpportunityLineItem({
-        //       price_list: priceListId,
-        //       product_offering: productOffering.productOffering.id,
-        //       opportunity: opportunityResponse.sys_id,
-        //       unit_of_measurement: productOffering.unitOfMeasure.id,
-        //       quantity: values.opportunityLineItem.quantity,
-        //       term_month: values.opportunityLineItem.term_month
-        //     }))
-        //   ))
-        // );
-
-        
-
-        message.success('Opportunity created successfully!');
         setOpen(false);
         resetForm();
         setCurrentStep(0);
       } catch (error) {
         console.error('Submission error:', error);
-        message.error('Failed to create opportunity. Please try again.');
+        notification.error({
+          message: 'Operation Failed',
+          description: error.message || 'Failed to create opportunity. Please try again.',
+        });
       }
     },
   });
 
   
-
-  // Add a new product offering to the list
-  const addProductOffering = () => {
-    formik.setFieldValue('productOfferings', [
-      ...formik.values.productOfferings,
-      {
-        name: '',
-        price: { unit: 'USD', value: '' },
-        productOffering: { id: '' },
-        unitOfMeasure: { id: '' },
-        priceType: 'recurring',
-        recurringChargePeriodType: 'monthly',
-        validFor: {
-          startDateTime: formatDateForInput(new Date()),
-          endDateTime: ''
-        }
-      }
-    ]);
-  };
-
-  // Remove a product offering from the list
-  const removeProductOffering = (index) => {
-    const newOfferings = [...formik.values.productOfferings];
-    newOfferings.splice(index, 1);
-    formik.setFieldValue('productOfferings', newOfferings);
-  };
-
-  // Update product offering field
-  const updateProductOffering = (index, field, value) => {
-    const newOfferings = [...formik.values.productOfferings];
-    newOfferings[index][field] = value;
-    formik.setFieldValue('productOfferings', newOfferings);
-    // Manually trigger validation for the updated field
-    formik.setFieldTouched(`productOfferings[${index}].${field}`, true, false);
-  };
-
   const handleCancel = () => {
     setOpen(false);
     formik.resetForm();
@@ -322,7 +258,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
       setCurrentStep(currentStep + 1);
     } else {
       console.log('Validation errors:', errors);
-      message.error('Please fill all required fields before proceeding');
+      
     }
   };
 
@@ -330,43 +266,41 @@ function OpportunityForm({ open, setOpen, dispatch }) {
     setCurrentStep(currentStep - 1);
   };
 
-  // Update account in both opportunity and price list when changed
-  const handleAccountChange = (accountId) => {
-    formik.setFieldValue('opportunity.account', accountId);
-    formik.setFieldValue('priceList.account', accountId);
-  };
 
-  // Update unit of measure in both product offering price and opportunity line item
-  const handleUnitOfMeasureChange = (uomId) => {
-    formik.setFieldValue('productOfferingPrice.unitOfMeasure.id', uomId);
-    formik.setFieldValue('opportunityLineItem.unit_of_measurement', uomId);
-  };
-
-  // Update product offering in both product offering price and opportunity line item
-  const handleProductOfferingChange = (productOfferingId) => {
-    formik.setFieldValue('productOfferingPrice.productOffering.id', productOfferingId);
-    formik.setFieldValue('opportunityLineItem.product_offering', productOfferingId);
-  };
-
-   // Render error message for a field
-  const renderErrorMessage = (fieldName) => {
-    const touched = formik.touched[fieldName];
-    const error = formik.errors[fieldName];
-    return touched && error ? (
-      <p className="text-red-500 text-sm mt-1">{error}</p>
-    ) : null;
-  };
-
-  // Render error message for array fields
-  const renderArrayErrorMessage = (arrayName, index, fieldName) => {
-    const touched = formik.touched[arrayName]?.[index]?.[fieldName];
-    const error = formik.errors[arrayName]?.[index]?.[fieldName];
-    return touched && error ? (
-      <p className="text-red-500 text-sm mt-1">{error}</p>
-    ) : null;
-  };
-
+  const pdfRef = useRef();
   
+    const downloadPDF = () => {
+      const input = pdfRef.current;
+      
+      html2canvas(input, {
+        scale: 2,
+        windowHeight: input.scrollHeight
+      }).then((canvas) => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgWidth = 190; // mm (A4 width minus margins)
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        let heightLeft = imgHeight;
+        let position = 10; // Start 10mm from top
+        const pageHeight = 277; // A4 height in mm (297 - 20mm margins)
+        
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+        
+        // Add new pages as needed
+        while (heightLeft >= 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+        
+        pdf.save('opportunity_details.pdf');
+      });
+    };
+
+
 
   return (
     <Modal
@@ -395,7 +329,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
           <OpportunityStep3 formik={formik} />
         )}
         {currentStep === 3 && (
-          <OpportunityStep4 formik={formik} />
+          <OpportunityStep4 formik={formik} pdfRef={pdfRef} />
         )}
 
         <OpportunityNavigation
@@ -405,6 +339,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
           nextStep={nextStep}
           handleCancel={handleCancel}
           formik={formik}
+          downloadPDF={downloadPDF}
         />
       </form>
     </Modal>
