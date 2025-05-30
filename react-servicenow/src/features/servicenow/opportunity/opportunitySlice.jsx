@@ -285,14 +285,12 @@ const opportunitySlice = createSlice({
         state.loading = true;
       })
       .addCase(getOpportunities.fulfilled, (state, action) => {
-       
         state.loading = false;
         state.currentPage = action.payload.pagination.page;
         state.totalPages = action.payload.pagination.totalPages;
         state.totalItems = action.payload.pagination.total;
         state.limit = action.payload.pagination.limit || 6;
         state.opportunities = action.payload.data;
-        state.totalItems = action.payload.length;
       })
       .addCase(getOpportunities.rejected, (state, action) => {
         state.loading = false;
@@ -324,7 +322,7 @@ const opportunitySlice = createSlice({
       .addCase(deleteOpportunity.fulfilled, (state, action) => {
         state.loading = false;
         state.opportunities = state.opportunities.filter(
-          opp => opp.sys_id !== action.payload
+          opp => opp._id !== action.payload
         );
       })
       .addCase(deleteOpportunity.rejected, (state, action) => {

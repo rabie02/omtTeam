@@ -10,7 +10,8 @@ const OpportunityStep4 = ({ formik, pdfRef }) => {
     selectedPriceList, 
     createNewPriceList, 
     productOfferings,
-    opportunityLineItem
+    opportunityLineItem,
+    account
   } = formik.values;
 
 
@@ -37,8 +38,8 @@ const OpportunityStep4 = ({ formik, pdfRef }) => {
   const currentPriceList = getSelectedPriceList();
 
   const getAccountName = (id) => {
-     const account = accounts.find(u => u.sys_id === id);
-    return account ? account.name : 'Not found';
+     const account = accounts.find(u => u._id === id);
+    return account ? account.name : false;
   }
 
   console.log(JSON.stringify(formik.values,null, 2  ));
@@ -56,7 +57,7 @@ const OpportunityStep4 = ({ formik, pdfRef }) => {
             {format(new Date(opportunity.estimated_closed_date), 'MMM dd, yyyy')}
           </Descriptions.Item>
           <Descriptions.Item label="Account">
-            {getAccountName(opportunity.account)}
+            {getAccountName(opportunity.account) || account.name}
           </Descriptions.Item>
           <Descriptions.Item label="Probability">
             {opportunity.probability}%

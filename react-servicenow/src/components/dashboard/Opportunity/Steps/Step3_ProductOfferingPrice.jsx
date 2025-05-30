@@ -100,7 +100,7 @@ const OpportunityStep3 = ({ formik }) => {
                   value={offering.price.value}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
-                  className="w-full rounded py-2 px-2 border-1"
+                  //className="w-full rounded py-2 px-2"
                   //noLabel
                 />
                 <FormSelect
@@ -118,12 +118,7 @@ const OpportunityStep3 = ({ formik }) => {
                   //noLabel
                 />
               </Space.Compact>
-              {formik.touched.productOfferings?.[index]?.price?.value && 
-               formik.errors.productOfferings?.[index]?.price?.value && (
-                <p className="text-red-500 text-sm mt-1">
-                  {formik.errors.productOfferings[index].price.value}
-                </p>
-              )}
+              
             </div>
 
             <FormSelect
@@ -195,7 +190,7 @@ const OpportunityStep3 = ({ formik }) => {
               onBlur={formik.handleBlur}
               min={new Date(new Date(minDate).getTime() + 86400000).toISOString().split('T')[0]}
               max={maxDate != "" ? new Date(new Date(maxDate).getTime() - 86400000*2).toISOString().split('T')[0] : ""}
-              description="must be within the price list start/end date"
+              //description="must be within the price list start/end date"
             />
 
             <FormInput

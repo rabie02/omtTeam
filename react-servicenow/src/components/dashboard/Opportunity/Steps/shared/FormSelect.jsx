@@ -14,8 +14,30 @@ const FormSelect = ({
   ...props
 }) => {
   const value = getNestedValue(formik.values, name);
-  const touched = getNestedValue(formik.touched, name);
-  const error = getNestedValue(formik.errors, name);
+  let touched = getNestedValue(formik.touched, name);
+  let error = getNestedValue(formik.errors, name);
+
+  if (name.includes('[')) {
+    // Handle array notation in field names (e.g., "products[0].price")
+    const [basePath, ...nestedPaths] = name.split('.');
+    const [arrayName, indexStr] = basePath.split(/[\[\]]/);
+    const index = Number(indexStr);
+
+    const arrayErrors = formik.errors[arrayName]?.[index];
+    const arrayTouched = formik.touched[arrayName]?.[index];
+
+    if (arrayErrors) {
+        error = nestedPaths.reduce((obj, path) => obj?.[path], arrayErrors) ?? false;
+    }
+
+    if (arrayTouched) {
+        touched = nestedPaths.reduce((obj, path) => obj?.[path], arrayTouched) ?? false;
+    }
+}
+
+  console.log(name);
+  console.log(error);
+  console.log(touched);
   
   return (
     <div className={`mb-4 ${className}`}>

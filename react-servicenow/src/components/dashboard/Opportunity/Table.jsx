@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Popconfirm, Empty, Spin, Table, notification, Tooltip, Modal} from 'antd';
+import { Popconfirm, Empty, Spin, Table, notification, Tooltip, Modal, Pagination} from 'antd';
 import { 
   getOpportunities,
   deleteOpportunity,
@@ -28,6 +28,7 @@ function OpportunityTable({ setOpenForm, searchQuery }) {
     totalPages,
     productOfferingPrices
   } = useSelector((state) => state.opportunity);
+  
 
   useEffect(() => {
     dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
@@ -48,7 +49,7 @@ function OpportunityTable({ setOpenForm, searchQuery }) {
           message: 'Opportunuity Deleted',
           description: 'Opportunuity has been deleted successfully',
       });
-      dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
+      //dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
     } catch (error) {
         console.error('Deletion failed:', error);
         notification.error({
@@ -57,6 +58,10 @@ function OpportunityTable({ setOpenForm, searchQuery }) {
         });
     }
   };
+
+  const handlePageChange = (page) => {
+          dispatch(getOpportunities({ page, limit, q: searchQuery }));
+      };
 
 
   const columns = [
@@ -186,11 +191,21 @@ function OpportunityTable({ setOpenForm, searchQuery }) {
         locale={{
           emptyText: <Empty description="No opportunities found" />,
         }}
-        pagination={{
-          pageSize: 6,
-          showSizeChanger: false,
-        }}
+        pagination={false}
       />
+      <div className="mt-6 flex justify-end">
+        <Pagination
+            current={currentPage}
+            total={totalItems}
+            pageSize={limit}
+            onChange={handlePageChange}
+            showSizeChanger={false}
+            disabled={loading}
+            className="ant-pagination-custom"
+
+        />
+      </div>
+      
     </div>
   );
 }
