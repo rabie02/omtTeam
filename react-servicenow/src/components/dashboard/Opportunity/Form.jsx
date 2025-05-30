@@ -206,7 +206,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [createNewPriceList, setCreateNewPriceList] = useState(true);
   const [productOfferingsList, setProductOfferingsList] = useState([]);
-
+  const FORM_STORAGE_KEY = 'opportunityFormData'
   // Get required data from Redux store
   const {
     salesCycleTypes,
@@ -231,6 +231,78 @@ function OpportunityForm({ open, setOpen, dispatch }) {
     dispatch(getProductOfferings({ page: 1, limit: 6}));
     dispatch(getPriceList({page: 1, limit: 1000}));
   }, [dispatch]);
+
+  // Get initial values from localStorage or use defaults
+  const getInitialValues = () => {
+    const savedForm = localStorage.getItem(FORM_STORAGE_KEY);
+    return savedForm ? JSON.parse(savedForm) : {
+      createNewPriceList: true,
+      selectedPriceList: '',
+      account: {
+        name: "",
+        email: ""
+      },
+      opportunity: {
+        short_description: '',
+        estimated_closed_date: formatDateForInput(new Date(new Date().getTime() + 86400000)),
+        description: '',
+        term_month: '12',
+        sales_cycle_type: '',
+        probability: '50',
+        stage: '',
+        industry: "telecommunications",
+        account: ''
+      },
+      priceList: {
+        name: '',
+        currency: 'USD',
+        state: 'published',
+        start_date: formatDateForInput(new Date("01-01-2010")),
+        end_date: '',
+        description: ''
+      },
+      productOfferings: [{
+        name: '',
+        price: { unit: 'USD', value: '' },
+        productOffering: { id: '' },
+        unitOfMeasure: { id: '' },
+        priceType: 'recurring',
+        recurringChargePeriodType: 'monthly',
+        validFor: {
+          startDateTime: formatDateForInput(new Date()),
+          endDateTime: ''
+        }
+      }],
+      productOfferingPrice: {
+        name: '',
+        price: {
+          unit: 'USD',
+          value: ''
+        },
+        lifecycleStatus: 'Active',
+        validFor: {
+          startDateTime: formatDateForInput(new Date()),
+          endDateTime: ''
+        },
+        productOffering: {
+          id: ''
+        },
+        priceType: 'recurring',
+        recurringChargePeriodType: 'monthly',
+        unitOfMeasure: {
+          id: ''
+        },
+        priceList: {
+          id: ''
+        },
+        '@type': 'ProductOfferingPrice'
+      },
+      opportunityLineItem: {
+        term_month: '12',
+        quantity: '1'
+      }
+    };
+  };
 
   const validationSchema = useMemo(() => {
     return Yup.object().shape({
@@ -422,73 +494,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
   }, [priceLists, productOfferings]);
 
   const formik = useFormik({
-    initialValues: {
-      createNewPriceList: true,
-      selectedPriceList: '',
-      account: {
-        name: "",
-        email: ""
-      },
-      opportunity: {
-        short_description: '',
-        estimated_closed_date: formatDateForInput(new Date(new Date().getTime() + 86400000)),
-        description: '',
-        term_month: '12',
-        sales_cycle_type: '',
-        probability: '50',
-        stage: '',
-        industry: "telecommunications",
-        account: ''
-      },
-      priceList: {
-        name: '',
-        currency: 'USD',
-        state: 'published',
-        start_date: formatDateForInput(new Date("01-01-2010")),
-        end_date: '',
-        description: ''
-      },
-      productOfferings: [{
-        name: '',
-        price: { unit: 'USD', value: '' },
-        productOffering: { id: '' },
-        unitOfMeasure: { id: '' },
-        priceType: 'recurring',
-        recurringChargePeriodType: 'monthly',
-        validFor: {
-          startDateTime: formatDateForInput(new Date()),
-          endDateTime: ''
-        }
-      }],
-      productOfferingPrice: {
-        name: '',
-        price: {
-          unit: 'USD',
-          value: ''
-        },
-        lifecycleStatus: 'Active',
-        validFor: {
-          startDateTime: formatDateForInput(new Date()),
-          endDateTime: ''
-        },
-        productOffering: {
-          id: ''
-        },
-        priceType: 'recurring',
-        recurringChargePeriodType: 'monthly',
-        unitOfMeasure: {
-          id: ''
-        },
-        priceList: {
-          id: ''
-        },
-        '@type': 'ProductOfferingPrice'
-      },
-      opportunityLineItem: {
-        term_month: '12',
-        quantity: '1'
-      }
-    },
+    initialValues: getInitialValues(),
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
       try {
@@ -512,9 +518,23 @@ function OpportunityForm({ open, setOpen, dispatch }) {
     validateOnMount: true,
   });
 
+  // Save form to localStorage whenever it changes
+  useEffect(() => {
+    if (formik.dirty) {
+      localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formik.values));
+    }
+  }, [formik.values, formik.dirty]);
   
   const handleCancel = () => {
     setOpen(false);
+    //formik.resetForm();
+    setCurrentStep(0);
+  };
+
+  // Reset form handler
+  const handleReset = () => {
+    setOpen(false);
+    localStorage.removeItem(FORM_STORAGE_KEY);
     formik.resetForm();
     setCurrentStep(0);
   };
@@ -661,6 +681,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
           handleCancel={handleCancel}
           formik={formik}
           downloadPDF={downloadPDF}
+          resetForm={handleReset}
         />
       </form>
     </Modal>

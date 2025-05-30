@@ -8,7 +8,8 @@ const OpportunityNavigation = ({
   nextStep,
   handleCancel,
   formik, 
-  downloadPDF
+  downloadPDF,
+  resetForm
 }) => {
   return (
     <div className="flex justify-between pt-4">
@@ -62,6 +63,13 @@ const OpportunityNavigation = ({
           className="px-4 py-2 rounded border bg-gray-200 text-red-400 hover:bg-red-400 hover:text-white"
         >
           Cancel
+        </button>
+        <button
+          type="button"
+          onClick={resetForm}
+          className="px-4 py-2 rounded border bg-gray-200 text-red-400 hover:bg-red-400 hover:text-white"
+        >
+          Reset & Close
         </button>
       </div>
     </div>
