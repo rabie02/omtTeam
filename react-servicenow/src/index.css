@@ -42,6 +42,18 @@
   color:white !important;
   border-color: oklch(52% 0.105 223.128) !important;
 }
+.ant-btn-color-primary{
+    background-color: var(--color-cyan-700) !important;
+    color: white !important;
+}
+.ant-btn-color-primary:hover{
+    background-color: var(--color-cyan-900) !important;
+}
+
+.ant-btn-color-default:hover{
+    border-color: var(--color-cyan-700) !important;
+    color: var(--color-cyan-700) !important;
+}
 
 /* select */
 .ant-select-selector {

@@ -1,5 +1,5 @@
-import React from 'react';
-
+import React, { useState } from 'react';
+import { Modal } from 'antd';
 
 const OpportunityNavigation = ({
   currentStep,
@@ -11,6 +11,23 @@ const OpportunityNavigation = ({
   downloadPDF,
   resetForm
 }) => {
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+
+  const showModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleOk = () => {
+    resetForm();
+    setIsModalOpen(false);
+  };
+
+  const handleCancel2 = () => {
+    setIsModalOpen(false);
+  };
+
   return (
     <div className="flex justify-between pt-4">
       <div>
@@ -64,13 +81,26 @@ const OpportunityNavigation = ({
         >
           Cancel
         </button>
-        <button
-          type="button"
-          onClick={resetForm}
-          className="px-4 py-2 rounded border bg-gray-200 text-red-400 hover:bg-red-400 hover:text-white"
-        >
-          Reset & Close
-        </button>
+        <div>
+          <button
+            type="button"
+            onClick={showModal}
+            className="px-4 py-2 rounded border bg-gray-200 text-red-400 hover:bg-red-400 hover:text-white"
+          >
+            Reset & Close
+          </button>
+
+          <Modal
+            title="Confirm Reset"
+            closable={{ 'aria-label': 'Custom Close Button' }}
+            open={isModalOpen}
+            onOk={handleOk}
+            onCancel={handleCancel2}
+            centered
+          >
+            <p>You sure you want to reset the form?</p>
+          </Modal>
+        </div>
       </div>
     </div>
   );
