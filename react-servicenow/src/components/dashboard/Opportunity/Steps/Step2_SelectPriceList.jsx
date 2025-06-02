@@ -9,7 +9,7 @@ const OpportunityStep2 = ({ formik }) => {
   const { priceLists } = useSelector((state) => state.priceList);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 mt-4">
       <h3 className="text-lg font-medium">Price List Selection</h3>
       
       <FormRadioGroup

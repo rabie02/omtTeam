@@ -14,7 +14,7 @@ const OpportunityStep1 = ({ formik }) => {
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 mt-4">
       <h3 className="text-lg font-medium">Opportunity Details</h3>
       
       <FormInput

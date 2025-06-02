@@ -5,8 +5,9 @@ import {useSelector} from 'react-redux';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
-const OpportunityStep4 = ({ initialData=null }) => {
-  console.log(initialData);
+const OpportunityStep4 = ({ initialData }) => {
+  try{
+  const tempID = initialData.price_list !== (null || undefined) && initialData.price_list._id ;
   const { 
     opportunity, 
     priceList, 
@@ -17,7 +18,7 @@ const OpportunityStep4 = ({ initialData=null }) => {
   } = {
     opportunity: initialData,
     priceList: initialData.price_list,
-    selectedPriceList: initialData.price_list._id, 
+    selectedPriceList: tempID, 
     createNewPriceList:false,
     productOfferings: initialData.line_items.map(item => ({...item.productOffering, unit_of_measurement: item.unit_of_measurement})),
     opportunityLineItem: initialData.line_items
@@ -203,7 +204,9 @@ const OpportunityStep4 = ({ initialData=null }) => {
         <div></div>
     </div>
     </>
-  );
+  )}catch(error){
+    console.log(error)
+  }
 };
 
 export default OpportunityStep4;

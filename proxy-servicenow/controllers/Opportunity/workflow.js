@@ -15,8 +15,8 @@ module.exports = async (req, res) => {
   const selectedPriceList = req.body.selectedPriceList;
   const op = req.body.opportunity; // opportunity JSON body
   const pl = req.body.priceList; // price list JSON body
-  const pos = req.body.productOfferings; // product offerings price list items
-  const opli = req.body.opportunityLineItem; // opportunity line item
+  const pos = req.body.productOfferings; // product offerings price list items turned into opportunity line items.
+  //const opli = req.body.opportunityLineItem; // opportunity line item
   const acc = req.body.account;
   const payload = req;
   
@@ -46,8 +46,9 @@ module.exports = async (req, res) => {
   
   try {
     // Prepare product offering price JSON body
+    const { term_month, quantity, ...filteredPo } = po;
     payload.body = {
-      ...po,
+      ...filteredPo,
       priceList: { id: priceListID },
       "lifecycleStatus": "Active",
       '@type': 'ProductOfferingPrice'
@@ -56,7 +57,8 @@ module.exports = async (req, res) => {
     const pricing = await createPOPrice(payload);
     
     payload.body = {
-      ...opli,
+      quantity: quantity,
+      term_month: term_month,
       price_list: priceListID,
       product_offering: po.productOffering.id,
       opportunity: opportunity._id,

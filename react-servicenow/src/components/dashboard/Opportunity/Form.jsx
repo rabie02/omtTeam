@@ -271,36 +271,10 @@ function OpportunityForm({ open, setOpen, dispatch }) {
         validFor: {
           startDateTime: formatDateForInput(new Date()),
           endDateTime: ''
-        }
-      }],
-      productOfferingPrice: {
-        name: '',
-        price: {
-          unit: 'USD',
-          value: ''
         },
-        lifecycleStatus: 'Active',
-        validFor: {
-          startDateTime: formatDateForInput(new Date()),
-          endDateTime: ''
-        },
-        productOffering: {
-          id: ''
-        },
-        priceType: 'recurring',
-        recurringChargePeriodType: 'monthly',
-        unitOfMeasure: {
-          id: ''
-        },
-        priceList: {
-          id: ''
-        },
-        '@type': 'ProductOfferingPrice'
-      },
-      opportunityLineItem: {
-        term_month: '12',
-        quantity: '1'
-      }
+        term_month: '',
+        quantity: ''
+      }]
     };
   };
 
@@ -464,6 +438,8 @@ function OpportunityForm({ open, setOpen, dispatch }) {
             unitOfMeasure: Yup.object().shape({
               id: Yup.string().required('Unit of measure is required'),
             }),
+            quantity: Yup.number().min(1),
+            term_month: Yup.number().min(1),
             priceType: Yup.string()
               .test(
                 'matches-product-offering',
@@ -480,12 +456,8 @@ function OpportunityForm({ open, setOpen, dispatch }) {
                 }
               )
               .required('Price type is required'),
-          })
+          }),
         ),
-      opportunityLineItem: Yup.object().shape({
-        quantity: Yup.number().min(1).required('Quantity is required'),
-        term_month: Yup.number().min(1).required('Term is required'),
-      }),
       account: Yup.object().shape({
         name: Yup.string(),
         email: Yup.string(),
@@ -505,6 +477,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
         });
         
         setOpen(false);
+        localStorage.removeItem(FORM_STORAGE_KEY);
         resetForm();
         setCurrentStep(0);
       } catch (error) {
@@ -535,7 +508,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
   const handleReset = () => {
     setOpen(false);
     localStorage.removeItem(FORM_STORAGE_KEY);
-    formik.resetForm();
+    formik.resetForm({ values: getInitialValues() });
     setCurrentStep(0);
   };
 
@@ -650,7 +623,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
       <Steps current={currentStep} className="mb-6">
         <Step title="Opportunity" />
         <Step title="Price List" />
-        <Step title="Product Offerings" />
+        <Step title="Line Items" />
         <Step title="Summary" />
       </Steps>
 

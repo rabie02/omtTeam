@@ -92,11 +92,11 @@ const OpportunityStep4 = ({ formik, pdfRef }) => {
         </Descriptions>
       </Card>
 
-      <Card title="Product Offerings" variant>
+      <Card title="Opportunity Line Items" variant>
         {productOfferings.map((offering, index) => (
           <div key={index} className="mb-6 last:mb-0">
             <Descriptions 
-              title={`Offering #${index + 1}`} 
+              title={`Item #${index + 1}`} 
               column={1} 
               bordered
               className="mb-4"
@@ -128,20 +128,12 @@ const OpportunityStep4 = ({ formik, pdfRef }) => {
                   {format(new Date(offering.validFor.endDateTime), 'MMM dd, yyyy HH:mm')}
                 </Descriptions.Item>
               )}
+              {offering.quantity !== '' && <Descriptions.Item label="Quantity">{offering.quantity}</Descriptions.Item>}
+              
+              {offering.term_month !== '' && <Descriptions.Item label="Term (Months)">{offering.term_month}</Descriptions.Item>}
             </Descriptions>
           </div>
         ))}
-      </Card>
-
-      <Card title="Line Item Details" variant>
-        <Descriptions column={1}>
-          <Descriptions.Item label="Quantity">
-            {opportunityLineItem.quantity}
-          </Descriptions.Item>
-          <Descriptions.Item label="Term (Months)">
-            {opportunityLineItem.term_month}
-          </Descriptions.Item>
-        </Descriptions>
       </Card>
     </div>
   );

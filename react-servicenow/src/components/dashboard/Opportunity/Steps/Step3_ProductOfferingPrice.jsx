@@ -41,7 +41,9 @@ const OpportunityStep3 = ({ formik }) => {
         validFor: {
           startDateTime: formatDateForInput(new Date()),
           endDateTime: ''
-        }
+        },
+        term_month: '12',
+        quantity: '1',
       }
     ]);
   };
@@ -54,9 +56,15 @@ const OpportunityStep3 = ({ formik }) => {
     formik.setFieldValue('productOfferings', newOfferings);
   };
 
+  const filterOffering = (id)=>{
+    if(id === "") return [allOfferings[0]];
+    return allOfferings.filter(p => p._id === id);
+  }
+
+  console.log(allOfferings)
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-medium">Product Offerings</h3>
+    <div className="space-y-4 mt-4">
+      <h3 className="text-lg font-medium">Opportunity Line Items</h3>
       
       {formik.errors.productOfferings && typeof formik.errors.productOfferings === 'string' && (
         <p className="text-red-500 text-sm mb-4">{formik.errors.productOfferings}</p>
@@ -65,7 +73,7 @@ const OpportunityStep3 = ({ formik }) => {
       {formik.values.productOfferings.map((offering, index) => (
         <div key={index} className="border border-gray-200 p-4 rounded-lg mb-4">
           <div className="flex justify-between items-center mb-4">
-            <h4 className="font-medium text-gray-800">Product Offering Price #{index + 1}</h4>
+            <h4 className="font-medium text-gray-800">Item #{index + 1}</h4>
             {formik.values.productOfferings.length > 1 && (
               <Button
                 type="text"
@@ -150,7 +158,6 @@ const OpportunityStep3 = ({ formik }) => {
               }))}
               
             />
-
             <FormSelect
             formik={formik}
               label="Price Type*"
@@ -158,16 +165,15 @@ const OpportunityStep3 = ({ formik }) => {
               value={offering.priceType}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              options={[
-                { value: 'recurring', label: 'Recurring' },
-                { value: 'one_time', label: 'One-time' }
-              ]}
+              options={filterOffering(offering.productOffering.id)[0].productOfferingPrice[0].price.taxIncludedAmount.value !=="0" && filterOffering(offering.productOffering.id)[0].productOfferingPrice[0].priceType === "recurring"? [{ value: 'recurring', label: 'Recurring' }] : [{ value: 'one_time', label: 'One-time' }]}
              
             />
+            
 
-            {offering.priceType === 'recurring' && (
-              <FormSelect
-              formik={formik}
+            {offering.priceType === 'recurring' ? (
+              <div class="grid grid-cols-2 gap-2">
+                <FormSelect
+                formik={formik}
                 label="Recurring Period*"
                 name={`productOfferings[${index}].recurringChargePeriodType`}
                 value={offering.recurringChargePeriodType}
@@ -177,6 +183,35 @@ const OpportunityStep3 = ({ formik }) => {
                   { value: 'monthly', label: 'Monthly' },
                   { value: 'annually', label: 'Annually' }
                 ]}
+              />
+              <FormInput
+                formik={formik}
+                  name={`productOfferings[${index}].term_month`}
+                  type="number"
+                  label="Term in months"
+                  min="1"
+                  step="1"
+                  value={offering.term_month}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  //className="w-full rounded py-2 px-2"
+                  //noLabel
+              />
+              </div>
+            ):(
+              <FormInput
+                formik={formik}
+                  name={`productOfferings[${index}].quantity`}
+                  type="number"
+                  label="Quantity"
+                  min="1"
+                  step="1"
+                  default="1"
+                  value={offering.quantity}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  //className="w-full rounded py-2 px-2"
+                  //noLabel
               />
             )}
 

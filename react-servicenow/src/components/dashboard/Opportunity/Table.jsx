@@ -9,12 +9,12 @@ import {
 import OpportunityStep4 from './Steps/DetailsModal';
 
 
-function OpportunityTable({ setOpenForm, searchQuery }) {
+function OpportunityTable({ setOpen, searchQuery }) {
 
-  const [visible, setVisible] = useState(false);
+  const [selectedOpportunity, setSelectedOpportunity] = useState(null);
 
-  const showModal = () => setVisible(true);
-  const hideModal = () => setVisible(false);
+  const showModal = (record) => setSelectedOpportunity(record);
+  const hideModal = () => setSelectedOpportunity(null);
 
   const dispatch = useDispatch();
   const {
@@ -143,33 +143,20 @@ function OpportunityTable({ setOpenForm, searchQuery }) {
             </Popconfirm>
           </Tooltip>
           <>
-            <Tooltip title="See More Details">
-              <button 
-                className="mx-2 text-gray-500 hover:text-green-600"
-                onClick={showModal}
-                
-              >
-                <i className="ri-eye-line text-2xl"></i>
-              </button>
-            </Tooltip>
-            
-            <Modal
-             
-              open={visible}
-              onCancel={hideModal}
-              footer={null}
-              width={800}
+          <Tooltip title="See More Details">
+            <button 
+              className="mx-2 text-gray-500 hover:text-green-600"
+              onClick={() => showModal(record)}
             >
-              <OpportunityStep4 
-                initialData={record}
-              />
-            </Modal>
+              <i className="ri-eye-line text-2xl"></i>
+            </button>
+          </Tooltip>
           </>
         </div>
       ),
     },
   ];
-  console.log(opportunities)
+
 
   if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
   if (error) {
@@ -205,6 +192,19 @@ function OpportunityTable({ setOpenForm, searchQuery }) {
 
         />
       </div>
+
+      <Modal
+        open={!!selectedOpportunity}
+        onCancel={hideModal}
+        footer={null}
+        width={800}
+      >
+        {selectedOpportunity && (
+          <OpportunityStep4 
+            initialData={selectedOpportunity}
+          />
+        )}
+      </Modal>
       
     </div>
   );

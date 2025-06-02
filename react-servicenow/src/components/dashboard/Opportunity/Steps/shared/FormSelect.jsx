@@ -35,9 +35,7 @@ const FormSelect = ({
     }
 }
 
-  console.log(name);
-  console.log(error);
-  console.log(touched);
+
   
   return (
     <div className={`mb-4 ${className}`}>
@@ -47,7 +45,7 @@ const FormSelect = ({
         value={value}
         onChange={onChange}
         onBlur={onBlur}
-        className={`w-full border rounded px-3 py-2 ${error ? 'border-red-500' : 'border-gray-300'}`}
+        className={`w-full border rounded px-3 py-2.5 ${error ? 'border-red-500' : 'border-gray-300'}`}
         {...props}
       >
         <option value="">Select {label}</option>

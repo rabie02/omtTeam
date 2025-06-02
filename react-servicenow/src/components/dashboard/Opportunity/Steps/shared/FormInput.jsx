@@ -43,9 +43,9 @@ const FormInput = ({ formik, name, label, type = 'text', inputRef, autoFocus, ..
     }
 }
 
-  console.log(name);
-  console.log(error);
-  console.log(touched);
+  // console.log(name);
+  // console.log(error);
+  // console.log(touched);
 
   return (
     <div>
@@ -56,7 +56,7 @@ const FormInput = ({ formik, name, label, type = 'text', inputRef, autoFocus, ..
         value={value}
         onChange={formik.handleChange}
         onBlur={formik.handleBlur}
-        className={`w-full border rounded px-3 py-2 ${error ? 'border-red-500' : 'border-gray-700'}`}
+        className={`w-full border rounded px-3 py-2 ${error ? 'border-red-500' : 'border-gray-300'}`}
         ref={inputRef}
         autoFocus={autoFocus}
         {...props}

@@ -17,7 +17,7 @@ async function createOpportunity(req, res=null) {
         return res?.status(400).json({ error: 'Invalid start date format' });
       }
       
-      if (startDate > currentDate) {
+      if (startDate < currentDate) {
         return res?.status(400).json({ error: 'Start date cannot be in the future' });
       }
     }
