@@ -4,8 +4,19 @@ const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 const mongoose = require('mongoose');
 
-module.exports = async (req, res) => {
+async function deletePriceList (req, res = null){
   try {
+    // Extract ID from either req.params.id or req.id
+    const priceListId = req.params?.id || req.id;
+    
+    if (!priceListId) {
+      const error = "Price list ID is required";
+      if (res) {
+        return res.status(400).json({ error });
+      }
+      throw new Error(error);
+    }
+
     // First, find the document in MongoDB to get the sys_id
     let priceListDoc;
     try {
@@ -59,4 +70,11 @@ module.exports = async (req, res) => {
     const message = error.response?.data?.error?.message || error.message;
     res.status(status).json({ error: message });
   }
+}
+// Original Express route handler for backward compatibility
+module.exports = async (req, res) => {
+  return deletePriceList(req, res);
 };
+
+// Export the function for reuse
+module.exports.deletePriceList = deletePriceList;

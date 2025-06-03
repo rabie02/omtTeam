@@ -5,6 +5,8 @@ const createPriceList = require('../PriceList/createPriceList');
 const createPOPrice = require('../ProductOfferingPrice/createProductOfferingPrice');
 const createOpportunityLineItem = require('../OpportunityLine/createOpportunityLine');
 const deleteOpportunityLine = require('../OpportunityLine/deleteOpportuityline');
+const priceList = require("../../models/priceList");
+const deletePriceList = require("../PriceList/deletePriceList");
 
 const editOpportunityPrices = async (req, res) => {
   const { opportunityId, newPrices, priceListData } = req.body;
@@ -13,7 +15,8 @@ const editOpportunityPrices = async (req, res) => {
     // 1. Get existing opportunity with account info
     const opportunity = await Opportunity.findById(opportunityId)
       .select('account price_list')
-      .populate('account', '_id sys_id');
+      .populate('account', '_id sys_id')
+      .populate('price_list', '_id sys_id name');
 
     if (!opportunity) {
       return res.status(404).json({
@@ -21,6 +24,9 @@ const editOpportunityPrices = async (req, res) => {
         error: 'Opportunity not found'
       });
     }
+    // Store old price list ID for deletion later
+    const oldPriceListId = opportunity.price_list._id;
+
     // Get existing opportunity line items to delete
     const existingLineItems = await opportunityLine.find({
       opportunity: opportunityId
@@ -107,15 +113,29 @@ const editOpportunityPrices = async (req, res) => {
         }];
       }
     }, Promise.resolve([]));
-
-
-
+   
+    
 
     // 5. Update opportunity to use new price list
     await Opportunity.findByIdAndUpdate(opportunityId, {
       price_list: newPriceList._id
     });
+//delete old price list
+    if (oldPriceListId) {
+      try {
+        const deleteReq = {
+          params: { id: oldPriceListId.toString() },
+          user: req.user
+        };
+        await deletePriceList( deleteReq);
+        console.log('Successfully deleted old price list:', oldPriceListId);
 
+      } catch (error) {
+        console.error('Failed to delete old price list:', error);
+        console.warn('Warning: Main operation succeeded but old price list cleanup failed');
+
+      }
+    }
     // 6 Check results and respond
     const allSuccessful = results.every(result => result.success);
     if (allSuccessful) {
