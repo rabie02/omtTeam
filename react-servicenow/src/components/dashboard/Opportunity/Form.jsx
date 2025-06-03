@@ -618,7 +618,7 @@ function OpportunityForm({ open, setOpen, dispatch }) {
       onCancel={handleCancel}
       footer={null}
       width={800}
-      destroyOnClose
+      destroyOnHidden
     >
       <Steps current={currentStep} className="mb-6">
         <Step title="Opportunity" />

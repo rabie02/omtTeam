@@ -57,7 +57,7 @@ export const getOpportunities = createAsyncThunk(
          },
         
       );
-      console.log(response);
+      
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -65,16 +65,16 @@ export const getOpportunities = createAsyncThunk(
   }
 );
 
-export const updateOpportunityStatus = createAsyncThunk(
-  'opportunity/updateOpportunityStatus',
-  async ({ id, status }, { rejectWithValue }) => {
+export const updateOpportunityPricing = createAsyncThunk(
+  'opportunity/updateOpportunityPricing',
+  async ({ body }, { rejectWithValue }) => {
     try {
       const response = await axios.patch(
-        `${backendUrl}/api/opportunity/${id}`,
-        { state: status },
+        `${backendUrl}/api/opportunity-edit`,
+        body,
         { headers: getHeaders() }
       );
-      return response.data.result;
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -298,19 +298,19 @@ const opportunitySlice = createSlice({
       })
 
       // Update Opportunity Status
-      .addCase(updateOpportunityStatus.pending, (state) => {
+      .addCase(updateOpportunityPricing.pending, (state) => {
         state.loading = true;
       })
-      .addCase(updateOpportunityStatus.fulfilled, (state, action) => {
+      .addCase(updateOpportunityPricing.fulfilled, (state, action) => {
         state.loading = false;
         const index = state.opportunities.findIndex(
-          opp => opp.sys_id === action.payload.sys_id
+          opp => opp._id === action.payload.opportunityId
         );
         if (index !== -1) {
           state.opportunities[index] = action.payload;
         }
       })
-      .addCase(updateOpportunityStatus.rejected, (state, action) => {
+      .addCase(updateOpportunityPricing.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.error?.message || 'Failed to update opportunity status';
       })

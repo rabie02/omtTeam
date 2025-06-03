@@ -23,7 +23,7 @@ const OpportunityStep2 = ({ formik }) => {
       
       {formik.values.createNewPriceList ? (
         <>
-        <div class="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-4">
           <span className="col-span-3">
             <FormInput
             formik={formik}
@@ -58,7 +58,7 @@ const OpportunityStep2 = ({ formik }) => {
                 onChange={formik.handleChange}
         onBlur={formik.handleBlur}
             /> */}
-          <div class="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <FormInput
             formik={formik}
             name="priceList.start_date"

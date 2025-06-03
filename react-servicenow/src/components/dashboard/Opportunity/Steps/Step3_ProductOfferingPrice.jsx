@@ -171,7 +171,7 @@ const OpportunityStep3 = ({ formik }) => {
             
 
             {offering.priceType === 'recurring' ? (
-              <div class="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <FormSelect
                 formik={formik}
                 label="Recurring Period*"
