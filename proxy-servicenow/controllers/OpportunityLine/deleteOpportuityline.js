@@ -4,15 +4,17 @@ const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 const mongoose = require('mongoose');
 
-module.exports = async (req, res) => {
+async function deleteOpportunityLine(req, res = null){
   try {
+    // Get the ID from params or direct parameter
+    const lineItemId = req.params?.id || req.id || req;
     // First, verify valid MongoDB ID and find the document to get sys_id
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    if (!mongoose.Types.ObjectId.isValid(lineItemId)) {
       return res.status(400).json({ error: "Invalid MongoDB ID format" });
     }
 
     // Find the document in MongoDB by _id
-    const opportunityLineDoc = await OpportunityLine.findById(req.params.id);
+    const opportunityLineDoc = await OpportunityLine.findById(lineItemId);
     
     if (!opportunityLineDoc) {
       return res.status(404).json({ error: "OpportunityLine not found in MongoDB" });
@@ -36,7 +38,7 @@ module.exports = async (req, res) => {
     
     // Delete from MongoDB using _id
     try {
-      await OpportunityLine.findByIdAndDelete(req.params.id);
+      await OpportunityLine.findByIdAndDelete(lineItemId);
     } catch (mongoError) {
       return handleMongoError(res, snResponse.data, mongoError, 'delete');
     }
@@ -44,7 +46,7 @@ module.exports = async (req, res) => {
     // Return success response with both IDs for traceability
     res.json({
       message: "Opportunity Line deleted successfully",
-      mongoId: req.params.id,
+      mongoId: lineItemId,
       serviceNowId: sysId,
       serviceNowResponse: snResponse.data
     });
@@ -54,4 +56,12 @@ module.exports = async (req, res) => {
     const message = error.response?.data?.error?.message || error.message;
     res.status(status).json({ error: message });
   }
+}
+
+// Original Express route handler for backward compatibility
+module.exports = async (req, res) => {
+    return deleteOpportunityLine(req, res);
 };
+  
+  // Export the function for reuse
+module.exports.deleteOpportunityLine = deleteOpportunityLine;
