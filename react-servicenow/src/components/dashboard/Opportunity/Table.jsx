@@ -8,16 +8,11 @@ import {
   updateOpportunityPricing
 } from '../../../features/servicenow/opportunity/opportunitySlice';
 import OpportunityStep4 from './Steps/DetailsModal';
-import UpdatePricingModal from './Steps/UpdatePricingModal';
 
 
-function OpportunityTable({ searchQuery }) {
+function OpportunityTable({ setData, setOpen, searchQuery }) {
 
   const [selectedOpportunity, setSelectedOpportunity] = useState(null);
-  const [pricingModalVisible, setPricingModalVisible] = useState(false);
-  const [currentOpportunity, setCurrentOpportunity] = useState(null);
-  const [updateLoading, setUpdateLoading] = useState(false);
-
   const showModal = (record) => setSelectedOpportunity(record);
   const hideModal = () => setSelectedOpportunity(null);
 
@@ -69,29 +64,12 @@ function OpportunityTable({ searchQuery }) {
       };
 
   const showPricingModal = (record) => {
-    setCurrentOpportunity(record);
-    setPricingModalVisible(true);
+    setData(record);
+    setOpen(true);
+    
   };
 
-  const handlePricingSubmit = async (payload) => {
-    try {
-      setUpdateLoading(true);
-      await dispatch(updateOpportunityPricing(payload));
-      notification.success({
-        message: 'Pricing Updated',
-        description: 'Pricing has been updated successfully',
-      });
-      setPricingModalVisible(false);
-    } catch (error) {
-      console.error('Pricing update failed:', error);
-      notification.error({
-        message: 'Update Failed',
-        description: error.message || 'Failed to update pricing. Please try again.',
-      });
-    } finally {
-      setUpdateLoading(false);
-    }
-  };
+
 
   const columns = [
     {
@@ -242,14 +220,7 @@ function OpportunityTable({ searchQuery }) {
         )}
       </Modal>
 
-      {currentOpportunity !== null && <UpdatePricingModal
-        visible={pricingModalVisible}
-        onCancel={() => setPricingModalVisible(false)}
-        opportunity={currentOpportunity}
-        productOfferings={productOfferingPrices}
-        onSubmit={handlePricingSubmit}
-        loading={updateLoading}
-      />}
+
       
     </div>
   );

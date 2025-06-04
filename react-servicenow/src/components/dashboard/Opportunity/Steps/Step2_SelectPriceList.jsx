@@ -5,13 +5,13 @@ import  FormRadioGroup  from './shared/FormRadioGroup';
 import {useSelector} from 'react-redux';
 
 
-const OpportunityStep2 = ({ formik }) => {
+const OpportunityStep2 = ({ formik, editMode=false }) => {
   const { priceLists } = useSelector((state) => state.priceList);
 
   return (
     <div className="space-y-4 mt-4">
       <h3 className="text-lg font-medium">Price List Selection</h3>
-      
+      {editMode && <p className="text-red-300">if you want to edit the prices you must create a new price list</p>}
       <FormRadioGroup
         formik={formik}
         name="createNewPriceList"

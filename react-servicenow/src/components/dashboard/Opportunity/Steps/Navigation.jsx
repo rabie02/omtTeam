@@ -9,7 +9,8 @@ const OpportunityNavigation = ({
   handleCancel,
   formik, 
   downloadPDF,
-  resetForm
+  resetForm,
+  editMode
 }) => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,6 +49,7 @@ const OpportunityNavigation = ({
             type="button"
             className="px-4 py-2 rounded border bg-red-200 hover:bg-gray-300"
             onClick={downloadPDF}
+            hidden={editMode}
           >
             Download as PDF
           </button>
@@ -70,7 +72,7 @@ const OpportunityNavigation = ({
             disabled={loading}
             className="px-4 py-2 rounded bg-cyan-700 text-white hover:bg-cyan-800"
           >
-            {loading ? 'Creating...' : 'Create Opportunity'}
+            {loading ? 'Creating...' : ( editMode ? 'Update Opportunity':'Create Opportunity')}
           </button>
         )}
         
@@ -86,6 +88,7 @@ const OpportunityNavigation = ({
             type="button"
             onClick={showModal}
             className="px-4 py-2 rounded border bg-gray-200 text-red-400 hover:bg-red-400 hover:text-white"
+            disabled={editMode}
           >
             Reset & Close
           </button>
