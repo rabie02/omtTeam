@@ -41,29 +41,35 @@ const editOpportunityPrices = async (req, res) => {
     const newPriceList = await createPriceList(payload);
 
     // delete old opp line item 
-
-    const deletePromises = existingLineItems.map(async (lineItem) => {
+    const deleteResults = await Promise.all(
+      existingLineItems.map(async (lineItemId) => {
+        try {
+          await deleteOpportunityLine({
+            params: { id: lineItemId._id.toString() },
+            user: req.user
+          });
+          console.log("deleted");
+          return { success: true, id: lineItemId._id };
+        } catch (error) {
+          console.error('Failed to delete line item:', error);
+          return { success: false, id: lineItemId._id, error: error.message };
+        }
+      })
+    );
+    //delete old price list also 
+    let priceListDeletionResult = { success: false };
+    if (oldPriceListId) {
       try {
-        const deleteReq = {
-          id: lineItem._id.toString(),
+        priceListDeletionResult = await deletePriceList({
+          params: { id: oldPriceListId.toString() },
           user: req.user
-        };
-
-        await deleteOpportunityLine(deleteReq);
-        return { success: true, deletedId: lineItem._id };
+        });
+        priceListDeletionResult.success = true;
       } catch (error) {
-        console.error(`Failed to delete line item ${lineItem._id}:`, error);
-        return { success: false, error: error.message, lineItemId: lineItem._id };
+        console.error('Price list cleanup failed:', error);
+        priceListDeletionResult.error = error.message;
       }
-    });
-
-    const deleteResults = await Promise.all(deletePromises);
-    const deletionErrors = deleteResults.filter(result => !result.success);
-
-    if (deletionErrors.length > 0) {
-      console.warn('Some line items failed to delete:', deletionErrors);
     }
-
     // 3. Create new product offering prices for the new price list
     const results = await newPrices.reduce(async (previousPromise, priceData) => {
       const accumulatedResults = await previousPromise;
@@ -113,29 +119,14 @@ const editOpportunityPrices = async (req, res) => {
         }];
       }
     }, Promise.resolve([]));
-   
-    
+
+
 
     // 5. Update opportunity to use new price list
     await Opportunity.findByIdAndUpdate(opportunityId, {
       price_list: newPriceList._id
     });
-//delete old price list
-    if (oldPriceListId) {
-      try {
-        const deleteReq = {
-          params: { id: oldPriceListId.toString() },
-          user: req.user
-        };
-        await deletePriceList( deleteReq);
-        console.log('Successfully deleted old price list:', oldPriceListId);
 
-      } catch (error) {
-        console.error('Failed to delete old price list:', error);
-        console.warn('Warning: Main operation succeeded but old price list cleanup failed');
-
-      }
-    }
     // 6 Check results and respond
     const allSuccessful = results.every(result => result.success);
     if (allSuccessful) {
@@ -147,9 +138,18 @@ const editOpportunityPrices = async (req, res) => {
             _id: newPriceList._id,
             name: newPriceList.name
           },
-          deletedLineItems: deleteResults.filter(r => r.success).length,
-          createdLineItems: results.length,
-          lineItemResults: results
+          deletedItems: {
+            lineItems: {
+              attempted: existingLineItems.length,
+              successful: deleteResults.filter(r => r.success).length,
+              failed: deleteResults.filter(r => !r.success).length
+            },
+            priceList: priceListDeletionResult.success ? 'success' : 'failed'
+          },
+          creations: { 
+            createdLineItems: results.length,
+            details : results
+          }
         }
       });
     } else {
@@ -165,11 +165,9 @@ const editOpportunityPrices = async (req, res) => {
     console.error('Error in opportunity creation:', error);
     const status = error.response?.status || 500;
     const message = error.response?.data?.error?.message || error.message;
-    const mongoError = handleMongoError(error);
     return res.status(status).json({
       success: false,
       error: message,
-      mongoError: mongoError.message
     });
   }
 };

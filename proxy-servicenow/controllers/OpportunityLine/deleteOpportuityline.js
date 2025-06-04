@@ -42,26 +42,35 @@ async function deleteOpportunityLine(req, res = null){
     } catch (mongoError) {
       return handleMongoError(res, snResponse.data, mongoError, 'delete');
     }
-    
-    // Return success response with both IDs for traceability
-    res.json({
+    const succcesResponse = {
+      success : true,
       message: "Opportunity Line deleted successfully",
       mongoId: lineItemId,
       serviceNowId: sysId,
       serviceNowResponse: snResponse.data
-    });
+    }
+    // Return success response with both IDs for traceability
+    if (res) {
+      res.json(succcesResponse);
+    }
+    return succcesResponse;
   } catch (error) {
     console.error('Error deleting opportunity line:', error);
-    const status = error.response?.status || 500;
-    const message = error.response?.data?.error?.message || error.message;
-    res.status(status).json({ error: message });
+    const errorResponse = {
+      success: false,
+      error: error.response?.data?.error?.message || error.message,
+      status: error.response?.status || 500
+    };
+    if (res) {
+      res.status(errorResponse.status).json(errorResponse);
+    }else{
+      throw error;
+    }
   }
 }
 
 // Original Express route handler for backward compatibility
-module.exports = async (req, res) => {
-    return deleteOpportunityLine(req, res);
-};
+module.exports = deleteOpportunityLine;
   
   // Export the function for reuse
 module.exports.deleteOpportunityLine = deleteOpportunityLine;
