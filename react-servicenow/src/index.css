@@ -4,6 +4,27 @@
     border-radius: 0px !important;
 }
 
+/* For Chrome, Edge, and Safari */
+::-webkit-scrollbar {
+  width: 10px;              /* width of vertical scrollbar */
+  height: 12px;             /* height of horizontal scrollbar */
+}
+
+::-webkit-scrollbar-track {
+  background: #00759536;      /* track color */
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #005f78;   /* thumb color */
+  border-radius: 0px;       /* round corners */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #007595;
+}
+
+
+
 /* pagination css */
 .ant-pagination-item-active {
     border-color: #0891b2 !important;
