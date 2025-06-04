@@ -3,6 +3,8 @@ const router = express.Router();
 
 // Import controllers
 const getAll = require('../../controllers/Opportunity/getAllOpportunity');
+const getOne = require('../../controllers/Opportunity/getOneOpportuntity');
+
 const create = require('../../controllers/Opportunity/createOpportunity');
 const updateOpportunity = require('../../controllers/Opportunity/updateOpportunity');
 const deleteOpportunity = require('../../controllers/Opportunity/deleteOpportunity');
@@ -14,6 +16,8 @@ const getStages = require('../../controllers/Opportunity/Stages/getAll');
 
 // Define routes
 router.get('/opportunity', getAll);
+router.get('/opportunity/:id', getOne);
+
 router.post('/opportunity', create);
 router.patch('/opportunity/:id', updateOpportunity);
 router.delete('/opportunity/:id', deleteOpportunity);
