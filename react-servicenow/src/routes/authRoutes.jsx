@@ -2,15 +2,21 @@
 import React from 'react';
 import Register from '../views/auth/Register';
 import Login from '../views/auth/login';
-import PrivateRoute from '../middleware/PrivateRoute';
+import IsAuth from '../middleware/IsAuth';
 import CreateAccount from '../components/createAccount/createAccount';
 
-// routes/auth.js
 const authRoutes = [
-  { path: '/', element: <Login /> },
-  { path: '/register', element:<Register /> },
-    { path: '/createAccount', element:<CreateAccount /> },
+  // { path: '/', element: <Login /> },
+  // { path: '/register', element: <Register /> },
+  {
+    path: '/',
+    element: (
+      <IsAuth>
+        <Login />
+      </IsAuth>
+    ),
+  },
   // ... other routes
 ];
 
-export default authRoutes; 
+export default authRoutes;
