@@ -4,9 +4,10 @@ import { Popconfirm, Empty, Spin, Table, notification, Tooltip, Modal, Paginatio
 import { 
   getOpportunities,
   deleteOpportunity,
-  getProductOfferingPrice,
-  updateOpportunityPricing
+  generateContract,
+  downloadContract
 } from '../../../features/servicenow/opportunity/opportunitySlice';
+import {getAll as getProductOfferingPrice} from '../../../features/servicenow/product-offering-price/productOfferingPriceSlice';
 import OpportunityStep4 from './Steps/DetailsModal';
 
 
@@ -69,6 +70,40 @@ function OpportunityTable({ setData, setOpen, searchQuery }) {
     
   };
 
+  const handleGenerateContract = async (opportunityId) =>{
+    try {
+      await dispatch(generateContract(opportunityId));
+      notification.success({
+          message: 'Contract Generated',
+          description: 'Contract has been generated successfully',
+      });
+      //dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
+    } catch (error) {
+        console.error('Generation failed:', error);
+        notification.error({
+            message: 'Generation Failed',
+            description: error.message || 'Failed to generate Contract. Please try again.',
+        });
+    }
+  }
+
+  const handleDownloadContract = async (contractId) =>{
+    try {
+      await dispatch(downloadContract(contractId));
+      notification.success({
+          message: 'Contract Downloaded',
+          description: 'Contract has been downloaded successfully',
+      });
+      //dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
+    } catch (error) {
+        console.error('Download failed:', error);
+        notification.error({
+            message: 'Download Failed',
+            description: error.message || 'Failed to download Contract. Please try again.',
+        });
+    }
+  }
+
 
 
   const columns = [
@@ -118,7 +153,7 @@ function OpportunityTable({ setData, setOpen, searchQuery }) {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => ( record!==undefined &&
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           {/* <Popconfirm
             title="Change Status"
             description={`Are you sure you want to ${record.state === 'published' ? 'retire' : 'publish'} this opportunity?`}
@@ -166,6 +201,26 @@ function OpportunityTable({ setData, setOpen, searchQuery }) {
                 <i className="ri-pencil-line text-2xl"></i>
             </button>
         </Tooltip>
+        <Tooltip title={ (record.contract ? "Download":"Generate") +" Contract"}>
+        {record.contract ? 
+              <button 
+                className=" text-gray-500 hover:text-orange-300"
+                onClick={() => handleDownloadContract(record.contract._id)}
+                >
+                  <i className="ri-contract-fill text-2xl"></i>
+              </button> : 
+              <Popconfirm
+                title={"Generate Contract"}
+                description="Are you sure to Generate this opportunity's contract?"
+                onConfirm={() => handleGenerateContract(record._id)}
+              >
+                <button className=" text-gray-500 hover:text-orange-300">
+                    <i className="ri-contract-line text-2xl"></i>
+                </button>
+              </Popconfirm>
+              }
+            
+          </Tooltip>
         </div>
       ),
     },

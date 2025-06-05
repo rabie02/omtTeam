@@ -24,6 +24,15 @@ const store = configureStore({
     quotes: quoteReducer,
     productOfferingPrice: productOfferingPriceReducer
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        // Ignore these action types
+        ignoredActions: ['opportunity/downloadContract/fulfilled'],
+        // Ignore these paths in the state
+        ignoredPaths: ['opportunity.downloadContract.file']
+      }
+    })
 });
 
 export default store;

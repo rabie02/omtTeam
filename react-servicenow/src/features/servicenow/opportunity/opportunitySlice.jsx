@@ -96,58 +96,6 @@ export const deleteOpportunity = createAsyncThunk(
   }
 );
 
-
-
-// 3. Product Offering Price CRUD operations
-export const createProductOfferingPrice = createAsyncThunk(
-  'opportunity/createProductOfferingPrice',
-  async (productOfferingPriceData, { rejectWithValue }) => {
-    try {
-      const response = await axios.post(
-        `${backendUrl}/api/product-offering-price`,
-        productOfferingPriceData,
-        { headers: getHeaders() }
-      );
-      return response.data.result;
-    } catch (error) {
-      return rejectWithValue(error.response.data);
-    }
-  }
-);
-
-//get Product offering prices
-export const getProductOfferingPrice = createAsyncThunk(
-  'opportunity/getProductOfferingPrice',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await axios.get(
-        `${backendUrl}/api/product-offering-price`,
-        { headers: getHeaders() }
-      );
-      return response.data.result;
-    } catch (error) {
-      return rejectWithValue(error.response.data);
-    }
-  }
-);
-
-// 4. Opportunity Line Item CRUD operations
-export const createOpportunityLineItem = createAsyncThunk(
-  'opportunity/createOpportunityLineItem',
-  async (lineItemData, { rejectWithValue }) => {
-    try {
-      const response = await axios.post(
-        `${backendUrl}/api/opportunity-line-item`,
-        lineItemData,
-        { headers: getHeaders() }
-      );
-      return response.data.result;
-    } catch (error) {
-      return rejectWithValue(error.response.data);
-    }
-  }
-);
-
 // Reference data fetchers
 export const getSalesCycleTypes = createAsyncThunk(
   'opportunity/getSalesCycleTypes',
@@ -210,20 +158,44 @@ export const getUnitOfMeasures = createAsyncThunk(
   }
 );
 
-export const getProductOfferings = createAsyncThunk(
-  'opportunity/getProductOfferings',
-  async (_, { rejectWithValue }) => {
+
+export const generateContract = createAsyncThunk(
+  'opportunity/generateContract',
+  async (op_id, { rejectWithValue }) => {
     try {
       const response = await axios.get(
-        `${backendUrl}/api/product-offering-sn`,
-        { headers: getHeaders() }
+        `${backendUrl}/api/opportunity-generate-contract/${op_id}`,
+        {headers: getHeaders()},
+        
       );
-      return response.data.result;
+      
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
   }
 );
+
+export const downloadContract = createAsyncThunk(
+  'opportunity/downloadContract',
+  async (contract_id, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(
+        `${backendUrl}/api/opportunity-download-contract/${contract_id}`,
+        {
+          headers: getHeaders(),
+          responseType: 'blob'
+        },
+        
+      );
+      
+      return {id: contract_id, file:response.data};
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 
 const initialState = {
   opportunities: [],
@@ -231,8 +203,6 @@ const initialState = {
   stages: [],
   accounts: [],
   unitOfMeasures: [],
-  productOfferings: [],
-  productOfferingPrices:[],
   loading: false,
   error: null,
   currentPage: 1,
@@ -330,43 +300,6 @@ const opportunitySlice = createSlice({
         state.error = action.payload?.error?.message || 'Failed to delete opportunity';
       })
 
-      // Create Product Offering Price
-      .addCase(createProductOfferingPrice.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(createProductOfferingPrice.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(createProductOfferingPrice.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload?.error?.message || 'Failed to create product offering price';
-      })
-
-      // Get Product Offering Prices
-      .addCase(getProductOfferingPrice.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(getProductOfferingPrice.fulfilled, (state, action) => {
-        state.loading = false;
-        state.productOfferingPrices = action.payload;
-      })
-      .addCase(getProductOfferingPrice.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload?.error?.message || 'Failed to fetch sales cycle types';
-      })
-
-      // Create Opportunity Line Item
-      .addCase(createOpportunityLineItem.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(createOpportunityLineItem.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(createOpportunityLineItem.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload?.error?.message || 'Failed to create opportunity line item';
-      })
-
       // Get Sales Cycle Types
       .addCase(getSalesCycleTypes.pending, (state) => {
         state.loading = true;
@@ -419,17 +352,53 @@ const opportunitySlice = createSlice({
         state.error = action.payload?.error?.message || 'Failed to fetch unit of measures';
       })
 
-      // Get Product Offerings
-      .addCase(getProductOfferings.pending, (state) => {
+
+      // Generate Contract
+      .addCase(generateContract.pending, (state) => {
         state.loading = true;
       })
-      .addCase(getProductOfferings.fulfilled, (state, action) => {
+      .addCase(generateContract.fulfilled, (state, action) => {
         state.loading = false;
-        state.productOfferings = action.payload;
+        const index = state.opportunities.findIndex(
+          opp => opp._id === action.payload.opportunity
+        );
+        if (index !== -1) {
+          state.opportunities[index].contract = action.payload;
+        }
       })
-      .addCase(getProductOfferings.rejected, (state, action) => {
+      .addCase(generateContract.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.error?.message || 'Failed to fetch product offerings';
+        state.error = action.payload?.error || 'Failed to generate contract';
+      })
+
+
+      // Download Contract
+      .addCase(downloadContract.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(downloadContract.fulfilled, (state, action) => {
+        const id =action.payload.id;
+        const file = action.payload.file;
+        state.loading = false;
+        const opportunity = state.opportunities.find(
+          opp => opp.contract && opp.contract._id === id
+        );
+
+        let fileName = opportunity ? opportunity.contract.file_name :'contract.pdf';
+        
+        // Download the file
+        const url = window.URL.createObjectURL(file);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      })
+      .addCase(downloadContract.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.error || 'Failed to download contract';
       });
   },
 });

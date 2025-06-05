@@ -10,7 +10,8 @@ const workflow = require('../../controllers/Opportunity/workflow');
 const workflowEdit = require('../../controllers/Opportunity/editPriceWorkflow');
 const getCycles = require('../../controllers/Opportunity/SalesCycleType/getAll');
 const getStages = require('../../controllers/Opportunity/Stages/getAll');
-
+const generateContract = require('../../controllers/Opportunity/Contract/generateContract');
+const downloadContract = require('../../controllers/Opportunity/Contract/downloadContract');
 
 // Define routes
 router.get('/opportunity', getAll);
@@ -26,5 +27,7 @@ router.patch('/opportunity-edit', workflowEdit);
 router.get('/opportunity-stage', getStages);
 //Sales cycle type
 router.get('/opportunity-sales-cycle-type', getCycles);
+router.get('/opportunity-generate-contract/:id',generateContract)
+router.get('/opportunity-download-contract/:id',downloadContract)
 
 module.exports = router;
