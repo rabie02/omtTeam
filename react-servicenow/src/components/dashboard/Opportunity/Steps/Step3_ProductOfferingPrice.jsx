@@ -22,10 +22,10 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
     productOfferingPrices: pops 
   } = useSelector(selectOpportunityData, shallowEqual);
 
-
+console.log(pops)
   let minDate = "";
   let maxDate = "";
-  let editable = false;
+  let editable = !editMode;
   
   if(formik.values.createNewPriceList){
     minDate = formik.values.priceList.start_date;
@@ -69,6 +69,34 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
     }
   }, [editMode, pops, lineItems]); // Only run when these dependencies change
 
+  useEffect(() => {
+    if (pops?.length && !editMode) {
+      // Create the new product offerings array
+      const newProductOfferings = pops.map((pop) => {
+        console.log(pop)
+        return {
+          name: pop.name,
+          price: pop.price,
+          productOffering: { id: pop.productOffering },
+          unitOfMeasure: { id: pop.unitOfMeasure.id },
+          priceType: pop.priceType,
+          recurringChargePeriodType: pop.recurringChargePeriodType,
+          validFor: {
+            startDateTime: formatDateForInput(pop.validFor.startDateTime),
+            endDateTime: formatDateForInput(pop.validFor.endDateTime)
+          },
+          term_month: pop.term_month,
+          quantity: pop.quantity
+        };
+      }).filter(Boolean); // Remove any null entries
+  
+      // Only update if the values are different
+      if (JSON.stringify(newProductOfferings) !== JSON.stringify(formik.values.productOfferings)) {
+        formik.setFieldValue('productOfferings', newProductOfferings);
+      }
+    }
+  }, [pops]); // Only run when these dependencies change
+
 
   const addProductOffering = () => {
     
@@ -87,11 +115,11 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
         },
         term_month: '12',
         quantity: '1',
+        new: editMode
       }
     ]);
   };
   
-
 
   const removeProductOffering = (index) => {
     const newOfferings = [...formik.values.productOfferings];
@@ -104,7 +132,12 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
     return allOfferings.filter(p => p._id === id);
   }
 
-
+  // Get all currently selected product offering IDs except the current one
+  const getSelectedProductOfferings = (currentIndex) => {
+    return formik.values.productOfferings
+      .filter((_, index) => index !== currentIndex)
+      .map(item => item.productOffering.id);
+  };
 
   return (
     <div className="space-y-4 mt-4">
@@ -137,7 +170,7 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
               value={offering.name}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              disabled={!editable}
+              disabled={!editable && !offering.new}
             />
 
             <div>
@@ -154,7 +187,7 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
                   onBlur={formik.handleBlur}
                   //className="w-full rounded py-2 px-2"
                   //noLabel
-                  disabled={!editable}
+                  disabled={!editable && !offering.new}
                 />
                 <FormSelect
                   name={`productOfferings[${index}].price.unit`}
@@ -169,7 +202,7 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
                   ]}
                   className="ml-7 mt-1"
                   //noLabel
-                  disabled={!editable}
+                  disabled={!editable && !offering.new}
                 />
               </Space.Compact>
               
@@ -181,14 +214,14 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
               name={`productOfferings[${index}].productOffering.id`}
               value={offering.productOffering.id}
               onChange={formik.handleChange}
-        onBlur={formik.handleBlur}
+              onBlur={formik.handleBlur}
               options={allOfferings
-                .filter(po => po.status.toLowerCase() === "published")
+                .filter(po => po.status.toLowerCase() === "published" && !getSelectedProductOfferings(index).includes(po._id))
                 .map(po => ({
                   value: po._id,
-                  label: po.name
+                  label: po.name,
                 }))}
-                disabled={!editable}
+              disabled={!editable && !offering.new}
             />
 
             <FormSelect
@@ -202,7 +235,7 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
                 value: uom.sys_id,
                 label: uom.name
               }))}
-              disabled={!editable}
+              disabled={!editable && !offering.new}
             />
             <FormSelect
             formik={formik}
@@ -213,7 +246,7 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
               onBlur={formik.handleBlur}
               options={filterOffering(offering.productOffering.id)[0].productOfferingPrice[0].price.taxIncludedAmount.value !=="0" && filterOffering(offering.productOffering.id)[0].productOfferingPrice[0].priceType === "recurring"? [{ value: 'recurring', label: 'Recurring' }] : [{ value: 'one_time', label: 'One-time' }]}
               //options={[{ value: 'recurring', label: 'Recurring' }, { value: 'one_time', label: 'One-time' }]}
-              disabled={!editable}
+              disabled={!editable && !offering.new}
             />
             
 
@@ -230,7 +263,7 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
                   { value: 'monthly', label: 'Monthly' },
                   { value: 'annually', label: 'Annually' }
                 ]}
-                disabled={!editable}
+                disabled={!editable && !offering.new}
               />
               <FormInput
                 formik={formik}
@@ -244,7 +277,7 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
                   onBlur={formik.handleBlur}
                   //className="w-full rounded py-2 px-2"
                   //noLabel
-                  disabled={!editable}
+                  disabled={!editable && !offering.new}
               />
               </div>
             ):(
@@ -261,7 +294,7 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
                   onBlur={formik.handleBlur}
                   //className="w-full rounded py-2 px-2"
                   //noLabel
-                  disabled={!editable}
+                  disabled={!editable && !offering.new}
               />
             )}
 
@@ -276,7 +309,7 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
               min={new Date(new Date(minDate).getTime() + 86400000).toISOString().split('T')[0]}
               max={maxDate != "" ? new Date(new Date(maxDate).getTime() - 86400000*2).toISOString().split('T')[0] : ""}
               //description="must be within the price list start/end date"
-              disabled={!editable}
+              disabled={!editable && !offering.new}
             />
 
             <FormInput
@@ -288,7 +321,7 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
               onChange={formik.handleChange}
               min={new Date(new Date(offering.validFor.startDateTime).getTime() + 86400000).toISOString().split('T')[0]}
               max={maxDate != "" ? new Date(new Date(maxDate).getTime() - 86400000).toISOString().split('T')[0] : ""}
-              disabled={!offering.validFor.startDateTime || !editable}
+              disabled={!offering.validFor.startDateTime || (!editable && !offering.new)}
             />
           </div>
           <Divider className="my-4" />

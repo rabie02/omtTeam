@@ -67,7 +67,7 @@ export const getOpportunities = createAsyncThunk(
 
 export const updateOpportunityPricing = createAsyncThunk(
   'opportunity/updateOpportunityPricing',
-  async ({ body }, { rejectWithValue }) => {
+  async ( body , { rejectWithValue }) => {
     try {
       const response = await axios.patch(
         `${backendUrl}/api/opportunity-edit`,

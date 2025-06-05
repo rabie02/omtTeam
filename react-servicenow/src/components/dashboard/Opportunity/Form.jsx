@@ -14,7 +14,8 @@ import {
   getStages,
   getAccounts,
   getUnitOfMeasures,
-  workflow
+  workflow,
+  updateOpportunityPricing
 } from '../../../features/servicenow/opportunity/opportunitySlice';
 import { getPriceList } from '../../../features/servicenow/price-list/priceListSlice';
 import { getByPriceList } from '../../../features/servicenow/product-offering-price/productOfferingPriceSlice';
@@ -306,18 +307,17 @@ useEffect(() => {
     onSubmit: async (values, { resetForm }) => {
       try {
         if(editMode){
-          console.log(JSON.stringify(values,null,2))
-          //       await dispatch(updateOpportunityPricing(payload));
-          //       notification.success({
-          //         message: 'Pricing Updated',
-          //         description: 'Pricing has been updated successfully',
-          //       });
+            await dispatch(updateOpportunityPricing(values));
+            notification.success({
+              message: 'Opportunity Updated',
+              description: 'Opportunity has been updated successfully',
+            });
         }else{
           await dispatch(workflow(values));
-        notification.success({
-          message: 'Opportunity Created',
-          description: 'New Opportunity has been created successfully',
-        });
+          notification.success({
+            message: 'Opportunity Created',
+            description: 'New Opportunity has been created successfully',
+          });
         }
         
         setOpen(false);
