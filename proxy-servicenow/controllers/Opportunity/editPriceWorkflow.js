@@ -1,12 +1,11 @@
 const Opportunity = require("../../models/opportunity");
 const opportunityLine = require("../../models/opportunityLine");
-const handleMongoError = require("../../utils/handleMongoError");
 const createPriceList = require('../PriceList/createPriceList');
 const createPOPrice = require('../ProductOfferingPrice/createProductOfferingPrice');
 const createOpportunityLineItem = require('../OpportunityLine/createOpportunityLine');
 const deleteOpportunityLine = require('../OpportunityLine/deleteOpportuityline');
-const priceList = require("../../models/priceList");
 const deletePriceList = require("../PriceList/deletePriceList");
+const getOpportunityWithDetails = require("./getOpportuntityWithdetails");
 
 const editOpportunityPrices = async (req, res) => {
   const { opportunityId, productOfferings, priceList } = req.body;
@@ -127,6 +126,9 @@ const editOpportunityPrices = async (req, res) => {
       price_list: newPriceList._id
     });
 
+    //get complet updated opp 
+    const updatedOpportunity = await getOpportunityWithDetails(opportunityId);
+
     // 6 Check results and respond
     const allSuccessful = results.every(result => result.success);
     if (allSuccessful) {
@@ -138,6 +140,7 @@ const editOpportunityPrices = async (req, res) => {
             _id: newPriceList._id,
             name: newPriceList.name
           },
+          updatedOpportunity: updatedOpportunity,
           deletedItems: {
             lineItems: {
               attempted: existingLineItems.length,
