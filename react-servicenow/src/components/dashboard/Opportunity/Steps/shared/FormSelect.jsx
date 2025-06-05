@@ -45,7 +45,7 @@ const FormSelect = ({
         value={value}
         onChange={onChange}
         onBlur={onBlur}
-        className={`w-full border rounded px-3 py-2.5 ${error ? 'border-red-500' : 'border-gray-300'}`}
+        className={`w-full border rounded px-3 py-2.5 ${error ? 'border-red-500' : 'border-gray-300'} disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500`}
         {...props}
       >
         <option value="">Select {label}</option>

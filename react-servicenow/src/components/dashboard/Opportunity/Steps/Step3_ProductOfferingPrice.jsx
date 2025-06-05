@@ -1,30 +1,101 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { Button, Space, Divider } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import  FormInput  from './shared/FormInput';
 import  FormSelect  from './shared/FormSelect';
-import {useSelector} from 'react-redux';
+import {useSelector, shallowEqual } from 'react-redux';
 import { formatDateForInput } from '@/utils/formatDateForInput.js';
 
-const OpportunityStep3 = ({ formik }) => {
+const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
   
-  const { unitOfMeasures, productOfferings: allOfferings, priceLists } = useSelector((state) => ({
-      ...state.opportunity,
-      productOfferings: state.productOffering.data || [],
-      priceLists: state.priceList.priceLists || [],
-    }));
-    
+  const selectOpportunityData = (state) => ({
+    unitOfMeasures: state.opportunity.unitOfMeasures,
+    productOfferings: state.productOffering.data ?? [],
+    priceLists: state.priceList.priceLists ?? [],
+    productOfferingPrices: state.productOfferingPrice.productOfferingPrices ?? []
+  });
+
+  const { 
+    unitOfMeasures, 
+    productOfferings: allOfferings, 
+    priceLists, 
+    productOfferingPrices: pops 
+  } = useSelector(selectOpportunityData, shallowEqual);
+
+console.log(pops)
   let minDate = "";
   let maxDate = "";
+  let editable = !editMode;
   
   if(formik.values.createNewPriceList){
     minDate = formik.values.priceList.start_date;
     maxDate = formik.values.priceList.end_date;
+    editable = true;
   }else{
     const chosenPriceList = priceLists.filter(pl =>  pl._id === formik.values.selectedPriceList );
     minDate = chosenPriceList[0].start_date;
     maxDate = chosenPriceList[0].end_date;
   }
+
+  
+
+  useEffect(() => {
+    if (editMode && pops?.length && lineItems?.length) {
+      // Create the new product offerings array
+      const newProductOfferings = lineItems.map((item) => {
+        const pop = pops.find(prod => prod.productOffering === item.productOffering._id);
+        if (!pop) return null;
+        
+        return {
+          name: pop.name,
+          price: pop.price,
+          productOffering: { id: item.productOffering._id },
+          unitOfMeasure: { id: item.unit_of_measurement.value },
+          priceType: pop.priceType,
+          recurringChargePeriodType: pop.recurringChargePeriodType,
+          validFor: {
+            startDateTime: formatDateForInput(pop.validFor.startDateTime),
+            endDateTime: formatDateForInput(pop.validFor.endDateTime)
+          },
+          term_month: item.term_month,
+          quantity: item.quantity
+        };
+      }).filter(Boolean); // Remove any null entries
+  
+      // Only update if the values are different
+      if (JSON.stringify(newProductOfferings) !== JSON.stringify(formik.values.productOfferings)) {
+        formik.setFieldValue('productOfferings', newProductOfferings);
+      }
+    }
+  }, [editMode, pops, lineItems]); // Only run when these dependencies change
+
+  useEffect(() => {
+    if (pops?.length && !editMode) {
+      // Create the new product offerings array
+      const newProductOfferings = pops.map((pop) => {
+        console.log(pop)
+        return {
+          name: pop.name,
+          price: pop.price,
+          productOffering: { id: pop.productOffering },
+          unitOfMeasure: { id: pop.unitOfMeasure.id },
+          priceType: pop.priceType,
+          recurringChargePeriodType: pop.recurringChargePeriodType,
+          validFor: {
+            startDateTime: formatDateForInput(pop.validFor.startDateTime),
+            endDateTime: formatDateForInput(pop.validFor.endDateTime)
+          },
+          term_month: pop.term_month,
+          quantity: pop.quantity
+        };
+      }).filter(Boolean); // Remove any null entries
+  
+      // Only update if the values are different
+      if (JSON.stringify(newProductOfferings) !== JSON.stringify(formik.values.productOfferings)) {
+        formik.setFieldValue('productOfferings', newProductOfferings);
+      }
+    }
+  }, [pops]); // Only run when these dependencies change
 
 
   const addProductOffering = () => {
@@ -44,11 +115,11 @@ const OpportunityStep3 = ({ formik }) => {
         },
         term_month: '12',
         quantity: '1',
+        new: editMode
       }
     ]);
   };
   
-
 
   const removeProductOffering = (index) => {
     const newOfferings = [...formik.values.productOfferings];
@@ -61,7 +132,13 @@ const OpportunityStep3 = ({ formik }) => {
     return allOfferings.filter(p => p._id === id);
   }
 
-  console.log(allOfferings)
+  // Get all currently selected product offering IDs except the current one
+  const getSelectedProductOfferings = (currentIndex) => {
+    return formik.values.productOfferings
+      .filter((_, index) => index !== currentIndex)
+      .map(item => item.productOffering.id);
+  };
+
   return (
     <div className="space-y-4 mt-4">
       <h3 className="text-lg font-medium">Opportunity Line Items</h3>
@@ -93,7 +170,7 @@ const OpportunityStep3 = ({ formik }) => {
               value={offering.name}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              
+              disabled={!editable && !offering.new}
             />
 
             <div>
@@ -110,6 +187,7 @@ const OpportunityStep3 = ({ formik }) => {
                   onBlur={formik.handleBlur}
                   //className="w-full rounded py-2 px-2"
                   //noLabel
+                  disabled={!editable && !offering.new}
                 />
                 <FormSelect
                   name={`productOfferings[${index}].price.unit`}
@@ -124,6 +202,7 @@ const OpportunityStep3 = ({ formik }) => {
                   ]}
                   className="ml-7 mt-1"
                   //noLabel
+                  disabled={!editable && !offering.new}
                 />
               </Space.Compact>
               
@@ -135,14 +214,14 @@ const OpportunityStep3 = ({ formik }) => {
               name={`productOfferings[${index}].productOffering.id`}
               value={offering.productOffering.id}
               onChange={formik.handleChange}
-        onBlur={formik.handleBlur}
+              onBlur={formik.handleBlur}
               options={allOfferings
-                .filter(po => po.status.toLowerCase() === "published")
+                .filter(po => po.status.toLowerCase() === "published" && !getSelectedProductOfferings(index).includes(po._id))
                 .map(po => ({
                   value: po._id,
-                  label: po.name
+                  label: po.name,
                 }))}
-              
+              disabled={!editable && !offering.new}
             />
 
             <FormSelect
@@ -156,7 +235,7 @@ const OpportunityStep3 = ({ formik }) => {
                 value: uom.sys_id,
                 label: uom.name
               }))}
-              
+              disabled={!editable && !offering.new}
             />
             <FormSelect
             formik={formik}
@@ -166,12 +245,13 @@ const OpportunityStep3 = ({ formik }) => {
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               options={filterOffering(offering.productOffering.id)[0].productOfferingPrice[0].price.taxIncludedAmount.value !=="0" && filterOffering(offering.productOffering.id)[0].productOfferingPrice[0].priceType === "recurring"? [{ value: 'recurring', label: 'Recurring' }] : [{ value: 'one_time', label: 'One-time' }]}
-             
+              //options={[{ value: 'recurring', label: 'Recurring' }, { value: 'one_time', label: 'One-time' }]}
+              disabled={!editable && !offering.new}
             />
             
 
             {offering.priceType === 'recurring' ? (
-              <div class="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <FormSelect
                 formik={formik}
                 label="Recurring Period*"
@@ -183,6 +263,7 @@ const OpportunityStep3 = ({ formik }) => {
                   { value: 'monthly', label: 'Monthly' },
                   { value: 'annually', label: 'Annually' }
                 ]}
+                disabled={!editable && !offering.new}
               />
               <FormInput
                 formik={formik}
@@ -196,6 +277,7 @@ const OpportunityStep3 = ({ formik }) => {
                   onBlur={formik.handleBlur}
                   //className="w-full rounded py-2 px-2"
                   //noLabel
+                  disabled={!editable && !offering.new}
               />
               </div>
             ):(
@@ -212,6 +294,7 @@ const OpportunityStep3 = ({ formik }) => {
                   onBlur={formik.handleBlur}
                   //className="w-full rounded py-2 px-2"
                   //noLabel
+                  disabled={!editable && !offering.new}
               />
             )}
 
@@ -226,6 +309,7 @@ const OpportunityStep3 = ({ formik }) => {
               min={new Date(new Date(minDate).getTime() + 86400000).toISOString().split('T')[0]}
               max={maxDate != "" ? new Date(new Date(maxDate).getTime() - 86400000*2).toISOString().split('T')[0] : ""}
               //description="must be within the price list start/end date"
+              disabled={!editable && !offering.new}
             />
 
             <FormInput
@@ -237,7 +321,7 @@ const OpportunityStep3 = ({ formik }) => {
               onChange={formik.handleChange}
               min={new Date(new Date(offering.validFor.startDateTime).getTime() + 86400000).toISOString().split('T')[0]}
               max={maxDate != "" ? new Date(new Date(maxDate).getTime() - 86400000).toISOString().split('T')[0] : ""}
-              disabled={!offering.validFor.startDateTime}
+              disabled={!offering.validFor.startDateTime || (!editable && !offering.new)}
             />
           </div>
           <Divider className="my-4" />

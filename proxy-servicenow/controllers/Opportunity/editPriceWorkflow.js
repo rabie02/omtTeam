@@ -8,7 +8,7 @@ const deletePriceList = require("../PriceList/deletePriceList");
 const getOpportunityWithDetails = require("./getOpportuntityWithdetails");
 
 const editOpportunityPrices = async (req, res) => {
-  const { opportunityId, newPrices, priceListData } = req.body;
+  const { opportunityId, productOfferings, priceList } = req.body;
 
   try {
     // 1. Get existing opportunity with account info
@@ -34,7 +34,7 @@ const editOpportunityPrices = async (req, res) => {
     // 2. Create new price list linked to opportunity's account
     const payload = { ...req };
     payload.body = {
-      ...priceListData,
+      ...priceList,
       account: opportunity.account.sys_id.toString()
     };
     const newPriceList = await createPriceList(payload);
@@ -70,7 +70,7 @@ const editOpportunityPrices = async (req, res) => {
       }
     }
     // 3. Create new product offering prices for the new price list
-    const results = await newPrices.reduce(async (previousPromise, priceData) => {
+    const results = await productOfferings.reduce(async (previousPromise, priceData) => {
       const accumulatedResults = await previousPromise;
 
       try {

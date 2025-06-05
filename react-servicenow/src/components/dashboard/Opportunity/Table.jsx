@@ -4,15 +4,15 @@ import { Popconfirm, Empty, Spin, Table, notification, Tooltip, Modal, Paginatio
 import { 
   getOpportunities,
   deleteOpportunity,
-  getProductOfferingPrice
+  getProductOfferingPrice,
+  updateOpportunityPricing
 } from '../../../features/servicenow/opportunity/opportunitySlice';
 import OpportunityStep4 from './Steps/DetailsModal';
 
 
-function OpportunityTable({ setOpen, searchQuery }) {
+function OpportunityTable({ setData, setOpen, searchQuery }) {
 
   const [selectedOpportunity, setSelectedOpportunity] = useState(null);
-
   const showModal = (record) => setSelectedOpportunity(record);
   const hideModal = () => setSelectedOpportunity(null);
 
@@ -63,6 +63,13 @@ function OpportunityTable({ setOpen, searchQuery }) {
           dispatch(getOpportunities({ page, limit, q: searchQuery }));
       };
 
+  const showPricingModal = (record) => {
+    setData(record);
+    setOpen(true);
+    
+  };
+
+
 
   const columns = [
     {
@@ -111,7 +118,7 @@ function OpportunityTable({ setOpen, searchQuery }) {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => ( record!==undefined &&
-        <div className="flex space-x-2">
+        <div className="grid grid-cols-3 gap-2">
           {/* <Popconfirm
             title="Change Status"
             description={`Are you sure you want to ${record.state === 'published' ? 'retire' : 'publish'} this opportunity?`}
@@ -137,21 +144,28 @@ function OpportunityTable({ setOpen, searchQuery }) {
               description="Are you sure to delete this opportunity?"
               onConfirm={() => handleDelete(record._id)}
             >
-              <button className="mx-2 text-gray-500 hover:text-red-600">
+              <button className=" text-gray-500 hover:text-red-600">
                   <i className="ri-delete-bin-6-line text-2xl"></i>
               </button>
             </Popconfirm>
           </Tooltip>
-          <>
+          
           <Tooltip title="See More Details">
             <button 
-              className="mx-2 text-gray-500 hover:text-green-600"
+              className=" text-gray-500 hover:text-green-600"
               onClick={() => showModal(record)}
             >
               <i className="ri-eye-line text-2xl"></i>
             </button>
           </Tooltip>
-          </>
+          <Tooltip title={"Update Pricing"}>
+            <button
+                className="text-gray-500 hover:text-blue-600 disabled:text-gray-200"
+                onClick={() => showPricingModal(record)}
+            >
+                <i className="ri-pencil-line text-2xl"></i>
+            </button>
+        </Tooltip>
         </div>
       ),
     },
@@ -174,7 +188,7 @@ function OpportunityTable({ setOpen, searchQuery }) {
         headerColor="rgba(0, 117, 149, 1)"
         columns={columns}
         dataSource={opportunities}
-        rowKey="sys_id"
+        rowKey="_id"
         locale={{
           emptyText: <Empty description="No opportunities found" />,
         }}
@@ -205,6 +219,8 @@ function OpportunityTable({ setOpen, searchQuery }) {
           />
         )}
       </Modal>
+
+
       
     </div>
   );

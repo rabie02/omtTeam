@@ -61,7 +61,7 @@ const PageLayout = ({
         {children}
       </div>
 
-      {FormComponent && (
+      {FormComponent && open && (
         <FormComponent 
           open={open} 
           setOpen={setOpen} 

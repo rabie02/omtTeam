@@ -168,7 +168,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
       open={open}
       onCancel={handleCancel}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
     >
       <form onSubmit={formik.handleSubmit} className="space-y-4">
         {/* Name */}
@@ -188,7 +188,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         </div>
 
        
-          <div class="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
         {/* Start Date */}
         <div>
           <label className="block font-medium mb-1">Start Date</label>
@@ -262,7 +262,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           </div>
         </div>
 
-          <div class="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4">
         {/* Product Offering Term */}
         <div>
         <label className="block font-medium mb-1">Contract Term:</label>
@@ -312,7 +312,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
      )}
       </div>
       </div>
-      <div class="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
        {/* {Product Offering Category} */}
        <div>
         <label className="block font-medium mb-1">Category:</label>
