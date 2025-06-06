@@ -6,6 +6,7 @@ const createOpportunityLineItem = require('../OpportunityLine/createOpportunityL
 const deleteOpportunityLine = require('../OpportunityLine/deleteOpportuityline');
 const deletePriceList = require("../PriceList/deletePriceList");
 const getOpportunityWithDetails = require("./getOpportuntityWithdetails");
+const { updateOpportunityCore } = require('./updateOpportunity');
 
 const editOpportunityPrices = async (req, res) => {
   const { opportunityId, productOfferings, priceList } = req.body;
@@ -119,11 +120,18 @@ const editOpportunityPrices = async (req, res) => {
       }
     }, Promise.resolve([]));
 
-
-
     // 5. Update opportunity to use new price list
-    await Opportunity.findByIdAndUpdate(opportunityId, {
-      price_list: newPriceList._id
+    // await Opportunity.findByIdAndUpdate(opportunityId, {
+    //   price_list: newPriceList._id
+    // });
+
+    await updateOpportunityCore({
+      params: { id: opportunityId },
+      body: {
+        ...req.body.opportunity, // Spread all opportunity fields
+        price_list: newPriceList._id // Include the new price list reference
+      },
+      user: req.user
     });
 
     //get complet updated opp 
