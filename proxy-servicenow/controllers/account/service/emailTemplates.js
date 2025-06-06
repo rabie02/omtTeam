@@ -1,4 +1,4 @@
-const config = require('./config');
+const config = require('../../../utils/configCreateAccount');
 
 const getConfirmationEmail = (firstName, confirmationLink) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">

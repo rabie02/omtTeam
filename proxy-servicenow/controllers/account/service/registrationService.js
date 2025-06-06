@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
-const config = require('./config');
+const config = require('../../../utils/configCreateAccount');
 const emailTemplates = require('./emailTemplates');
 
 // In-memory store with email tracking
@@ -89,4 +89,14 @@ module.exports = {
   sendWelcomeEmail, // MUST be included here
   hasPendingRegistration,
   storeRegistration
+};
+
+const checkEmailExists = async (email) => {
+  // Check both MongoDB and ServiceNow
+  const [mongoUser, serviceNowResults] = await Promise.all([
+    User.findOne({ email }),
+    serviceNowRequest('GET', `/api/now/table/customer_contact?sysparm_query=email=${encodeURIComponent(email)}`)
+  ]);
+
+  return mongoUser || serviceNowResults.length > 0;
 };
