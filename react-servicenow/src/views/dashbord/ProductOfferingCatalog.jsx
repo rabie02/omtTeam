@@ -3,7 +3,6 @@ import { useDispatch } from 'react-redux';
 import Table from '../../components/dashboard/ProductOfferingCatalog/Table';
 import Form from '../../components/dashboard/ProductOfferingCatalog/Form';
 
-
 function ProductOfferingCatalog() {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState(null);
@@ -13,7 +12,7 @@ function ProductOfferingCatalog() {
   return (
     <>
       <div className='h-svh'>
-        <div className='h-36 bg-gradient-to-b from-cyan-700  from-10% to-cyan-700/40  to-90%  flex items-end py-3 px-20'>
+        <div className='h-24 bg-gradient-to-b from-cyan-700  from-10% to-cyan-700/40  to-90%  flex items-end py-3 px-20'>
           <div className='flex w-full justify-between'>
 
             <div className="relative w-48 transition-all focus-within:w-60">

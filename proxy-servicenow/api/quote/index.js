@@ -10,7 +10,7 @@ const getLatestOneByOpportunity = require('../../controllers/Quote/getLatestQuot
 
 router.get('/quote', getAll);
 router.post('/quote/:id', create);
-router.delete('/quote', deleteQuote);
+router.delete('/quote/:id', deleteQuote);
 router.patch('/quote', update);
 router.get('/quote/op/:id',getLatestOneByOpportunity);
 

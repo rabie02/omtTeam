@@ -91,24 +91,29 @@ const Home = () => {
           </Card>
           </Link>
           </Col>
+          
         
-        
-        <Col span={6}>
+         <Col span={6}>
+          <Link to="/dashboard/category">
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <Statistic 
-              title="Categories" 
-              value={categories} 
+              title="Category" 
+              value={productOfferings} 
               valueStyle={{ color: '#0891b2' }}
               prefix={<div className="w-3 h-3 rounded-full bg-cyan-500 mr-2"></div>}
             />
             <Progress 
-              percent={(categories / maxCount) * 100} 
+              percent={(productOfferings / maxCount) * 100} 
               showInfo={false} 
               strokeColor="#06b6d4"
             />
           </Card>
-        </Col>
+          </Link>
+          </Col>
+
+
         <Col span={6}>
+          <Link to="/dashboard/catalog">
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <Statistic 
               title="Catalogs" 
@@ -122,8 +127,10 @@ const Home = () => {
               strokeColor="#06b6d4"
             />
           </Card>
+          </Link>
         </Col>
         <Col span={6}>
+          <Link to="/dashboard/quote">
           <Card className="shadow-md hover:shadow-lg transition-shadow">
             <Statistic 
               title="Quotes" 
@@ -137,6 +144,7 @@ const Home = () => {
               strokeColor="#06b6d4"
             />
           </Card>
+          </Link>
         </Col>
       </Row>
 

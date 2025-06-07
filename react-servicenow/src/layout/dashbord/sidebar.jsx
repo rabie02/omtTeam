@@ -35,33 +35,25 @@ const Sidebar = ({ toggleSidebar, open, isSidebarCollapsed }) => {
 
       ]
     },
-    { 
-      path: '/dashboard/product-specification', 
-      icon: 'file-list-line', 
-      text: 'Product Specification' 
-    },
     {
-      path:'/dashboard/opportunity',
-      icon: 'shining-line',
-      text: 'Opportunity'
-    },
-    {
-      path:'/dashboard/price-list',
-      icon: 'price-tag-3-line',
-      text: 'Price List'
-    },
-    { 
-      path: '/dashboard/quote', 
-      icon: 'contract-line', 
-      text: 'Quote' 
+      path: '/dashboard/oreder',
+      icon: 'shopping-cart-line',
+      text: 'Order',
+      children: [
+        { path: '/dashboard/opportunity', icon: 'shining-line', text: 'Opportunity' },
+        { path: '/dashboard/price-list', icon: 'price-tag-3-line', text: 'Price List' },
+        { path: '/dashboard/quote', icon: 'contract-line', text: 'Quote' }
+      ]
     }
+
+
   ];
 
   return (
     <>
       <aside className={`z-50 h-screen fixed bg-cyan-800 inset-y-0 pt-4  shadow-lg overflow-hidden ${open ? 'w-[4rem]' : 'w-64'
         } transition-all duration-400 flex flex-col`}
-        >
+      >
         <div className="mb-8 mt-2 h-12 flex justify-center items-center px-2 text-white font-bold text-xl truncate">
           <i className={`ri-admin-line  text-blue-200 ${open ? '' : 'mr-2'}  `} />
           <span className={`${open ? 'hidden ' : 'inline'}`}>

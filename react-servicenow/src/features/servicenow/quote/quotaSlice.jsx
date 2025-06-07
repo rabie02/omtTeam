@@ -7,6 +7,10 @@ const initialState = {
   data: [],
   loading: false,
   error: null,
+  createLoading: false,
+  createError: null,
+  deleteLoading: false,
+  deleteError: null,
   page: 1,
   totalPages: 0,
   total: 0,
@@ -24,6 +28,38 @@ export const getQuotes = createAsyncThunk(
         headers: { authorization: access_token },
         params: { page, limit, q }
       });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+export const createQuote = createAsyncThunk(
+  'quotes/create',
+  async (opportunityId, { rejectWithValue }) => {
+    try {
+      const access_token = localStorage.getItem('access_token');
+      const response = await axios.post(
+        `${backendUrl}/api/quote/${opportunityId}`, {},
+        { headers: { authorization: access_token } }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+export const deleteQuote = createAsyncThunk(
+  'quotes/delete',
+  async (quoteId, { rejectWithValue }) => {
+    try {
+      const access_token = localStorage.getItem('access_token');
+      const response = await axios.delete(
+        `${backendUrl}/api/quote/${quoteId}`,
+        { headers: { authorization: access_token } }
+      );
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -63,6 +99,30 @@ const quoteSlice = createSlice({
         state.data = [];
         state.total = 0;
         state.totalPages = 0;
+      })
+      .addCase(createQuote.pending, (state) => {
+        state.createLoading = true;
+        state.createError = null;
+      })
+      .addCase(createQuote.fulfilled, (state) => {
+        state.createLoading = false;
+      })
+      .addCase(createQuote.rejected, (state, action) => {
+        state.createLoading = false;
+        state.createError = action.payload;
+      })
+      .addCase(deleteQuote.pending, (state) => {
+        state.deleteLoading = true;
+        state.deleteError = null;
+      })
+      .addCase(deleteQuote.fulfilled, (state, action) => {
+        state.deleteLoading = false;
+        state.data = state.data.filter(p => p._id !== action.payload._id);
+        state.total -= 1;
+      })
+      .addCase(deleteQuote.rejected, (state, action) => {
+        state.deleteLoading = false;
+        state.deleteError = action.payload;
       });
   }
 });

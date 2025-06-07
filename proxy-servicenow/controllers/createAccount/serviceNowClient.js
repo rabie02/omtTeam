@@ -1,6 +1,7 @@
 const axios = require('axios');
 const config = require('./config');
 const User = require('../../models/User'); // Import MongoDB model
+const jwt = require('jsonwebtoken');
 
 const getAuthHeader = () => {
   const basicAuth = Buffer.from(`${config.serviceNow.user}:${config.serviceNow.password}`).toString('base64');
@@ -68,18 +69,47 @@ const createServiceNowRecords = async (userData) => {
 };
 
 const createServiceNowRecordsOnly = async (userData) => {
+  console.log(userData.token)
     const username = `${userData.first_name.toLowerCase()}.${userData.last_name.toLowerCase()}`;
     
-    // Account creation
+    let account;
+let accountSysId;
+
+if (userData.token) {
+  try {
+    const decoded = jwt.verify(userData.token, process.env.JWT_SECRET);
+    accountSysId = decoded.id;
+
     const accountPayload = {
       name: userData.type === 'company' ? userData.company_name : `${userData.first_name} ${userData.last_name}`,
       account_type: userData.type === 'company' ? 'business' : 'individual',
       phone: userData.mobile_phone || '',
       email: userData.email,
-      user_name: username // Add username field if your ServiceNow table has it
+      user_name: username
     };
-  
-  const account = await serviceNowRequest('POST', '/api/now/table/customer_account', accountPayload);
+
+    // Update the existing account
+    await serviceNowRequest('PATCH', `/api/now/table/customer_account/${accountSysId}`, accountPayload);
+
+    // Optionally fetch updated account details
+    account = await serviceNowRequest('GET', `/api/now/table/customer_account/${accountSysId}`);
+  } catch (err) {
+    console.error("Token verification or account update failed:", err);
+    throw new Error("Invalid or expired token for account update");
+  }
+} else {
+  // Create new account
+  const accountPayload = {
+    name: userData.type === 'company' ? userData.company_name : `${userData.first_name} ${userData.last_name}`,
+    account_type: userData.type === 'company' ? 'business' : 'individual',
+    phone: userData.mobile_phone || '',
+    email: userData.email,
+    user_name: username
+  };
+
+  account = await serviceNowRequest('POST', '/api/now/table/customer_account', accountPayload);
+  accountSysId = account.sys_id;
+}
   
   // Contact creation
   const contactPayload = {
@@ -125,23 +155,30 @@ const createServiceNowRecordsOnly = async (userData) => {
 };
 
 const saveToMongoDB = async (userData, serviceNowRecords) => {
-    const username = `${userData.first_name.toLowerCase()}.${userData.last_name.toLowerCase()}`;
-    
-    const user = new User({
-      serviceNowId: serviceNowRecords.contact.sys_id,
-      firstName: userData.first_name,
-      lastName: userData.last_name,
-      username: username, // Add username field
-      email: userData.email,
-      mobilePhone: userData.mobile_phone,
-      password: userData.password,
-      type: userData.type,
-      companyName: userData.type === 'company' ? userData.company_name : undefined,
-      location: userData.location
-    });
-  
-    return await user.save();
+  const username = `${userData.first_name.toLowerCase()}.${userData.last_name.toLowerCase()}`;
+
+  const update = {
+    serviceNowId: serviceNowRecords.contact.sys_id,
+    firstName: userData.first_name,
+    lastName: userData.last_name,
+    username: username,
+    email: userData.email,
+    mobilePhone: userData.mobile_phone,
+    password: userData.password,
+    type: userData.type,
+    companyName: userData.type === 'company' ? userData.company_name : undefined,
+    location: userData.location
   };
+
+  // If user exists, update. Else, create new.
+  const user = await User.findOneAndUpdate(
+    { email: userData.email },  // Match by email
+    update,
+    { new: true, upsert: true } // Return updated doc or create if not exist
+  );
+
+  return user;
+};
 
 const cleanupServiceNowRecords = async (records) => {
   // Implement cleanup logic if MongoDB save fails
