@@ -508,6 +508,18 @@ useEffect(() => {
         formik.setTouched(touched);
       }
     }, [editMode]);
+    if(loading){
+      return <Modal
+      title="Create New Opportunity"
+      open={open}
+      onCancel={handleCancel}
+      footer={null}
+      width={800}
+      destroyOnHidden
+    >
+      <div className='h-full flex justify-center items-center'><Spin /></div>
+    </Modal>
+    }
   return (
     <Modal
       title="Create New Opportunity"

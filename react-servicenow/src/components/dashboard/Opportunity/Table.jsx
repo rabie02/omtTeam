@@ -12,7 +12,7 @@ import {getAll as getProductOfferingPrice} from '../../../features/servicenow/pr
 
 
 
-function OpportunityTable({ setData, setOpen, searchQuery }) {
+function OpportunityTable({ setData, setOpen, open, searchQuery }) {
 
   const [selectedOpportunity, setSelectedOpportunity] = useState(null);
   const showModal = (record) => setSelectedOpportunity(record);
@@ -204,7 +204,7 @@ function OpportunityTable({ setData, setOpen, searchQuery }) {
   ];
 
 
-  if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
+  if (!open && loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
   if (error) {
       notification.error({
         
