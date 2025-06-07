@@ -7,10 +7,12 @@ const deleteOpportunityLine = require('../OpportunityLine/deleteOpportuityline')
 const deletePriceList = require("../PriceList/deletePriceList");
 const getOpportunityWithDetails = require("./getOpportuntityWithdetails");
 const { updateOpportunityCore } = require('./updateOpportunity');
+const getProductOfferingPriceByPriceList = require('../ProductOfferingPrice/getProductOfferingPriceByPriceList');
+const create = require("../account/create");
 
 const editOpportunityPrices = async (req, res) => {
-  const { opportunityId, productOfferings, priceList } = req.body;
-
+  const { createNewPriceList, selectedPriceList, opportunityId, productOfferings, priceList } = req.body;
+  const payload = { ...req };
   try {
     // 1. Get existing opportunity with account info
     const opportunity = await Opportunity.findById(opportunityId)
@@ -24,8 +26,29 @@ const editOpportunityPrices = async (req, res) => {
         error: 'Opportunity not found'
       });
     }
-    // Store old price list ID for deletion later
-    const oldPriceListId = opportunity.price_list._id;
+    let pops;
+    let chosen = [];
+    let newPriceList = createNewPriceList ? {} : {_id: selectedPriceList};
+    if(!createNewPriceList){
+      try {
+        pops = await getProductOfferingPriceByPriceList({
+          params: { id: selectedPriceList.toString() },
+          user: req.user
+        });
+        pops.success = true;
+      } catch (error) {
+        console.error('product offering price fetching failed:', error);
+        pops.error = error.message;
+      }
+      const popsData = pops.result;
+      chosen = productOfferings.map(op => {
+        return (popsData.find(item => item.productOffering._id.toString() === op.productOffering.id))
+      });
+    }
+    
+    //Store old price list ID for deletion later
+    let oldPriceListId = false;
+    if (opportunity.price_list !== null) oldPriceListId = opportunity.price_list._id;
 
     // Get existing opportunity line items to delete
     const existingLineItems = await opportunityLine.find({
@@ -33,12 +56,14 @@ const editOpportunityPrices = async (req, res) => {
     }).select('_id sys_id');
 
     // 2. Create new price list linked to opportunity's account
-    const payload = { ...req };
-    payload.body = {
-      ...priceList,
-      account: opportunity.account.sys_id.toString()
-    };
-    const newPriceList = await createPriceList(payload);
+    if(createNewPriceList){
+      
+      payload.body = {
+        ...priceList,
+        account: opportunity.account.sys_id.toString()
+      };
+      newPriceList = await createPriceList(payload);
+    }
 
     // delete old opp line item 
     const deleteResults = await Promise.all(
@@ -48,7 +73,7 @@ const editOpportunityPrices = async (req, res) => {
             params: { id: lineItemId._id.toString() },
             user: req.user
           });
-          console.log("deleted");
+          console.log("opportunity line item deleted");
           return { success: true, id: lineItemId._id };
         } catch (error) {
           console.error('Failed to delete line item:', error);
@@ -57,27 +82,28 @@ const editOpportunityPrices = async (req, res) => {
       })
     );
     //delete old price list also 
-    let priceListDeletionResult = { success: false };
-    if (oldPriceListId) {
-      try {
-        priceListDeletionResult = await deletePriceList({
-          params: { id: oldPriceListId.toString() },
-          user: req.user
-        });
-        priceListDeletionResult.success = true;
-      } catch (error) {
-        console.error('Price list cleanup failed:', error);
-        priceListDeletionResult.error = error.message;
+    if(createNewPriceList){
+      let priceListDeletionResult = { success: false };
+      if (oldPriceListId) {
+        try {
+          priceListDeletionResult = await deletePriceList({
+            params: { id: oldPriceListId.toString() },
+            user: req.user
+          });
+          priceListDeletionResult.success = true;
+        } catch (error) {
+          console.error('Price list cleanup failed:', error);
+          priceListDeletionResult.error = error.message;
+        }
       }
     }
     // 3. Create new product offering prices for the new price list
     const results = await productOfferings.reduce(async (previousPromise, priceData) => {
       const accumulatedResults = await previousPromise;
-
-      try {
+      
+      try{
         // Create product offering price (following creation workflow pattern)
         const { term_month, quantity, productOffering, unitOfMeasure, ...filteredPriceData } = priceData;
-
         payload.body = {
           ...filteredPriceData,
           priceList: { id: newPriceList._id },
@@ -86,9 +112,10 @@ const editOpportunityPrices = async (req, res) => {
           lifecycleStatus: "Active",
           '@type': 'ProductOfferingPrice'
         };
-
-        const pricing = await createPOPrice(payload);
-        console.log('Created ProductOfferingPrice:', JSON.stringify(pricing, null, 2));
+        const createNewPOP = createNewPriceList || filteredPriceData.new ? true : false;
+        console.log('Creating ProductOfferingPrice with payload:', JSON.stringify(payload.body, null, 2));
+        const pricing = createNewPOP ? await createPOPrice(payload) : chosen.find(item => item!==undefined && item.productOffering._id.toString() === productOffering.id);
+        console.log('Created ProductOfferingPrice!');
 
         // Create opportunity line item (following creation workflow pattern)
         payload.body = {
@@ -100,8 +127,8 @@ const editOpportunityPrices = async (req, res) => {
           unit_of_measurement: unitOfMeasure.id,
         };
         console.log('Creating OpportunityLineItem with payload:', JSON.stringify(payload.body, null, 2));
-
         const opLineItem = await createOpportunityLineItem(payload);
+        console.log('Created OpportunityLineItem!');
 
         return [...accumulatedResults, {
           success: true,
@@ -109,6 +136,7 @@ const editOpportunityPrices = async (req, res) => {
           opportunityLineItem: opLineItem
         }];
       } catch (error) {
+        console.log(error);
         return [...accumulatedResults, {
           success: false,
           error: {
@@ -143,25 +171,7 @@ const editOpportunityPrices = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: 'Opportunity prices updated successfully',
-        data: {
-          newPriceList: {
-            _id: newPriceList._id,
-            name: newPriceList.name
-          },
-          updatedOpportunity: updatedOpportunity,
-          deletedItems: {
-            lineItems: {
-              attempted: existingLineItems.length,
-              successful: deleteResults.filter(r => r.success).length,
-              failed: deleteResults.filter(r => !r.success).length
-            },
-            priceList: priceListDeletionResult.success ? 'success' : 'failed'
-          },
-          creations: { 
-            createdLineItems: results.length,
-            details : results
-          }
-        }
+        data: updatedOpportunity
       });
     } else {
       const failedItem = results.find(result => !result.success);
@@ -171,6 +181,7 @@ const editOpportunityPrices = async (req, res) => {
         error: failedItem.error
       });
     }
+   
 
   } catch (error) {
     console.error('Error in opportunity creation:', error);

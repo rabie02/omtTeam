@@ -2,7 +2,7 @@ const handleMongoError = require('../../utils/handleMongoError');
 const productOfferingPrice = require('../../models/productOfferingPrice');
 const mongoose = require('mongoose');
 
-module.exports = async (req, res) => {
+async function getProductOfferingPriceByPriceList(req, res = null) {
   try {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -13,12 +13,13 @@ module.exports = async (req, res) => {
     const product_offering_prices= await productOfferingPrice.find({
         priceList: priceListObjectId
       }).lean();
-   
-      return res.json({
-        result: product_offering_prices,
-        total: product_offering_prices.length,
-        source : "mongodb"
-      });
+      
+    const jsonBody = {
+      result: product_offering_prices,
+      total: product_offering_prices.length,
+      source : "mongodb"
+    };
+      return res ?  res.json(jsonBody) : jsonBody;
     
 
   } catch (error) {
@@ -27,3 +28,13 @@ module.exports = async (req, res) => {
     res.status(mongoError.status).json({ error: mongoError.message });
   }
 };
+
+
+
+// Original Express route handler for backward compatibility
+module.exports = async (req, res) => {
+  return getProductOfferingPriceByPriceList(req, res);
+};
+
+// Export the function directly as well
+module.exports.getProductOfferingPriceByPriceList = getProductOfferingPriceByPriceList;

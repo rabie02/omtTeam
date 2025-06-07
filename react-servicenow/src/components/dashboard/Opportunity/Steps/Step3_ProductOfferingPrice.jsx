@@ -22,19 +22,19 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
     productOfferingPrices: pops 
   } = useSelector(selectOpportunityData, shallowEqual);
 
-console.log(pops)
+
   let minDate = "";
   let maxDate = "";
   let editable = !editMode;
   
   if(formik.values.createNewPriceList){
     minDate = formik.values.priceList.start_date;
-    maxDate = formik.values.priceList.end_date;
+    maxDate = formik.values.priceList.end_date || "";
     editable = true;
   }else{
     const chosenPriceList = priceLists.filter(pl =>  pl._id === formik.values.selectedPriceList );
     minDate = chosenPriceList[0].start_date;
-    maxDate = chosenPriceList[0].end_date;
+    maxDate = chosenPriceList[0].end_date || "";
   }
 
   
@@ -69,34 +69,6 @@ console.log(pops)
     }
   }, [editMode, pops, lineItems]); // Only run when these dependencies change
 
-  useEffect(() => {
-    if (pops?.length && !editMode) {
-      // Create the new product offerings array
-      const newProductOfferings = pops.map((pop) => {
-        console.log(pop)
-        return {
-          name: pop.name,
-          price: pop.price,
-          productOffering: { id: pop.productOffering },
-          unitOfMeasure: { id: pop.unitOfMeasure.id },
-          priceType: pop.priceType,
-          recurringChargePeriodType: pop.recurringChargePeriodType,
-          validFor: {
-            startDateTime: formatDateForInput(pop.validFor.startDateTime),
-            endDateTime: formatDateForInput(pop.validFor.endDateTime)
-          },
-          term_month: pop.term_month,
-          quantity: pop.quantity
-        };
-      }).filter(Boolean); // Remove any null entries
-  
-      // Only update if the values are different
-      if (JSON.stringify(newProductOfferings) !== JSON.stringify(formik.values.productOfferings)) {
-        formik.setFieldValue('productOfferings', newProductOfferings);
-      }
-    }
-  }, [pops]); // Only run when these dependencies change
-
 
   const addProductOffering = () => {
     
@@ -128,8 +100,8 @@ console.log(pops)
   };
 
   const filterOffering = (id)=>{
-    if(id === "") return [allOfferings[0]];
-    return allOfferings.filter(p => p._id === id);
+    if(id === "" || id === undefined) return allOfferings[0];
+    return allOfferings.find(p => p._id === id);
   }
 
   // Get all currently selected product offering IDs except the current one
@@ -237,6 +209,7 @@ console.log(pops)
               }))}
               disabled={!editable && !offering.new}
             />
+
             <FormSelect
             formik={formik}
               label="Price Type*"
@@ -244,7 +217,7 @@ console.log(pops)
               value={offering.priceType}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              options={filterOffering(offering.productOffering.id)[0].productOfferingPrice[0].price.taxIncludedAmount.value !=="0" && filterOffering(offering.productOffering.id)[0].productOfferingPrice[0].priceType === "recurring"? [{ value: 'recurring', label: 'Recurring' }] : [{ value: 'one_time', label: 'One-time' }]}
+              options={filterOffering(offering.productOffering.id).productOfferingPrice[0].price.taxIncludedAmount.value !=="0" && filterOffering(offering.productOffering.id).productOfferingPrice[0].priceType === "recurring"? [{ value: 'recurring', label: 'Recurring' }] : [{ value: 'one_time', label: 'One-time' }]}
               //options={[{ value: 'recurring', label: 'Recurring' }, { value: 'one_time', label: 'One-time' }]}
               disabled={!editable && !offering.new}
             />

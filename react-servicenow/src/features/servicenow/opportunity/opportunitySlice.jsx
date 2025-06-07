@@ -204,6 +204,7 @@ const initialState = {
   accounts: [],
   unitOfMeasures: [],
   loading: false,
+  partiallyLoading:false,
   error: null,
   currentPage: 1,
   totalItems: 0,
@@ -274,10 +275,10 @@ const opportunitySlice = createSlice({
       .addCase(updateOpportunityPricing.fulfilled, (state, action) => {
         state.loading = false;
         const index = state.opportunities.findIndex(
-          opp => opp._id === action.payload.opportunityId
+          opp => opp._id === action.payload.data._id
         );
         if (index !== -1) {
-          state.opportunities[index] = action.payload;
+          state.opportunities[index] = action.payload.data;
         }
       })
       .addCase(updateOpportunityPricing.rejected, (state, action) => {
@@ -355,10 +356,10 @@ const opportunitySlice = createSlice({
 
       // Generate Contract
       .addCase(generateContract.pending, (state) => {
-        state.loading = true;
+        state.partiallyLoading = true;
       })
       .addCase(generateContract.fulfilled, (state, action) => {
-        state.loading = false;
+        state.partiallyLoading = false;
         const index = state.opportunities.findIndex(
           opp => opp._id === action.payload.opportunity
         );
@@ -367,19 +368,19 @@ const opportunitySlice = createSlice({
         }
       })
       .addCase(generateContract.rejected, (state, action) => {
-        state.loading = false;
+        state.partiallyLoading = false;
         state.error = action.payload?.error || 'Failed to generate contract';
       })
 
 
       // Download Contract
       .addCase(downloadContract.pending, (state) => {
-        state.loading = true;
+        state.partiallyLoading = true;
       })
       .addCase(downloadContract.fulfilled, (state, action) => {
         const id =action.payload.id;
         const file = action.payload.file;
-        state.loading = false;
+        state.partiallyLoading = false;
         const opportunity = state.opportunities.find(
           opp => opp.contract && opp.contract._id === id
         );
@@ -397,7 +398,7 @@ const opportunitySlice = createSlice({
         document.body.removeChild(a);
       })
       .addCase(downloadContract.rejected, (state, action) => {
-        state.loading = false;
+        state.partiallyLoading = false;
         state.error = action.payload?.error || 'Failed to download contract';
       });
   },

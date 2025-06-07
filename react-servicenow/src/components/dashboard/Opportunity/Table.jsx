@@ -8,7 +8,7 @@ import {
   downloadContract
 } from '../../../features/servicenow/opportunity/opportunitySlice';
 import {getAll as getProductOfferingPrice} from '../../../features/servicenow/product-offering-price/productOfferingPriceSlice';
-import OpportunityStep4 from './Steps/DetailsModal';
+
 
 
 function OpportunityTable({ setData, setOpen, searchQuery }) {
@@ -22,6 +22,7 @@ function OpportunityTable({ setData, setOpen, searchQuery }) {
     opportunities,
     accounts,
     loading,
+    partiallyLoading,
     error,
     currentPage,
     totalItems,
@@ -72,8 +73,9 @@ function OpportunityTable({ setData, setOpen, searchQuery }) {
 
   const handleGenerateContract = async (opportunityId) =>{
     try {
-      await dispatch(generateContract(opportunityId));
-      notification.success({
+      const res = await dispatch(generateContract(opportunityId));
+      console.log(res);
+      if(!res.error) notification.success({
           message: 'Contract Generated',
           description: 'Contract has been generated successfully',
       });
@@ -152,27 +154,8 @@ function OpportunityTable({ setData, setOpen, searchQuery }) {
     {
       title: 'Actions',
       key: 'actions',
-      render: (_, record) => ( record!==undefined &&
-        <div className="grid grid-cols-4 gap-2">
-          {/* <Popconfirm
-            title="Change Status"
-            description={`Are you sure you want to ${record.state === 'published' ? 'retire' : 'publish'} this opportunity?`}
-            onConfirm={() => handleUpdateStatus(
-              record.sys_id, 
-              record.state === 'published' ? 'retired' : 'published'
-            )}
-          >
-            <Button type="text" icon={<i className="ri-loop-right-line" />} />
-          </Popconfirm>
-          
-          <Button 
-            type="text" 
-            icon={<i className="ri-pencil-line" />}
-            onClick={() => {
-              // You would implement edit functionality here
-              message.info('Edit functionality to be implemented');
-            }}
-          /> */}
+      render: (_, record) => ( record!==undefined && 
+        <div className="grid grid-cols-3 gap-2">
           <Tooltip title={`Delete Opportunity`}>
             <Popconfirm
               title="Delete Opportunity"
@@ -184,16 +167,7 @@ function OpportunityTable({ setData, setOpen, searchQuery }) {
               </button>
             </Popconfirm>
           </Tooltip>
-          
-          <Tooltip title="See More Details">
-            <button 
-              className=" text-gray-500 hover:text-green-600"
-              onClick={() => showModal(record)}
-            >
-              <i className="ri-eye-line text-2xl"></i>
-            </button>
-          </Tooltip>
-          <Tooltip title={"Update Pricing"}>
+          <Tooltip title={"Update Opportunity Details"}>
             <button
                 className="text-gray-500 hover:text-blue-600 disabled:text-gray-200"
                 onClick={() => showPricingModal(record)}
@@ -206,6 +180,7 @@ function OpportunityTable({ setData, setOpen, searchQuery }) {
               <button 
                 className=" text-gray-500 hover:text-orange-300"
                 onClick={() => handleDownloadContract(record.contract._id)}
+                disabled={partiallyLoading}
                 >
                   <i className="ri-contract-fill text-2xl"></i>
               </button> : 
@@ -214,7 +189,7 @@ function OpportunityTable({ setData, setOpen, searchQuery }) {
                 description="Are you sure to Generate this opportunity's contract?"
                 onConfirm={() => handleGenerateContract(record._id)}
               >
-                <button className=" text-gray-500 hover:text-orange-300">
+                <button className=" text-gray-500 hover:text-orange-300" disabled={partiallyLoading}>
                     <i className="ri-contract-line text-2xl"></i>
                 </button>
               </Popconfirm>
@@ -261,19 +236,6 @@ function OpportunityTable({ setData, setOpen, searchQuery }) {
 
         />
       </div>
-
-      <Modal
-        open={!!selectedOpportunity}
-        onCancel={hideModal}
-        footer={null}
-        width={800}
-      >
-        {selectedOpportunity && (
-          <OpportunityStep4 
-            initialData={selectedOpportunity}
-          />
-        )}
-      </Modal>
 
 
       

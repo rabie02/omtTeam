@@ -52,7 +52,7 @@ async function deletePriceList(req, res = null) {
 
     // Delete from MongoDB using MongoDB's _id
     try {
-      const deletedDoc = await PriceList.findByIdAndDelete(req.params.id);
+      await priceListDoc.deleteOne(); 
       // Note: We already verified the document exists above, so this should always succeed
     } catch (mongoError) {
       return handleMongoError(res, snResponse.data, mongoError, 'delete');

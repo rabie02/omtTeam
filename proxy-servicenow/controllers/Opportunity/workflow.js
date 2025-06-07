@@ -7,6 +7,7 @@ const createPriceList = require('../PriceList/createPriceList');
 const createPOPrice = require('../ProductOfferingPrice/createProductOfferingPrice');
 const createOpportunityLineItem = require('../OpportunityLine/createOpportunityLine');
 const createAccount = require('../account/create');
+const getOpportunityWithDetails = require("./getOpportuntityWithdetails");
 
 const Account = require("../../models/account");
 module.exports = async (req, res) => {
@@ -84,12 +85,14 @@ module.exports = async (req, res) => {
   }
 }, Promise.resolve([]));
 
+const resultOpportunity = await getOpportunityWithDetails(opportunity._id);
+
     // Check if all operations were successful
     const allSuccessful = results.every(result => result.success);
     if (allSuccessful) {
       // All items created successfully
       return res.status(201).json({
-        data: opportunity,
+        data: resultOpportunity,
         success: true,
         message: 'Opportunity created successfully',
         
