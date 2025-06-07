@@ -7,6 +7,7 @@ import {
   generateContract,
   downloadContract
 } from '../../../features/servicenow/opportunity/opportunitySlice';
+import CreateQuote from '../quote/ButtonCreateQuote';
 import {getAll as getProductOfferingPrice} from '../../../features/servicenow/product-offering-price/productOfferingPriceSlice';
 
 
@@ -155,7 +156,8 @@ function OpportunityTable({ setData, setOpen, searchQuery }) {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => ( record!==undefined && 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-2">
+          <CreateQuote opportunityId={record._id} />
           <Tooltip title={`Delete Opportunity`}>
             <Popconfirm
               title="Delete Opportunity"
