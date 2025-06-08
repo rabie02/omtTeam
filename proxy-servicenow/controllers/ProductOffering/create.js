@@ -7,7 +7,6 @@ const ProductSpecification = require ('../../models/productSpecification');
 
 // Create Product Offering 
 module.exports = async (req, res) => {
-    
     try {
         let category;
         let prodSpec;
@@ -45,7 +44,6 @@ module.exports = async (req, res) => {
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-
         // Prepare ServiceNow payload
         const snPayload = {
             name: req.body.name,
@@ -57,7 +55,7 @@ module.exports = async (req, res) => {
             productOfferingTerm: req.body.productOfferingTerm,
             productOfferingPrice: req.body.productOfferingPrice,
             productSpecification: {
-                id: prodSpec.id || prodSpec.sys_id,
+                id: prodSpec.sys_id,
             },
             //prodSpecCharValueUse: req.body.prodSpecCharValueUse,
             channel: req.body.channel,
