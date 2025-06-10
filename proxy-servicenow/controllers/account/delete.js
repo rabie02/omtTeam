@@ -27,7 +27,7 @@ module.exports = async (req, res) => {
       try {
         const connection = snConnection.getConnection(req.user.sn_access_token);
         const snResponse = await axios.delete(
-          `${connection.baseURL}/api/now/table/customer_account/${servicenowId}`, // Adjust table name as needed
+          `${connection.baseURL}/api/now/table/customer_account/${servicenowId}`, 
           { headers: connection.headers }
         );
         console.log(`Account deleted from ServiceNow: ${servicenowId}`);
