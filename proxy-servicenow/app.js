@@ -52,7 +52,7 @@ const limiter = rateLimit({
 // Configuration
 
 const allowedOrigins = [
-  'https://omt-team-hlmx.vercel.app',
+  'omt-team-dhxpck1wp-jmili-mouads-projects.vercel.app',
   'https://delightful-sky-0cdf0611e.6.azurestaticapps.net',
   'http://localhost:5173',
   'https://superb-starburst-b1a498.netlify.app/'
