@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const {
   validateRegistrationInput
-} = require('../../controllers/createAccount/validation');
+} = require('../../controllers/account/service/validationAccountCreation');
 const {
   getAddressFromCoordinates
 } = require('../../controllers/createAccount/geocodingService');
@@ -15,7 +15,7 @@ const {
     hasPendingRegistration,
     storeRegistration,
     sendWelcomeEmail,
-  } = require('../../controllers/createAccount/registrationService');
+  } = require('../../controllers/account/service/registrationService');
 const {
   checkEmailExists,
   createServiceNowRecords
@@ -24,8 +24,8 @@ const {
   getSuccessHtml,
   getErrorHtml,
   getWelcomeEmail
-} = require('../../controllers/createAccount/emailTemplates');
-const config = require('../../controllers/createAccount/config');
+} = require('../../controllers/account/service/emailTemplates');
+const config = require('../../utils/configCreateAccount');
 
 // Reverse geocode endpoint
 router.get('/reverse-geocode', async (req, res) => {

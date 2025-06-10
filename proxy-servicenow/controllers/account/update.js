@@ -1,13 +1,11 @@
+const config = require('../../utils/configCreateAccount');
 const axios = require('axios');
-const snConnection = require('../../utils/servicenowConnection');
-const handleMongoError = require('../../utils/handleMongoError');
 const Account = require('../../models/account');
+const handleMongoError = require('../../utils/handleMongoError');
 
 module.exports = async (req, res) => {
   try {
-    const mongoId = req.params.id; // MongoDB _id
-    
-    // First, find the account in MongoDB to get the ServiceNow sys_id
+    const mongoId = req.params.id;
     const account = await Account.findById(mongoId);
     
     if (!account) {
@@ -16,44 +14,41 @@ module.exports = async (req, res) => {
     
     const servicenowId = account.sys_id;
     
-    console.log(`Updating account - MongoDB ID: ${mongoId}, ServiceNow ID: ${servicenowId}`);
+    // Create basic auth header using ServiceNow credentials from config
+    const auth = {
+      username: config.serviceNow.user,
+      password: config.serviceNow.password
+    };
     
-    // Step 1: Update in ServiceNow first
-    const connection = snConnection.getConnection(req.user.sn_access_token);
+    // Update in ServiceNow using basic auth
     const snResponse = await axios.patch(
-      `${connection.baseURL}/api/now/table/customer_account/${servicenowId}`, // Adjust table name as needed
+      `${config.serviceNow.url}/api/now/table/customer_account/${servicenowId}`,
       req.body,
-      { headers: connection.headers }
+      {
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        auth // This will add Basic Auth header
+      }
     );
     
-    console.log('Account updated in ServiceNow');
+    // Update in MongoDB
+    const updatedAccount = await Account.findByIdAndUpdate(
+      mongoId,
+      req.body,
+      { new: true }
+    );
     
-    // Step 2: Update in MongoDB with ServiceNow response
-    try {
-      const updatedAccount = await Account.findByIdAndUpdate(
-        mongoId,
-        req.body,
-        { new: true}
-      );
-      
-      console.log('Account updated in MongoDB');
-      
-      res.json({
-        message: 'Account updated successfully in both ServiceNow and MongoDB',
-        servicenow: snResponse.data.result,
-        mongodb: updatedAccount,
-        source: 'both'
-      });
-      
-    } catch (mongoError) {
-      console.error('MongoDB update failed:', mongoError);
-      return handleMongoError(res, snResponse.data, mongoError, 'update');
-    }
+    res.json({
+      message: 'Account updated successfully in both systems',
+      servicenow: snResponse.data.result,
+      mongodb: updatedAccount
+    });
     
   } catch (error) {
     console.error('Error updating account:', error);
     
-    // Handle invalid MongoDB ObjectId
     if (error.name === 'CastError') {
       return res.status(400).json({ 
         error: 'Invalid MongoDB ID format',
@@ -61,13 +56,11 @@ module.exports = async (req, res) => {
       });
     }
     
-    // Handle MongoDB errors
-    if (error.name && error.name.includes('Mongo')) {
+    if (error.name?.includes('Mongo')) {
       const mongoError = handleMongoError(error);
       return res.status(mongoError.status).json({ error: mongoError.message });
     }
     
-    // Handle ServiceNow errors
     const status = error.response?.status || 500;
     const message = error.response?.data?.error?.message || error.message;
     res.status(status).json({ error: message });

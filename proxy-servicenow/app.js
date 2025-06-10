@@ -19,6 +19,8 @@ const ProductSpecification = require('./api/ProductSpecification/index');
 const AiSearch = require('./api/ai-search/index')
 const measurmentUnit = require('./api/unit-of-measurment/index')
 const account = require('./api/account/index')
+const contact = require('./api/contact/index')
+const location = require('./api/location/index')
 const opportunity = require("./api/opportunity/index");
 const ProductOfferingPrice = require("./api/productOfferingPrice/index")
 const opportunityLine = require("./api/OpportunityLine/index")
@@ -26,7 +28,8 @@ const priceList = require("./api/PriceList/index")
 const nlpRoutes = require('./api/ai-search/nlp');
 const Quote = require('./api/quote/index');
 const emailroutes = require('./email/router');
-const createAccount = require('./api/createAccount')
+// const createAccount = require('./api/createAccount/index')
+const chatbotRoutes = require('./api/ai-search/chatboot.js');
 require('dotenv').config();
 
 const app = express();
@@ -89,10 +92,15 @@ if (process.env.NODE_ENV === 'development') {
 app.use('/api', [
   authRoutes,    // Login
   signupRoutes,  // Registration + confirmation
-  ProductSpecification,
-  emailroutes,
-  createAccount,
-  Quote
+
+    ProductSpecification,
+    emailroutes,
+    // createAccount,
+    Quote,
+    contact,
+    location,
+    account,
+
 ]);
 
 
@@ -108,7 +116,6 @@ app.use('/api', authjwt , [
   ProductSpecification,
   AiSearch,
   measurmentUnit,
-  account,
   priceList,
   opportunity,
   opportunityLine,
