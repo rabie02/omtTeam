@@ -10,6 +10,7 @@ import opportunityReducer from '../features/servicenow/opportunity/opportunitySl
 import priceListReducer from '../features/servicenow/price-list/priceListSlice';
 
 import quoteReducer from "../features/servicenow/quote/quotaSlice"
+import accountReducer from '../features/servicenow/account/accountSlice';
 const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -21,7 +22,8 @@ const store = configureStore({
     aiSearch: aiSearchReducer,
     opportunity: opportunityReducer,
     priceList: priceListReducer,
-    quotes: quoteReducer
+    quotes: quoteReducer,
+    account: accountReducer,
   },
 });
 
