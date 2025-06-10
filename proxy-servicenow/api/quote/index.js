@@ -6,11 +6,13 @@ const getAll = require('../../controllers/Quote/getall')
 const update = require('../../controllers/Quote/update')
 const create = require('../../controllers/Quote/create')
 const deleteQuote = require('../../controllers/Quote/delete')
+const getLatestOneByOpportunity = require('../../controllers/Quote/getLatestQuoteByOpportunity');
 
 router.get('/quote', getAll);
 router.post('/quote/:id', create);
 router.delete('/quote/:id', deleteQuote);
 router.patch('/quote', update);
+router.get('/quote/op/:id',getLatestOneByOpportunity);
 
 module.exports = router;
 

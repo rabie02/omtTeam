@@ -8,7 +8,7 @@ import channelReducer from '../features/servicenow/channel/channelSlice';
 import aiSearchReducer from '../features/servicenow/ai-search/aiSearchSlice';
 import opportunityReducer from '../features/servicenow/opportunity/opportunitySlice';
 import priceListReducer from '../features/servicenow/price-list/priceListSlice';
-
+import productOfferingPriceReducer from '../features/servicenow/product-offering-price/productOfferingPriceSlice';
 import quoteReducer from "../features/servicenow/quote/quotaSlice"
 const store = configureStore({
   reducer: {
@@ -21,8 +21,18 @@ const store = configureStore({
     aiSearch: aiSearchReducer,
     opportunity: opportunityReducer,
     priceList: priceListReducer,
-    quotes: quoteReducer
+    quotes: quoteReducer,
+    productOfferingPrice: productOfferingPriceReducer
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        // Ignore these action types
+        ignoredActions: ['opportunity/downloadContract/fulfilled'],
+        // Ignore these paths in the state
+        ignoredPaths: ['opportunity.downloadContract.file']
+      }
+    })
 });
 
 export default store;

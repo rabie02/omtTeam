@@ -12,6 +12,10 @@ function ProductOffering() {
   const [data, setData] = useState(null); 
   const [searchQuery, setSearchQuery] = useState(null);
   const dispatch = useDispatch();
+  const [searchTerm, setSearchTerm] = useState('');
+
+
+
   
   // Selectors
   const { data: specs, loading: specsLoading, error: specsError } = useSelector(
@@ -25,13 +29,13 @@ function ProductOffering() {
 
   useEffect(() => {
     if (localStorage.getItem('access_token')) {
-      dispatch(getSpecs({ page: 1, limit: 99 }));
+      dispatch(getSpecs({ page: 1, limit: 1000, q:searchTerm }));
       dispatch(getCats({ page: 1, limit: 99 }));
       dispatch(getChannels());
     } else {
       console.error('Auth token not found. Please login.');
     }
-  }, [dispatch]);
+  }, [dispatch, searchTerm, open]);
 
   const options = { specifications: specs, categories: cats, channels: channels };
 
@@ -48,6 +52,7 @@ function ProductOffering() {
       FormComponent={Form}
       options={options}
       dispatch={dispatch}
+      setSearchTerm={setSearchTerm}
     />
   );
 }

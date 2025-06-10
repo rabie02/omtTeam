@@ -17,7 +17,14 @@ const productSpecificationSchema = new mongoose.Schema({
   status: String
 }, {
   timestamps: true,
-  strict: false
+  strict:false,
+  toJSON: {
+    virtuals: true,
+    transform: (doc, ret) => {
+      delete ret.__v;
+      return ret;
+    }
+  }
 });
 
 const ProductSpecification = mongoose.model('ProductSpecification', productSpecificationSchema, 'product_specifications');

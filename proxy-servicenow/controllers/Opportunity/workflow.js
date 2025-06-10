@@ -7,6 +7,7 @@ const createPriceList = require('../PriceList/createPriceList');
 const createPOPrice = require('../ProductOfferingPrice/createProductOfferingPrice');
 const createOpportunityLineItem = require('../OpportunityLine/createOpportunityLine');
 const createAccount = require('../account/create');
+const getOpportunityWithDetails = require("./getOpportuntityWithdetails");
 
 const Account = require("../../models/account");
 module.exports = async (req, res) => {
@@ -15,8 +16,8 @@ module.exports = async (req, res) => {
   const selectedPriceList = req.body.selectedPriceList;
   const op = req.body.opportunity; // opportunity JSON body
   const pl = req.body.priceList; // price list JSON body
-  const pos = req.body.productOfferings; // product offerings price list items
-  const opli = req.body.opportunityLineItem; // opportunity line item
+  const pos = req.body.productOfferings; // product offerings price list items turned into opportunity line items.
+  //const opli = req.body.opportunityLineItem; // opportunity line item
   const acc = req.body.account;
   const payload = req;
   
@@ -30,7 +31,7 @@ module.exports = async (req, res) => {
 
     // Create price list if needed
     if (createNewPriceList) {
-      payload.body = {...pl, "account": account._id.toString()};
+      payload.body = {...pl, "account": account.sys_id.toString()};
       priceList = await createPriceList(payload);
     }
     
@@ -46,8 +47,9 @@ module.exports = async (req, res) => {
   
   try {
     // Prepare product offering price JSON body
+    const { term_month, quantity, ...filteredPo } = po;
     payload.body = {
-      ...po,
+      ...filteredPo,
       priceList: { id: priceListID },
       "lifecycleStatus": "Active",
       '@type': 'ProductOfferingPrice'
@@ -56,7 +58,8 @@ module.exports = async (req, res) => {
     const pricing = await createPOPrice(payload);
     
     payload.body = {
-      ...opli,
+      quantity: quantity,
+      term_month: term_month,
       price_list: priceListID,
       product_offering: po.productOffering.id,
       opportunity: opportunity._id,
@@ -82,12 +85,14 @@ module.exports = async (req, res) => {
   }
 }, Promise.resolve([]));
 
+const resultOpportunity = await getOpportunityWithDetails(opportunity._id);
+
     // Check if all operations were successful
     const allSuccessful = results.every(result => result.success);
     if (allSuccessful) {
       // All items created successfully
       return res.status(201).json({
-        data: opportunity,
+        data: resultOpportunity,
         success: true,
         message: 'Opportunity created successfully',
         

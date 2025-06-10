@@ -5,6 +5,24 @@ const Account = require('../../models/account');
 
 async function createAccount(req, res=null) {
   try {
+    
+    const existingAccount = await Account.findOne({ name: req.body.name });
+    if(existingAccount){
+      console.log("account already exist", existingAccount.name);
+      const result = {
+        _id: existingAccount._id,
+        message: 'Account with this name already exists',
+        mongodb: existingAccount,
+        source: 'existing'
+      };
+      
+      if (res) {
+        return res.status(200).json(result);
+      }
+      return result;
+
+    }
+    
     console.log('Creating account in ServiceNow with payload:', req.body);
     
     // Step 1: Create in ServiceNow first

@@ -61,7 +61,7 @@ function PriceListForm({ open, setOpen, initialData = null, dispatch }) {
       open={open}
       onCancel={handleCancel}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
     >
       <form onSubmit={formik.handleSubmit} className="space-y-4">
         {/* Name */}

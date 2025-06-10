@@ -14,21 +14,11 @@ module.exports = async (req, res) => {
         
 
       });
-      
     }
-    console.log('No opportunities line found in MongoDB, fetching from ServiceNow...');
 
-    // Utiliser le token d'authentification de l'utilisateur
-    const connection = snConnection.getConnection(req.user.sn_access_token);
-    
-    // Récupérer les données de ServiceNow
-    const snResponse = await axios.get(
-      `${connection.baseURL}/api/now/table/sn_opty_mgmt_core_opportunity_line_item`,
-      { headers: connection.headers }
-    );
-   
-    
+    console.log('No opportunities line found in MongoDB ...');
     res.json(snResponse.data.result);
+    
   } catch (error) {
     console.error('Error fetching opportunities:', error);
     // Handle MongoDB errors
