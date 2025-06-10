@@ -1,60 +1,112 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Popconfirm, Empty, Spin, Table, notification, Tooltip, Modal } from 'antd';
-import CreateQuote from '../quote/ButtonCreateQuote';
-import {
+import { Popconfirm, Empty, Spin, Table, notification, Tooltip, Modal, Pagination} from 'antd';
+import { 
   getOpportunities,
   deleteOpportunity,
-  getAccounts
+  generateContract,
+  downloadContract
 } from '../../../features/servicenow/opportunity/opportunitySlice';
-import OpportunityStep4 from './Steps/Step4-1';
+import CreateQuote from '../quote/ButtonCreateQuote';
+import {getAll as getProductOfferingPrice} from '../../../features/servicenow/product-offering-price/productOfferingPriceSlice';
 
 
-function OpportunityTable({ setOpenForm, searchQuery }) {
 
-  const [visible, setVisible] = useState(false);
+function OpportunityTable({ setData, setOpen, open, searchQuery }) {
 
-  const showModal = () => setVisible(true);
-  const hideModal = () => setVisible(false);
+  const [selectedOpportunity, setSelectedOpportunity] = useState(null);
+  const showModal = (record) => setSelectedOpportunity(record);
+  const hideModal = () => setSelectedOpportunity(null);
 
   const dispatch = useDispatch();
   const {
     opportunities,
     accounts,
     loading,
+    partiallyLoading,
     error,
     currentPage,
     totalItems,
     limit,
-    totalPages
+    totalPages,
+    productOfferingPrices
   } = useSelector((state) => state.opportunity);
+  
 
   useEffect(() => {
     dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
+    dispatch(getProductOfferingPrice());
   }, [dispatch, searchQuery]);
 
+
   // Helper function to extract value from ServiceNow object format
-  const getValue = (field) => {
-    if (!field) return '';
-    return typeof field === 'object' ? field.value : field;
-  };
+    const getValue = (field) => {
+        if (!field) return '';
+        return typeof field === 'object' ? field.value : field;
+    };
 
   const handleDelete = async (opportunityId) => {
     try {
       await dispatch(deleteOpportunity(opportunityId));
       notification.success({
-        message: 'Opportunuity Deleted',
-        description: 'Opportunuity has been deleted successfully',
+          message: 'Opportunuity Deleted',
+          description: 'Opportunuity has been deleted successfully',
       });
-      dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
+      //dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
     } catch (error) {
-      console.error('Deletion failed:', error);
-      notification.error({
-        message: 'Deletion Failed',
-        description: error.message || 'Failed to delete Opportunuity. Please try again.',
-      });
+        console.error('Deletion failed:', error);
+        notification.error({
+            message: 'Deletion Failed',
+            description: error.message || 'Failed to delete Opportunuity. Please try again.',
+        });
     }
   };
+
+  const handlePageChange = (page) => {
+          dispatch(getOpportunities({ page, limit, q: searchQuery }));
+      };
+
+  const showPricingModal = (record) => {
+    setData(record);
+    setOpen(true);
+    
+  };
+
+  const handleGenerateContract = async (opportunityId) =>{
+    try {
+      const res = await dispatch(generateContract(opportunityId));
+      console.log(res);
+      if(!res.error) notification.success({
+          message: 'Contract Generated',
+          description: 'Contract has been generated successfully',
+      });
+      //dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
+    } catch (error) {
+        console.error('Generation failed:', error);
+        notification.error({
+            message: 'Generation Failed',
+            description: error.message || 'Failed to generate Contract. Please try again.',
+        });
+    }
+  }
+
+  const handleDownloadContract = async (contractId) =>{
+    try {
+      await dispatch(downloadContract(contractId));
+      notification.success({
+          message: 'Contract Downloaded',
+          description: 'Contract has been downloaded successfully',
+      });
+      //dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
+    } catch (error) {
+        console.error('Download failed:', error);
+        notification.error({
+            message: 'Download Failed',
+            description: error.message || 'Failed to download Contract. Please try again.',
+        });
+    }
+  }
+
 
 
   const columns = [
@@ -103,94 +155,92 @@ function OpportunityTable({ setOpenForm, searchQuery }) {
     {
       title: 'Actions',
       key: 'actions',
-      render: (_, record) => (record !== undefined &&
-        <div className="flex space-x-2">
+      render: (_, record) => ( record!==undefined && 
+        <div className="grid grid-cols-4 gap-2">
           <CreateQuote opportunityId={record._id} />
-          {/* <Popconfirm
-            title="Change Status"
-            description={`Are you sure you want to ${record.state === 'published' ? 'retire' : 'publish'} this opportunity?`}
-            onConfirm={() => handleUpdateStatus(
-              record.sys_id, 
-              record.state === 'published' ? 'retired' : 'published'
-            )}
-          >
-            <Button type="text" icon={<i className="ri-loop-right-line" />} />
-          </Popconfirm>
-          
-          <Button 
-            type="text" 
-            icon={<i className="ri-pencil-line" />}
-            onClick={() => {
-              // You would implement edit functionality here
-              message.info('Edit functionality to be implemented');
-            }}
-          /> */}
-
-          <>
-            <Tooltip title="See More Details">
-              <button
-                className="mx-2 text-gray-500 hover:text-green-600"
-                onClick={showModal}
-                disabled
-              >
-                <i className="ri-eye-line text-2xl"></i>
-              </button>
-            </Tooltip>
-            <Tooltip title={`Delete Opportunity`}>
-              <Popconfirm
-                title="Delete Opportunity"
-                description="Are you sure to delete this opportunity?"
-                onConfirm={() => handleDelete(record._id)}
-              >
-                <button className="mx-2 text-gray-500 hover:text-red-600">
+          <Tooltip title={`Delete Opportunity`}>
+            <Popconfirm
+              title="Delete Opportunity"
+              description="Are you sure to delete this opportunity?"
+              onConfirm={() => handleDelete(record._id)}
+            >
+              <button className=" text-gray-500 hover:text-red-600">
                   <i className="ri-delete-bin-6-line text-2xl"></i>
+              </button>
+            </Popconfirm>
+          </Tooltip>
+          <Tooltip title={"Update Opportunity Details"}>
+            <button
+                className="text-gray-500 hover:text-blue-600 disabled:text-gray-200"
+                onClick={() => showPricingModal(record)}
+            >
+                <i className="ri-pencil-line text-2xl"></i>
+            </button>
+        </Tooltip>
+        <Tooltip title={ (record.contract ? "Download":"Generate") +" Contract"}>
+        {record.contract ? 
+              <button 
+                className=" text-gray-500 hover:text-orange-300"
+                onClick={() => handleDownloadContract(record.contract._id)}
+                disabled={partiallyLoading}
+                >
+                  <i className="ri-contract-fill text-2xl"></i>
+              </button> : 
+              <Popconfirm
+                title={"Generate Contract"}
+                description="Are you sure to Generate this opportunity's contract?"
+                onConfirm={() => handleGenerateContract(record._id)}
+              >
+                <button className=" text-gray-500 hover:text-orange-300" disabled={partiallyLoading}>
+                    <i className="ri-contract-line text-2xl"></i>
                 </button>
               </Popconfirm>
-            </Tooltip>
-
-            <Modal
-
-              open={visible}
-              onCancel={hideModal}
-              footer={null}
-              width={800}
-            >
-              <OpportunityStep4
-                initialData={record}
-              />
-            </Modal>
-          </>
+              }
+            
+          </Tooltip>
         </div>
       ),
     },
   ];
-  console.log(opportunities)
 
-  if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
+
+  if (!open && loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
   if (error) {
-
-    notification.error({
-      message: 'creation Failed',
-      description: error || 'Failed to create opportunity. Please try again.',
-    });
+      notification.error({
+        
+              message: 'Error',
+              description: error || 'Failed to create opportunity. Please try again.',
+          });
   }
 
   return (
     <div className="">
-
+      
       <Table
         headerColor="rgba(0, 117, 149, 1)"
         columns={columns}
         dataSource={opportunities}
-        rowKey="sys_id"
+        rowKey="_id"
         locale={{
           emptyText: <Empty description="No opportunities found" />,
         }}
-        pagination={{
-          pageSize: 6,
-          showSizeChanger: false,
-        }}
+        pagination={false}
       />
+      <div className="mt-6 flex justify-end">
+        <Pagination
+            current={currentPage}
+            total={totalItems}
+            pageSize={limit}
+            onChange={handlePageChange}
+            showSizeChanger={false}
+            disabled={loading}
+            className="ant-pagination-custom"
+
+        />
+      </div>
+
+
+      
     </div>
   );
 }

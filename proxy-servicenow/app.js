@@ -25,7 +25,7 @@ const opportunity = require("./api/opportunity/index");
 const ProductOfferingPrice = require("./api/productOfferingPrice/index")
 const opportunityLine = require("./api/OpportunityLine/index")
 const priceList = require("./api/PriceList/index")
-//const chatBoot = require("")
+const nlpRoutes = require('./api/ai-search/nlp');
 const Quote = require('./api/quote/index');
 const emailroutes = require('./email/router');
 // const createAccount = require('./api/createAccount/index')
@@ -47,7 +47,7 @@ const limiter = rateLimit({
 
 // connection Kafka
 // const producer = require('./utils/connectionKafka');
-
+//app.set('trust proxy', 1);
 
 // Configuration
 
@@ -92,7 +92,7 @@ if (process.env.NODE_ENV === 'development') {
 app.use('/api', [
   authRoutes,    // Login
   signupRoutes,  // Registration + confirmation
-    
+
     ProductSpecification,
     emailroutes,
     // createAccount,
@@ -102,6 +102,7 @@ app.use('/api', [
     account,
 
 ]);
+
 
 // Protected routes
 app.use('/api', authjwt , [
@@ -119,8 +120,7 @@ app.use('/api', authjwt , [
   opportunity,
   opportunityLine,
   ProductOfferingPrice,
-  chatbotRoutes
-
+  nlpRoutes
 ]);
 
 

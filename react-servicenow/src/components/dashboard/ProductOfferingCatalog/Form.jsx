@@ -23,7 +23,7 @@ const validationSchema = Yup.object().shape({
   name: Yup.string().required('Name is required'),
   start_date: Yup.string().required('Start date is required'),
   end_date: Yup.string()
-    .test('end-date', 'End date must be after start date', function(value) {
+    .test('end-date', 'End date must be after start date', function (value) {
       if (!value) return true;
       return new Date(value) >= new Date(this.parent.start_date);
     }),
@@ -177,23 +177,55 @@ function ProductOfferingCatalogForm({ open, setOpen, initialData = null, dispatc
             type="button"
             onClick={handleCancel}
             disabled={formik.isSubmitting}
-            className="px-4 py-2 rounded border bg-gray-200 text-red-400 hover:bg-red-400 hover:text-white flex items-center"
+            className="overflow-hidden relative w-28 h-10 bg-gray-200 text-red-400 border-none rounded-md text-lg font-bold cursor-pointer z-10 group disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             Cancel
+
+            {/* Red bubble hover effect */}
+            <span className="absolute w-32 h-28 -top-7 -left-2 bg-red-200 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform group-hover:duration-500 duration-1000 origin-bottom"></span>
+            <span className="absolute w-32 h-28 -top-7 -left-2 bg-red-400 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform group-hover:duration-700 duration-700 origin-bottom"></span>
+            <span className="absolute w-32 h-28 -top-7 -left-2 bg-red-600 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform group-hover:duration-1000 duration-500 origin-bottom"></span>
+            <span className="group-hover:opacity-100 text-white group-hover:duration-1000 duration-100 opacity-0 absolute top-1.25 left-7.25 z-10">
+              Cancel
+            </span>
           </button>
+
+
           <button
             type="submit"
             disabled={formik.isSubmitting}
-            className="px-4 py-2 rounded bg-cyan-700 text-white hover:bg-cyan-800 flex items-center"
+            className="overflow-hidden relative w-32 h-10 bg-cyan-700 text-white border-none rounded-md text-xl font-bold cursor-pointer z-10 group disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {formik.isSubmitting
-              ? isEditMode
-                ? 'Updating...'
-                : 'Creating...'
-              : isEditMode
-                ? 'Update Catalog'
-                : 'Create Catalog'}
+            {formik.isSubmitting ? 'Please wait...' : isEditMode ? 'Update' : 'Create'}
+
+            {/* Conditional yellow bubbles for edit, green bubbles for create */}
+            <span
+              className={`absolute w-36 h-32 -top-8 -left-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-bottom ${isEditMode
+                ? 'bg-yellow-200 group-hover:duration-500 duration-1000'
+                : 'bg-green-200 group-hover:duration-500 duration-1000'
+                }`}
+            ></span>
+            <span
+              className={`absolute w-36 h-32 -top-8 -left-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-bottom ${isEditMode
+                ? 'bg-yellow-400 group-hover:duration-700 duration-700'
+                : 'bg-green-400 group-hover:duration-700 duration-700'
+                }`}
+            ></span>
+            <span
+              className={`absolute w-36 h-32 -top-8 -left-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-bottom ${isEditMode
+                ? 'bg-yellow-600 group-hover:duration-1000 duration-500'
+                : 'bg-green-600 group-hover:duration-1000 duration-500'
+                }`}
+            ></span>
+
+            {!formik.isSubmitting && (
+              <span className="group-hover:opacity-100 group-hover:duration-1000 duration-100 opacity-0 absolute top-1.25 left-7 z-10">
+                Catalog
+              </span>
+            )}
           </button>
+
+
         </div>
       </form>
     </Modal>

@@ -34,7 +34,7 @@ function PriceListTable({ setData, setOpen, dispatch, searchQuery }) {
                 message: 'Price List Deleted',
                 description: 'Price List has been deleted successfully',
             });
-            dispatch(getPriceList({q:searchQuery}));
+            //dispatch(getPriceList({q:searchQuery}));
         } catch (error) {
             console.error('Deletion failed:', error);
             notification.error({

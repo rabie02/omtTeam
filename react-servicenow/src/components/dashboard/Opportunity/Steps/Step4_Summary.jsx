@@ -3,23 +3,16 @@ import { Descriptions, Card, Tag } from 'antd';
 import { format } from 'date-fns';
 import {useSelector} from 'react-redux';
 
-const OpportunityStep4 = ({ formik, pdfRef, initialData=null }) => {
-  console.log(initialData);
+const OpportunityStep4 = ({ formik, pdfRef }) => {
   const { 
     opportunity, 
     priceList, 
     selectedPriceList, 
     createNewPriceList, 
     productOfferings,
-    opportunityLineItem
-  } = formik === undefined ? {
-    opportunity: initialData,
-    priceList: initialData.price_list,
-    selectedPriceList: initialData.price_list._id, 
-    createNewPriceList:false,
-    productOfferings: initialData.line_items.map(item => ({...item.productOffering, unit_of_measurement: item.unit_of_measurement})),
-    opportunityLineItem: initialData.line_items
-  } : formik.values ;
+    opportunityLineItem,
+    account
+  } = formik.values;
 
 
   const { unitOfMeasures, accounts } = useSelector(
@@ -45,12 +38,12 @@ const OpportunityStep4 = ({ formik, pdfRef, initialData=null }) => {
   const currentPriceList = getSelectedPriceList();
 
   const getAccountName = (id) => {
-     const account = accounts.find(u => u.sys_id === id);
-    return account ? account.name : 'Not found';
+     const account = accounts.find(u => u._id === id);
+    return account ? account.name : false;
   }
 
-  //console.log(JSON.stringify(formik.values,null, 2  ));
-  //console.log(productOfferings[0].name)
+  console.log(JSON.stringify(formik.values,null, 2  ));
+  
   return (
     <div className="space-y-6" ref={pdfRef}>
       <h3 className="text-lg font-medium">Opportunity Summary</h3>
@@ -64,7 +57,7 @@ const OpportunityStep4 = ({ formik, pdfRef, initialData=null }) => {
             {format(new Date(opportunity.estimated_closed_date), 'MMM dd, yyyy')}
           </Descriptions.Item>
           <Descriptions.Item label="Account">
-            {getAccountName(opportunity.account)}
+            {getAccountName(opportunity.account) || account.name}
           </Descriptions.Item>
           <Descriptions.Item label="Probability">
             {opportunity.probability}%
@@ -99,32 +92,32 @@ const OpportunityStep4 = ({ formik, pdfRef, initialData=null }) => {
         </Descriptions>
       </Card>
 
-      <Card title="Product Offerings" variant>
+      <Card title="Opportunity Line Items" variant>
         {productOfferings.map((offering, index) => (
           <div key={index} className="mb-6 last:mb-0">
             <Descriptions 
-              title={`Offering #${index + 1}`} 
+              title={`Item #${index + 1}`} 
               column={1} 
               bordered
               className="mb-4"
             >
               <Descriptions.Item label="Product">
-                {offering.name || getOfferingName(offering.productOffering.id)}
+                {getOfferingName(offering.productOffering.id)}
               </Descriptions.Item>
               <Descriptions.Item label="Price">
-                {offering.productOfferingPrice[0].price.taxIncludedAmount.value || offering.price.value} {offering.productOfferingPrice[0].price.taxIncludedAmount.unit || offering.price.unit}
+                {offering.price.value} {offering.price.unit}
               </Descriptions.Item>
               <Descriptions.Item label="Unit of Measure">
-                {getUomName( offering.unit_of_measurement || offering.unitOfMeasure.id)}
+                {getUomName(offering.unitOfMeasure.id)}
               </Descriptions.Item>
               <Descriptions.Item label="Price Type">
                 <Tag color={offering.priceType === 'recurring' ? 'blue' : 'purple'}>
-                  {offering.pricing_method || offering.priceType}
+                  {offering.priceType}
                 </Tag>
               </Descriptions.Item>
               {offering.priceType === 'recurring' && (
                 <Descriptions.Item label="Recurring Period">
-                  {offering.periodicity || offering.recurringChargePeriodType}
+                  {offering.recurringChargePeriodType}
                 </Descriptions.Item>
               )}
               <Descriptions.Item label="Valid From">
@@ -135,20 +128,12 @@ const OpportunityStep4 = ({ formik, pdfRef, initialData=null }) => {
                   {format(new Date(offering.validFor.endDateTime), 'MMM dd, yyyy HH:mm')}
                 </Descriptions.Item>
               )}
+              {offering.quantity !== '' && <Descriptions.Item label="Quantity">{offering.quantity}</Descriptions.Item>}
+              
+              {offering.term_month !== '' && <Descriptions.Item label="Term (Months)">{offering.term_month}</Descriptions.Item>}
             </Descriptions>
           </div>
         ))}
-      </Card>
-
-      <Card title="Line Item Details" variant>
-        <Descriptions column={1}>
-          <Descriptions.Item label="Quantity">
-            {opportunityLineItem[0].quantity}
-          </Descriptions.Item>
-          <Descriptions.Item label="Term (Months)">
-            {opportunityLineItem[0].term_month}
-          </Descriptions.Item>
-        </Descriptions>
       </Card>
     </div>
   );

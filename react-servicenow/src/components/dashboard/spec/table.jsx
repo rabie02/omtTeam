@@ -72,7 +72,7 @@ const fetchOfferings = async (specSysId) => {
 };
 
 
-
+console.log(data);
 
   if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
   if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
@@ -102,7 +102,7 @@ const fetchOfferings = async (specSysId) => {
                 </td>
               </tr>
             ) : (
-              data.map((product) => (
+              data.map((product) => ( product !== undefined &&
                 <tr key={product.sys_id} className="*:text-gray-900 *:first:font-medium">
                   <td className="px-3 py-3 whitespace-nowrap">{product.display_name || product.displayName}</td>
                   <td className="px-3 py-3 whitespace-nowrap">{product.specification_type || 'None'}</td>

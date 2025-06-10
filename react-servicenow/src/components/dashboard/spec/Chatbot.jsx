@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-
+import { stringSimilarity } from 'string-similarity-js';
 
 const Chatbot = () => {
   // États du chatbot
@@ -105,6 +105,7 @@ const Chatbot = () => {
     if (/(catégorie|type|famille)/.test(text)) return 'list_categories';
     if (/(article|connaissance)/.test(text)) return 'search_kb';
     if (/(spécification|caractéristique)/.test(text)) return 'search_specs';
+    if (/(menu|guide|principal)/.test(text)) return 'main_menu';
     if (/(voir.*devis|mes devis|liste.*devis)/.test(text)) return 'view_quotes';
 
 
@@ -123,26 +124,49 @@ const Chatbot = () => {
     try {
       if (currentStep) {
         await processStepResponse(input);
-      } else {
-        const response = await processUserInput(input);
+        return;
+      }
+
+      // 🧠 Étape 1 : essaye avec logique métier
+      const response = await processUserInput(input);
+
+      // Si l'intention est reconnue (et pas juste 'help')
+      if (response && response.intent && response.intent !== 'help') {
         setMessages(prev => [...prev, response]);
+
         if (response.data) {
-          setMessages(prev => [...prev, { 
-            text: response.text || "Voici les résultats:", 
+          setMessages(prev => [...prev, {
+            text: response.text || "Voici les résultats:",
             sender: 'bot',
             isData: true,
             data: response.data,
             options: getFollowUpOptions(response.intent)
           }]);
         }
+        return;
       }
+
+      // 🤖 Étape 2 : sinon NLP
+      const aiResponse = await queryNLPBackend(input);
+      if (aiResponse && aiResponse.text && aiResponse.text.trim() !== '') {
+        console.log("✅ Réponse NLP:", aiResponse);
+        setMessages(prev => [...prev, aiResponse]);
+        return;
+      }
+
+      // Si aucune réponse
+      addBotMessage("Je n’ai pas compris votre demande. Pouvez-vous reformuler ?",generateDefaultOptions());
+      const fallback = handleHelp();
+      setMessages(prev => [...prev, fallback]);
+
     } catch (error) {
       console.error("Erreur chatbot:", error);
-      addBotMessage("Désolé, une erreur est survenue. Pouvez-vous reformuler votre demande?");
+      addBotMessage("Désolé, une erreur est survenue. Pouvez-vous reformuler votre demande ?");
     } finally {
       setLoading(false);
     }
   };
+
 
   // Traitement de l'input utilisateur
   const processUserInput = async (userInput) => {
@@ -173,10 +197,20 @@ const Chatbot = () => {
         return handleViewQuotes();
       case 'list_specs':
         return handleListAllSpecs();
+      case 'main_menu':
+        return handleMainMenu();
       default:
         return handleHelp();
     }
   };
+  const handleMainMenu = () => {
+    return {
+      text: "Voici le menu principal. Comment puis-je vous aider ?",
+      sender: 'bot',
+      options: generateDefaultOptions()
+    };
+  };
+
   const handleViewQuotes = async () => {
     try {
       const response = await axios.get(`${backendUrl}/api/quote`, getAuthHeaders());
@@ -258,7 +292,31 @@ const Chatbot = () => {
       return handleError("Erreur de récupération des prix");
     }
   };
-  
+ 
+  const queryNLPBackend = async (text) => {
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/nlp`,
+        { message: text },
+        getAuthHeaders() // ✅ Ajoute les headers ici !
+      );
+
+      console.log("📡 NLP API response:", response.data);
+
+      if (response.data && response.data.answer) {
+        return {
+          text: response.data.answer,
+          sender: 'bot'
+        };
+      }
+    } catch (error) {
+      console.error("❌ Erreur NLP:", error);
+    }
+
+    return null;
+  };
+
+
   const handleCheckOpportunity = async () => {
     try {
       const response = await axios.get(`${backendUrl}/api/opportunity`, getAuthHeaders());
@@ -302,16 +360,28 @@ const Chatbot = () => {
 
   // Fonction pour rechercher dans la base de connaissances ServiceNow
   const searchKnowledgeArticles = async (query = '') => {
-  try {
-      const response = await axios.get(`${backendUrl}/api/chatbot/kb`, {
-        params: { q: query },
-        ...getAuthHeaders()
+    try {
+      const response = await axios.get(SN_CONFIG.endpoints.searchKB, {
+        baseURL: SN_CONFIG.baseURL,
+        auth: SN_CONFIG.auth,
+        params: {
+          sysparm_query: `active=true^workflow_state=published^${query ? `(short_descriptionLIKE${query}^ORtextLIKE${query})` : ''}`,
+          sysparm_limit: 5,
+          sysparm_fields: 'short_description,number,topic,text,url',
+          sysparm_display_value: true
+        }
       });
-  
-      return response.data.articles;
+      
+      return response.data.result.map(article => ({
+        short_description: article.short_description,
+        number: article.number,
+        topic: article.topic,
+        text: article.text,
+        url: article.url
+      }));
     } catch (error) {
-      console.error('❌ Erreur recherche KB:', error);
-      throw new Error("Impossible de récupérer les articles de connaissance.");
+      console.error('Error searching knowledge base:', error);
+      throw error;
     }
   };
 
@@ -368,10 +438,11 @@ const Chatbot = () => {
   });
 
   const handleHelp = () => ({
-    text: "Je peux vous aider avec:",
+    text: "Bonjour! Je suis votre assistant commercial. Je peux vous aider à trouver des produits, des devis, des prix et plus encore. Comment puis-je vous aider aujourd'hui?",
     sender: 'bot',
     options: generateDefaultOptions()
   });
+
 
   const handleError = (message) => ({
     text: message,
@@ -759,34 +830,191 @@ const Chatbot = () => {
   };
 
   // Composant Popup d'aide
-  const HelpPopup = () => (
+const HelpPopup = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
+  
+  const categories = [
+    {
+      id: 'products',
+      title: 'Produits & Offres',
+      icon: '📦',
+      description: 'Recherche et gestion des produits et offres commerciales'
+    },
+    {
+      id: 'quotes',
+      title: 'Devis & Tarifs',
+      icon: '💰',
+      description: 'Création et modification de devis, consultation des prix'
+    },
+    {
+      id: 'sales',
+      title: 'Opportunités',
+      icon: '📈',
+      description: 'Gestion du pipeline commercial et des opportunités'
+    },
+    {
+      id: 'servicenow',
+      title: 'ServiceNow',
+      icon: '🛠️',
+      description: 'Modules, certifications et fonctionnalités techniques'
+    },
+    {
+      id: 'admin',
+      title: 'Administration',
+      icon: '🔧',
+      description: 'Gestion des utilisateurs et configuration système'
+    },
+    {
+      id: 'kb',
+      title: 'Base de connaissances',
+      icon: '📚',
+      description: 'Documentation et ressources d\'aide'
+    }
+  ];
+
+  const filters = [
+    { id: 'all', label: 'Tout voir' },
+    { id: 'products', label: 'Produits' },
+    { id: 'quotes', label: 'Devis' },
+    { id: 'sales', label: 'Ventes' },
+    { id: 'technical', label: 'Technique' }
+  ];
+
+  const allExamples = [
+    { text: "Je veux voir les produits disponibles", category: 'products' },
+    { text: "Créez un devis pour le produit X", category: 'quotes' },
+    { text: "Quels sont les prix pour les produits Y ?", category: 'quotes' },
+    { text: "Quelles sont les opportunités en cours ?", category: 'sales' },
+    { text: "Rechercher des produits avec la spécification Z", category: 'products' },
+    { text: "Rechercher dans la base de connaissances", category: 'kb' },
+    { text: "Lister les spécifications techniques", category: 'products' },
+    { text: "Parle-moi de FSM", category: 'servicenow' },
+    { text: "C'est quoi OMT ?", category: 'servicenow' },
+    { text: "Quelles sont les certifications ServiceNow ?", category: 'servicenow' },
+    { text: "Créer une offre produit", category: 'products' },
+    { text: "Modifier un devis", category: 'quotes' },
+    { text: "Configurer une intégration SAP", category: 'servicenow' },
+    { text: "Créer une opportunité de vente", category: 'sales' },
+    { text: "Gérer les utilisateurs", category: 'admin' },
+    { text: "Comment créer un rapport ?", category: 'servicenow' },
+    { text: "Accéder à Now Learning", category: 'servicenow' }
+  ];
+
+  const [examples, setExamples] = useState(allExamples);
+
+  useEffect(() => {
+    let filtered = allExamples;
+    
+    // Appliquer le filtre
+    if (activeFilter !== 'all') {
+      filtered = filtered.filter(ex => ex.category === activeFilter);
+    }
+    
+    // Appliquer la recherche
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(ex => 
+        ex.text.toLowerCase().includes(term) || 
+        ex.category.toLowerCase().includes(term)
+      );
+    }
+    
+    setExamples(filtered);
+  }, [searchTerm, activeFilter]);
+
+  const handleClickExample = (text) => {
+    setShowHelp(false);
+    setInput(text);
+    setTimeout(() => handleSendMessage(), 300);
+  };
+
+  const handleCategoryClick = (categoryId) => {
+    setActiveFilter(categoryId);
+    setSearchTerm('');
+  };
+
+  return (
     <div className="help-popup-overlay">
       <div className="help-popup">
-        <h3>Comment utiliser le chatbot</h3>
+        <h3><span role="img" aria-label="lightbulb">💡</span> Comment utiliser le chatbot commercial</h3>
+        
+        {/* Barre de recherche */}
+        <input
+          type="text"
+          className="help-search"
+          placeholder="Rechercher dans l'aide..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        
+        {/* Filtres */}
+        <div className="filter-tags">
+          {filters.map(filter => (
+            <div 
+              key={filter.id}
+              className={`filter-tag ${activeFilter === filter.id ? 'active' : ''}`}
+              onClick={() => setActiveFilter(filter.id)}
+            >
+              {filter.label}
+            </div>
+          ))}
+        </div>
+        
+        {/* Catégories (visible seulement si pas de recherche) */}
+        {!searchTerm && activeFilter === 'all' && (
+          <>
+            <p>Choisissez une catégorie :</p>
+            <div className="help-categories">
+              {categories.map(category => (
+                <div 
+                  key={category.id}
+                  className="category-card"
+                  onClick={() => handleCategoryClick(category.id)}
+                >
+                  <h4><span role="img" aria-label={category.title}>{category.icon}</span> {category.title}</h4>
+                  <p>{category.description}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        
+        {/* Liste des fonctionnalités */}
         <p>Notre assistant peut vous aider avec :</p>
         <ul>
-          <li>Recherche de produits et offres</li>
-          <li>Demande de devis</li>
-          <li>Consultation des prix</li>
-          <li>Gestion des opportunités</li>
-          <li>Information sur les canaux</li>
-          <li>Recherche par spécifications techniques</li>
-          <li>Consultation de la base de connaissances</li>
+          <li><span role="img" aria-label="products">📦</span> Recherche de produits et offres</li>
+          <li><span role="img" aria-label="quotes">📝</span> Demande de devis</li>
+          <li><span role="img" aria-label="prices">💰</span> Consultation des prix</li>
+          <li><span role="img" aria-label="opportunities">📈</span> Gestion des opportunités</li>
+          <li><span role="img" aria-label="channels">📡</span> Information sur les canaux</li>
+          <li><span role="img" aria-label="specs">🛠️</span> Recherche par spécifications techniques</li>
+          <li><span role="img" aria-label="knowledge">📚</span> Consultation de la base de connaissances</li>
         </ul>
-        <p>Exemples de requêtes :</p>
-        <ul>
-          <li>"Je veux voir les produits disponibles"</li>
-          <li>"Créez un devis pour le produit X"</li>
-          <li>"Quels sont les prix pour les produits Y ?"</li>
-          <li>"Quelles sont les opportunités en cours ?"</li>
-          <li>"Rechercher des produits avec la spécification Z"</li>
-          <li>"Rechercher dans la base de connaissances"</li>
-          <li>"Lister les spécifications techniques"</li>
+        
+        {/* Exemples de requêtes */}
+        <p><span role="img" aria-label="examples">📌</span> Exemples de requêtes :</p>
+        <ul className="help-examples">
+          {examples.map((ex, i) => (
+            <li key={i}>
+              <button 
+                className="example-btn" 
+                onClick={() => handleClickExample(ex.text)}
+              >
+                {ex.text}
+              </button>
+            </li>
+          ))}
         </ul>
-        <button onClick={() => setShowHelp(false)}>Fermer</button>
+        
+        <button className="close-btn" onClick={() => setShowHelp(false)}>
+          Fermer l'aide
+        </button>
       </div>
     </div>
   );
+};
+
 
   return (
     <div className={`chatbot-container ${isOpen ? 'open' : ''}`}>
@@ -950,7 +1178,186 @@ const Chatbot = () => {
           font-size: 0.875rem;
           opacity: 0.9;
         }
-        
+        /* Styles globaux pour le popup d'aide */
+.help-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.help-popup {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 700px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 2rem;
+  position: relative;
+}
+
+.help-popup h3 {
+  color: #2563eb;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.help-popup p {
+  color: #4b5563;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.help-popup ul {
+  margin-bottom: 1.5rem;
+}
+
+.help-popup li {
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Barre de recherche */
+.help-search {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.help-search:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Exemples de requêtes */
+.help-examples {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.example-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 0.6rem 1.25rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.example-btn:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.example-btn:active {
+  transform: translateY(0);
+}
+
+/* Bouton de fermeture */
+.close-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.close-btn:hover {
+  background: #1d4ed8;
+}
+
+/* Catégories */
+.help-categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.category-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.category-card:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+}
+
+.category-card h4 {
+  margin: 0 0 0.5rem 0;
+  color: #1e40af;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.category-card p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+/* Filtres */
+.filter-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.filter-tag {
+  background: #e0f2fe;
+  color: #0369a1;
+  border-radius: 20px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-tag:hover, .filter-tag.active {
+  background: #0369a1;
+  color: white;
+}
+
+
         .close-button {
           position: absolute;
           top: 0.875rem;

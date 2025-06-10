@@ -5,13 +5,13 @@ import  FormRadioGroup  from './shared/FormRadioGroup';
 import {useSelector} from 'react-redux';
 
 
-const OpportunityStep2 = ({ formik }) => {
+const OpportunityStep2 = ({ formik, editMode=false }) => {
   const { priceLists } = useSelector((state) => state.priceList);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 mt-4">
       <h3 className="text-lg font-medium">Price List Selection</h3>
-      
+      {editMode && <p className="text-red-300">if you want to edit the prices you must create a new price list</p>}
       <FormRadioGroup
         formik={formik}
         name="createNewPriceList"
@@ -23,7 +23,7 @@ const OpportunityStep2 = ({ formik }) => {
       
       {formik.values.createNewPriceList ? (
         <>
-        <div class="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-4">
           <span className="col-span-3">
             <FormInput
             formik={formik}
@@ -58,7 +58,7 @@ const OpportunityStep2 = ({ formik }) => {
                 onChange={formik.handleChange}
         onBlur={formik.handleBlur}
             /> */}
-          <div class="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <FormInput
             formik={formik}
             name="priceList.start_date"

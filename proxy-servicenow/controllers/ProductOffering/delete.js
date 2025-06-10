@@ -25,11 +25,11 @@ module.exports = async (req, res) => {
               return res.status(404).json({ error: 'productOffering not found' });
           }
   
-          if (!productOffering.id) {
+          if (!productOffering.id && !productOffering.sys_id) {
               return res.status(400).json({ error: 'productOffering not synced with ServiceNow (missing sys_id)' });
           }
   
-          const sys_id = productOffering.id;
+          const sys_id = productOffering.id || productOffering.sys_id;
   
   
           const snResponse = await axios.delete(

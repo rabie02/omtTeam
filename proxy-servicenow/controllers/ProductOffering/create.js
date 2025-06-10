@@ -31,9 +31,7 @@ module.exports = async (req, res) => {
             return res.status(404).json({ error: 'prodSpec not found' });
         }
 
-        if (!prodSpec.sys_id) {
-            return res.status(400).json({ error: 'prodSpec not synced with ServiceNow (missing sys_id)' });
-        }
+        
 
         // Authentication and Authorization
         const authHeader = req.headers.authorization;
@@ -46,16 +44,6 @@ module.exports = async (req, res) => {
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        // Validation
-        const requiredFields = ['name', 'productSpecification', 'productOfferingPrice'];
-        const missingFields = requiredFields.filter(field => !req.body[field]);
-        if (missingFields.length > 0) {
-            return res.status(400).json({
-                error: 'Missing required fields',
-                missing: missingFields
-            });
-        }
-
         // Prepare ServiceNow payload
         const snPayload = {
             name: req.body.name,
@@ -67,13 +55,9 @@ module.exports = async (req, res) => {
             productOfferingTerm: req.body.productOfferingTerm,
             productOfferingPrice: req.body.productOfferingPrice,
             productSpecification: {
-                id: req.body.productSpecification.id,
-                name: req.body.productSpecification.name,
-                version: req.body.productSpecification.version,
-                internalVersion: 1,
-                internalId: req.body.productSpecification.id
+                id: prodSpec.sys_id,
             },
-            prodSpecCharValueUse: req.body.prodSpecCharValueUse,
+            //prodSpecCharValueUse: req.body.prodSpecCharValueUse,
             channel: req.body.channel,
             category: {
                 id: req.body.category.id,
@@ -82,6 +66,9 @@ module.exports = async (req, res) => {
             lifecycleStatus: req.body.lifecycleStatus,
             status: req.body.status
         };
+
+        console.log(JSON.stringify(snPayload,null,2))
+        
 
         // ServiceNow API Call
         const snResponse = await axios.post(
@@ -107,6 +94,8 @@ module.exports = async (req, res) => {
                 sys_id: snRecord.id
             });
             await mongoDoc.save();
+
+            console.log(JSON.stringify(mongoDoc,null,2))
             
             // Populate the created document
             populatedDoc = await ProductOffering.findById(mongoDoc._id)
@@ -117,7 +106,7 @@ module.exports = async (req, res) => {
         }
 
         const responseData = {
-            result: mongoDoc,
+            result: populatedDoc,
         };
 
         res.status(201).json(responseData);

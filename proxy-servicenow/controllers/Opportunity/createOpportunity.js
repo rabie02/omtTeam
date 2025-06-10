@@ -9,6 +9,18 @@ const Stage = require('../../models/stage');
 
 async function createOpportunity(req, res=null) {
   try {
+    if (req.body.estimated_closed_date) {
+      const startDate = new Date(req.body.estimated_closed_date);
+      const currentDate = new Date();
+      
+      if (isNaN(startDate.getTime())) {
+        return res?.status(400).json({ error: 'Invalid start date format' });
+      }
+      
+      if (startDate < currentDate) {
+        return res?.status(400).json({ error: 'Start date cannot be in the future' });
+      }
+    }
     const { account, price_list, stage, sales_cycle_type, ...opportunityData } = req.body;
     
     // Step 1: Get sys_ids from MongoDB documents using their _id (if provided)
