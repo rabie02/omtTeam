@@ -14,8 +14,28 @@ const FormSelect = ({
   ...props
 }) => {
   const value = getNestedValue(formik.values, name);
-  const touched = getNestedValue(formik.touched, name);
-  const error = getNestedValue(formik.errors, name);
+  let touched = getNestedValue(formik.touched, name);
+  let error = getNestedValue(formik.errors, name);
+
+  if (name.includes('[')) {
+    // Handle array notation in field names (e.g., "products[0].price")
+    const [basePath, ...nestedPaths] = name.split('.');
+    const [arrayName, indexStr] = basePath.split(/[\[\]]/);
+    const index = Number(indexStr);
+
+    const arrayErrors = formik.errors[arrayName]?.[index];
+    const arrayTouched = formik.touched[arrayName]?.[index];
+
+    if (arrayErrors) {
+        error = nestedPaths.reduce((obj, path) => obj?.[path], arrayErrors) ?? false;
+    }
+
+    if (arrayTouched) {
+        touched = nestedPaths.reduce((obj, path) => obj?.[path], arrayTouched) ?? false;
+    }
+}
+
+
   
   return (
     <div className={`mb-4 ${className}`}>
@@ -25,7 +45,7 @@ const FormSelect = ({
         value={value}
         onChange={onChange}
         onBlur={onBlur}
-        className={`w-full border rounded px-3 py-2 ${error ? 'border-red-500' : 'border-gray-300'}`}
+        className={`w-full border rounded px-3 py-2.5 ${error ? 'border-red-500' : 'border-gray-300'} disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500`}
         {...props}
       >
         <option value="">Select {label}</option>

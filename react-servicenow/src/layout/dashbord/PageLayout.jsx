@@ -13,11 +13,12 @@ const PageLayout = ({
   TableComponent,
   FormComponent,
   options,
-  dispatch
+  dispatch,
+  setSearchTerm
 }) => {
   return (
     <div className='h-svh'>
-      <div className='h-36 bg-gradient-to-b from-cyan-700 from-10% to-cyan-700/40 to-90% flex items-end py-3 px-20'>
+      <div className='h-24 bg-gradient-to-b from-cyan-700  from-10% to-cyan-700/40  to-90%  flex items-end py-3 px-20'>
         <div className='flex w-full justify-between'>
           <div className="relative w-48 transition-all focus-within:w-56">
             <input
@@ -53,6 +54,7 @@ const PageLayout = ({
           <TableComponent 
             setData={setData} 
             setOpen={setOpen} 
+            open={open}
             dispatch={dispatch} 
             searchQuery={searchQuery} 
           />
@@ -60,13 +62,14 @@ const PageLayout = ({
         {children}
       </div>
 
-      {FormComponent && (
+      {FormComponent && open && (
         <FormComponent 
           open={open} 
           setOpen={setOpen} 
           initialData={data} 
           options={options} 
           dispatch={dispatch} 
+          setSearchTerm={setSearchTerm}
         />
       )}
     </div>

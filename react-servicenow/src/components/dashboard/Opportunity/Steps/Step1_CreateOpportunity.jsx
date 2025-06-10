@@ -3,7 +3,7 @@ import FormInput from './shared/FormInput';
 import FormSelect from './shared/FormSelect';
 import {useSelector} from 'react-redux';
 import { useRef, useEffect } from 'react';
-const OpportunityStep1 = ({ formik }) => {
+const OpportunityStep1 = ({ formik, editMode=false }) => {
   const { salesCycleTypes, stages, accounts } = useSelector((state) => state.opportunity);
    // Focus the input when the component mounts
    const shortDescriptionRef = useRef(null);
@@ -14,7 +14,7 @@ const OpportunityStep1 = ({ formik }) => {
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 mt-4">
       <h3 className="text-lg font-medium">Opportunity Details</h3>
       
       <FormInput
@@ -50,6 +50,7 @@ const OpportunityStep1 = ({ formik }) => {
         }))}
         onChange={formik.handleChange}
         onBlur={formik.handleBlur}
+        disabled={editMode}
       />
       
         <FormSelect
@@ -64,7 +65,7 @@ const OpportunityStep1 = ({ formik }) => {
         onBlur={formik.handleBlur}
       />
       </div>
-      {salesCycleTypes.filter(s=> s._id === formik.values.opportunity.sales_cycle_type)?.[0]?.["sys_name"] === "NEWCUST" && 
+      {(salesCycleTypes.filter(s=> s._id === formik.values.opportunity.sales_cycle_type)?.[0]?.["sys_name"] === "NEWCUST" && !editMode) && 
       <div className="grid grid-cols-2 gap-4">
          <FormInput
           formik={formik}
@@ -79,7 +80,7 @@ const OpportunityStep1 = ({ formik }) => {
         />
       </div>}
       
-      {salesCycleTypes.filter(s=> s._id === formik.values.opportunity.sales_cycle_type)?.[0]?.["sys_name"] !== "NEWCUST" &&
+      {(salesCycleTypes.filter(s=> s._id === formik.values.opportunity.sales_cycle_type)?.[0]?.["sys_name"] !== "NEWCUST" || editMode) &&
       <FormSelect
         formik={formik}
         name="opportunity.account"
@@ -90,6 +91,7 @@ const OpportunityStep1 = ({ formik }) => {
         }))}
         onChange={formik.handleChange}
         onBlur={formik.handleBlur}
+        disabled={editMode}
       />
       }
 

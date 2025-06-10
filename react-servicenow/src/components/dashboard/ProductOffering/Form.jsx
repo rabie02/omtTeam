@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Modal, notification } from 'antd';
+import { Modal, notification, Select } from 'antd';
 import { updateProductOffering, createProductOffering } from '../../../features/servicenow/product-offering/productOfferingSlice';
 
 
@@ -20,9 +20,9 @@ const validationSchema = Yup.object().shape({
     category: Yup.string().required('Category is required'), // Category ID
 });
 
-function ProductOfferingForm({ open, setOpen, initialData = null, options=null, dispatch }) {
-
-  const isEditMode = Boolean(initialData);
+function ProductOfferingForm({ open, setOpen, initialData = null, options=null, dispatch, setSearchTerm }) {
+  console.log(initialData?.productSpecification);
+  const isEditMode = Boolean(initialData); 
   const formik = useFormik({
     initialValues: {
         name: initialData?.name || '',
@@ -34,12 +34,12 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         po_term: initialData?.productOfferingTerm || 'not_applicable',
         p_spec: initialData?.productSpecification._id || '', // Get ID from nested object
         channel: initialData?.channel?.[0]?.id || '', // Get ID from first item in array
-        category: initialData?.category[0] || '', // Get ID from nested object
+        category: initialData?.category[0]?._id || '', // Get ID from nested object
     },
     validationSchema,
     onSubmit: async (values, {resetForm}) => {
       try {
-       
+       console.log(values.p_spec)
         // Find the selected Product Specification object
         const selectedSpec = options.specifications.find(spec => 
           (spec._id) === values.p_spec
@@ -160,16 +160,15 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
   });
 
 
-
   const handleCancel = () => setOpen(false);
-
+  
   return (
     <Modal
       title={isEditMode ? 'Edit Record ' : 'Add New Record'}
       open={open}
       onCancel={handleCancel}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
     >
       <form onSubmit={formik.handleSubmit} className="space-y-4">
         {/* Name */}
@@ -189,7 +188,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         </div>
 
        
-          <div class="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
         {/* Start Date */}
         <div>
           <label className="block font-medium mb-1">Start Date</label>
@@ -222,42 +221,48 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         </div>
         </div>
 
-        <div className="columns-3">
-          <label className="block font-medium mb-1">Recurring Price</label>
-          <input
-            type="number"
-            name="recurring_price"
-            value={formik.values.recurring_price}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            disabled={formik.isSubmitting}
+        <div className="grid grid-cols-5 gap-3">
+          <div className="col-span-2">
+            <label className="block font-medium mb-1">Recurring Price</label>
+            <input
+              type="number"
+              name="recurring_price"
+              value={formik.values.recurring_price}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              disabled={formik.isSubmitting}
+              className="w-full border rounded px-3 py-2"
+              placeholder='USD'
+              step="0.01"
+            />
+          </div>
+          <div className="col-span-2">
+            <label className="block font-medium mb-1">Non Recurring Price</label>
+            <input
+              type="number"
+              name="non_recurring_price"
+              value={formik.values.non_recurring_price}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              disabled={formik.isSubmitting}
+              className="w-full border rounded px-3 py-2"
+              placeholder='USD'
+              step="0.01"
+            />
+          </div>
+          <div>
+            <label className="block font-medium mb-1">Currency</label>
+            <input
             className="w-full border rounded px-3 py-2"
-            placeholder='USD'
-            step="0.01"
-          />
-          <label className="block font-medium mb-1">Non Recurring Price</label>
-          <input
-            type="number"
-            name="non_recurring_price"
-            value={formik.values.non_recurring_price}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            disabled={formik.isSubmitting}
-            className="w-full border rounded px-3 py-2"
-            placeholder='USD'
-            step="0.01"
-          />
-          <label className="block font-medium mb-1">Currency (unavailable)</label>
-          <input
-           className="w-full border rounded px-3 py-2"
-            type="string"
-            readOnly
-            disabled
-            placeholder='USD'
-          />
+              type="string"
+              readOnly
+              disabled
+              placeholder='USD'
+            />
+          </div>
         </div>
 
-          <div class="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4">
         {/* Product Offering Term */}
         <div>
         <label className="block font-medium mb-1">Contract Term:</label>
@@ -283,30 +288,31 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
        {/* {Product Specification} */}
        <div className="col-span-2">
         <label className="block font-medium mb-1">Product Specification:</label>
-        <select
-          id="p_spec"
-          name="p_spec"
-          value={formik.values.p_spec}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          disabled={formik.isSubmitting || isEditMode}
-          className="w-full border rounded px-3 py-2 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500"
-        >
-          <option value="">Select a product specification</option>
-          {/* Map over the specs passed via props */}
-          {options.specifications.map(spec => ( spec.status ==="published"?
-                <option key={spec._id} value={spec._id}> {/* Use correct ID field */}
-                    {spec.display_name || spec.name} {/* Use correct Name field */}
-                </option> : ""
-                ))}
-          </select>
+        
+          <Select
+            id="p_spec"
+            name="p_spec"
+            showSearch
+            placeholder="Select Product Specification"
+            value={formik.values.p_spec || undefined} // Use undefined instead of empty string for better Select behavior
+            onChange={(value) => formik.setFieldValue('p_spec', value)}
+            onBlur={formik.handleBlur}
+            onSearch={(value) => setSearchTerm(value)}
+            options={options.specifications.map(spec => ({
+              value: spec._id,
+              label: spec.displayName
+            }))}
+            filterOption={false}
+            disabled={formik.isSubmitting || isEditMode}
+            className="w-full border rounded px-3 py-2"
+          />
            {/* Add validation message display */}
      {formik.touched.p_spec && formik.errors.p_spec && (
         <p className="text-red-500 text-sm mt-1">{formik.errors.p_spec}</p>
      )}
       </div>
       </div>
-      <div class="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
        {/* {Product Offering Category} */}
        <div>
         <label className="block font-medium mb-1">Category:</label>
@@ -378,29 +384,61 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
      )}
         </div>
 
-        {/* Actions */}
-        <div className="flex justify-end space-x-2 pt-2">
+         {/* Actions */}
+         <div className="flex justify-end space-x-2 pt-2">
           <button
             type="button"
             onClick={handleCancel}
             disabled={formik.isSubmitting}
-            className="px-4 py-2 rounded border bg-gray-200 text-red-400 hover:bg-red-400 hover:text-white"
+            className="overflow-hidden relative w-28 h-10 bg-gray-200 text-red-400 border-none rounded-md text-lg font-bold cursor-pointer z-10 group disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             Cancel
+
+            {/* Red bubble hover effect */}
+            <span className="absolute w-32 h-28 -top-7 -left-2 bg-red-200 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform group-hover:duration-500 duration-1000 origin-bottom"></span>
+            <span className="absolute w-32 h-28 -top-7 -left-2 bg-red-400 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform group-hover:duration-700 duration-700 origin-bottom"></span>
+            <span className="absolute w-32 h-28 -top-7 -left-2 bg-red-600 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform group-hover:duration-1000 duration-500 origin-bottom"></span>
+            <span className="group-hover:opacity-100 text-white group-hover:duration-1000 duration-100 opacity-0 absolute top-1.25 left-7.25 z-10">
+              Cancel
+            </span>
           </button>
+
+
           <button
             type="submit"
             disabled={formik.isSubmitting}
-            className="px-4 py-2 rounded bg-cyan-700 text-white hover:bg-cyan-800"
+            className="overflow-hidden relative w-32 h-10 bg-cyan-700 text-white border-none rounded-md text-xl font-bold cursor-pointer z-10 group disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {formik.isSubmitting
-              ? isEditMode
-                ? 'Updating...'
-                : 'Creating...'
-              : isEditMode
-              ? 'Update Record'
-              : 'Create Record'}
+            {formik.isSubmitting ? 'Please wait...' : isEditMode ? 'Update' : 'Create'}
+
+            {/* Conditional yellow bubbles for edit, green bubbles for create */}
+            <span
+              className={`absolute w-36 h-32 -top-8 -left-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-bottom ${isEditMode
+                ? 'bg-yellow-200 group-hover:duration-500 duration-1000'
+                : 'bg-green-200 group-hover:duration-500 duration-1000'
+                }`}
+            ></span>
+            <span
+              className={`absolute w-36 h-32 -top-8 -left-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-bottom ${isEditMode
+                ? 'bg-yellow-400 group-hover:duration-700 duration-700'
+                : 'bg-green-400 group-hover:duration-700 duration-700'
+                }`}
+            ></span>
+            <span
+              className={`absolute w-36 h-32 -top-8 -left-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-bottom ${isEditMode
+                ? 'bg-yellow-600 group-hover:duration-1000 duration-500'
+                : 'bg-green-600 group-hover:duration-1000 duration-500'
+                }`}
+            ></span>
+
+            {!formik.isSubmitting && (
+              <span className="group-hover:opacity-100 group-hover:duration-1000 duration-100 opacity-0 absolute top-1.25 left-7 z-10">
+                Product Offering
+              </span>
+            )}
           </button>
+
+
         </div>
       </form>
     </Modal>

@@ -38,7 +38,7 @@ module.exports = async (req, res) => {
             const allowedFields = [
               'name', 'displayName', 'description', 'lifecycleStatus',
               'productOfferingTerm', 'validFor', 'productOfferingPrice',
-              'prodSpecCharValueUse', 'channel', 'category', 'status', 'productSpecification'
+               'channel', 'category', 'status', 'productSpecification'
             ];
     
             const updateBody = {};
