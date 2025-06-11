@@ -840,7 +840,7 @@ export function CreateAcc() {
             </Tooltip>
           </CardBody>
         </form>
-        
+{/*         
         <CardFooter className="pt-0 text-center">
           <Typography variant="small" className="mt-4 flex justify-center">
             Already have an account? {" "}
@@ -854,7 +854,7 @@ export function CreateAcc() {
               Sign In
             </Typography>
           </Typography>
-        </CardFooter>
+        </CardFooter> */}
       </Card>
     </div>
   );

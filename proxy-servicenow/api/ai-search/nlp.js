@@ -129,7 +129,7 @@ manager.addDocument('fr', 'ajout au catalogue', 'product.create');
 manager.addDocument('fr', 'configurer un produit', 'product.create');
 manager.addDocument('fr', 'déclarer un produit', 'product.create');
 
-manager.addAnswer('fr', 'product.create', 'Pour créer un produit : Products > Nouveau. Renseignez SKU, description, catégorie et prix. Puis validez.');
+manager.addAnswer('fr', 'product.create', 'Pour créer un produit : Products > dire ok pour afficher les données que tu doit entrer');
 
 // ----------------------
 manager.addDocument('fr', 'modifier offre produit', 'product.edit');

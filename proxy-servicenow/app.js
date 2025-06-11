@@ -26,6 +26,7 @@ const ProductOfferingPrice = require("./api/productOfferingPrice/index")
 const opportunityLine = require("./api/OpportunityLine/index")
 const priceList = require("./api/PriceList/index")
 const nlpRoutes = require('./api/ai-search/nlp');
+const chatbotCases = require('./api/ai-search/getCases');
 const Quote = require('./api/quote/index');
 const emailroutes = require('./email/router');
 // const createAccount = require('./api/createAccount/index')
@@ -101,14 +102,13 @@ app.use('/api', [
     contact,
     location,
     account,
+    logoutRoutes,
 
 ]);
 
 
 // Protected routes
 app.use('/api', authjwt , [
-  // logout
-  logoutRoutes,
   // routes that need middaleware
   ProductOfferingCatalog,
   ProductOfferingCategory,
@@ -121,7 +121,8 @@ app.use('/api', authjwt , [
   opportunity,
   opportunityLine,
   ProductOfferingPrice,
-  nlpRoutes
+  nlpRoutes,
+  chatbotCases
 ]);
 
 

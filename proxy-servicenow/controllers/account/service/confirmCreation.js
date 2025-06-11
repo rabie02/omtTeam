@@ -45,14 +45,6 @@ const confirmCreation = async (req, res) => {
           phone: userData.mobile_phone || '',
           email: userData.email,
           status: 'active',
-          ...(userData.location && {
-            city: userData.location.city,
-            state: userData.location.state,
-            country: userData.location.country,
-            zip: userData.location.postalCode,
-            latitude: userData.location.latitude?.toString(),
-            longitude: userData.location.longitude?.toString()
-          })
         };
 
         // Call the PATCH /account/:id endpoint using MongoDB _id
@@ -78,14 +70,6 @@ const confirmCreation = async (req, res) => {
         email: userData.email,
         phone: userData.mobile_phone || '',
         status: 'active',
-        ...(userData.location && {
-          city: userData.location.city,
-          state: userData.location.state,
-          country: userData.location.country,
-          zip: userData.location.postalCode,
-          latitude: userData.location.latitude?.toString(),
-          longitude: userData.location.longitude?.toString()
-        }),
         ...(userData.type === 'company' && {
           industry: userData.industry || '',
           website: userData.website || ''
@@ -137,6 +121,16 @@ const confirmCreation = async (req, res) => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer system`
+        }
+      }
+    );
+
+   await Account.findByIdAndUpdate(
+      accountId,
+      {
+        $push: {
+          contacts: contactResponse.data._id,
+          locations: locationResponse.data._id
         }
       }
     );

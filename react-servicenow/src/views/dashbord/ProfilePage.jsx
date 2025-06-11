@@ -23,7 +23,7 @@ const ProfilePage = () => {
       phone: userInfo.phone || userInfo.mobile_phone || 'Phone not specified',
       lastLogin: userInfo.last_login_time ? new Date(userInfo.last_login_time).toLocaleString() : 'Not available',
       avatar: userInfo.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(userInfo.name || 'Admin')}&background=006080&color=fff`,
-      department: userInfo.department || 'Department not specified',
+      active: userInfo.active || 'not specified',
       manager: userInfo.manager?.display_value || userInfo.manager || 'Not specified',
       username: userInfo.user_name || 'N/A'
     };
@@ -104,8 +104,8 @@ const ProfilePage = () => {
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-gray-500 dark:text-gray-400">Department</dt>
-                      <dd className="text-lg font-medium text-gray-800 dark:text-white mt-1">{userData.department}</dd>
+                      <dt className="text-gray-500 dark:text-gray-400">Active</dt>
+                      <dd className="text-lg font-medium text-gray-800 dark:text-white mt-1">{userData.active}</dd>
                     </div>
                     <div>
                       <dt className="text-gray-500 dark:text-gray-400">Manager</dt>
