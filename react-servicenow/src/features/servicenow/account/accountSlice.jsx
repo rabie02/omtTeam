@@ -1,6 +1,11 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
 
+const getHeaders = () => ({
+  'Content-Type': 'application/json',
+  'authorization': `${localStorage.getItem('access_token')}`, // or your auth method
+});
+
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 const initialState = {
@@ -17,6 +22,7 @@ const initialState = {
   limit: 6,
   searchQuery: ''
 };
+
 
 // Async Thunks
 export const getAccount = createAsyncThunk(
@@ -47,10 +53,9 @@ export const deleteAccount = createAsyncThunk(
   'account/delete',
   async (accountId, { rejectWithValue }) => {
     try {
-      const access_token = localStorage.getItem('access_token');
       const response = await axios.delete(
         `${backendUrl}/api/account/${accountId}`,
-        { headers: { authorization: access_token } }
+        { headers: getHeaders() }
       );
       return response.data;
     } catch (error) {

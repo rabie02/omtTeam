@@ -44,9 +44,15 @@ const Sidebar = ({ toggleSidebar, open, isSidebarCollapsed }) => {
         { path: '/dashboard/price-list', icon: 'price-tag-3-line', text: 'Price List' },
         { path: '/dashboard/quote', icon: 'contract-line', text: 'Quote' }
       ]
+    },
+    {
+      path: '/dashboard/account',
+      icon: 'table-line',
+      text: 'Client',
+      children: [
+        { path: '/dashboard/account', icon: 'shining-line', text: 'Accounts' },
+      ]
     }
-
-
   ];
 
   return (
