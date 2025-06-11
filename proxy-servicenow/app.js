@@ -100,14 +100,13 @@ app.use('/api', [
     contact,
     location,
     account,
+    logoutRoutes,
 
 ]);
 
 
 // Protected routes
 app.use('/api', authjwt , [
-  // logout
-  logoutRoutes,
   // routes that need middaleware
   ProductOfferingCatalog,
   ProductOfferingCategory,

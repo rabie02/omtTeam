@@ -125,6 +125,16 @@ const confirmCreation = async (req, res) => {
       }
     );
 
+   await Account.findByIdAndUpdate(
+      accountId,
+      {
+        $push: {
+          contacts: contactResponse.data._id,
+          locations: locationResponse.data._id
+        }
+      }
+    );
+
     // Clean up the pending registration
     pendingRegistrations.delete(token);
     emailToTokenMap.delete(userData.email);

@@ -16,6 +16,7 @@ const authRoutes = [
       </IsAuth>
     ),
   },
+  { path: '/createAccount', element:<CreateAccount /> },
   // ... other routes
 ];
 
