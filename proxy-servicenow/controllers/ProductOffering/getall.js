@@ -22,6 +22,7 @@ module.exports = async(req, res) =>{
         ProductOffering.find(query)
           .skip(skip)
           .limit(limit)
+          .populate('category')
           .populate('productSpecification') // This will populate the referenced ProductSpecification
           .exec(),
         ProductOffering.countDocuments(query)

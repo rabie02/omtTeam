@@ -1,135 +1,98 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Modal, Steps, notification } from 'antd';
+import { Modal, Steps, notification, Spin } from 'antd';
 import { useSelector } from 'react-redux';
 import OpportunityNavigation from './Steps/Navigation';
-import OpportunityStep1 from './Steps/Step1';
-import OpportunityStep2 from './Steps/Step2';
-import OpportunityStep3 from './Steps/Step3';
-import OpportunityStep4 from './Steps/Step4';
+import OpportunityStep1 from './Steps/Step1_CreateOpportunity';
+import OpportunityStep2 from './Steps/Step2_SelectPriceList';
+import OpportunityStep3 from './Steps/Step3_ProductOfferingPrice';
+import OpportunityStep4 from './Steps/Step4_Summary';
 import { formatDateForInput } from '@/utils/formatDateForInput.js';
 import {
   getSalesCycleTypes,
   getStages,
   getAccounts,
   getUnitOfMeasures,
-  workflow
+  workflow,
+  updateOpportunityPricing
 } from '../../../features/servicenow/opportunity/opportunitySlice';
 import { getPriceList } from '../../../features/servicenow/price-list/priceListSlice';
+import { getByPriceList } from '../../../features/servicenow/product-offering-price/productOfferingPriceSlice';
 import {getall as getProductOfferings} from '../../../features/servicenow/product-offering/productOfferingSlice';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 const { Step } = Steps;
 
-const validationSchema = Yup.object().shape({
-  opportunity: Yup.object().shape({
-    short_description: Yup.string().required('Short description is required'),
-        estimated_closed_date: Yup.string(),
-        sales_cycle_type: Yup.string().required('Sales cycle type is required'),
-        stage: Yup.string().required('Stage is required'),
-        account: Yup.string(),
-        probability: Yup.number().min(0).max(100),
-  }),
-  createNewPriceList: Yup.boolean().required(),
-
-  selectedPriceList: Yup.string().when('createNewPriceList', {
-    is: (value) => value === false,
-    then: () => Yup.string().required('Please select a price list'),
-    otherwise: ()=> Yup.string().nullable(),
-  }),
-
-  priceList: Yup.object().when('createNewPriceList', {
-    is: (value) => value === true,
-    then: () => Yup.object().shape({
-      name: Yup.string().required('Name is required'),
-      currency: Yup.string().required('Currency is required'),
-      state: Yup.string(),
-      start_date: Yup.string().required('Start date is required'),
-    }),
-    otherwise: () => Yup.object().nullable(),
-  }),
-  productOfferings: Yup.array().min(1, 'At least one product offering is required').of(
-    Yup.object().shape({
-      name: Yup.string(),
-      price: Yup.object().shape({
-        value: Yup.number().min(0),
-        unit: Yup.string(),
-      }),
-      productOffering: Yup.object().shape({
-        id: Yup.string(),
-      }),
-      unitOfMeasure: Yup.object().shape({
-        id: Yup.string(),
-      }),
-      priceType: Yup.string(),
-    })
-  ),
-  opportunityLineItem: Yup.object().shape({
-    quantity: Yup.number().min(1),
-    term_month: Yup.number().min(1),
-  }),
-  account: Yup.object().shape({
-    name: Yup.string(),
-    email: Yup.string(),
-  }),
-});
-
-function OpportunityForm({ open, setOpen, dispatch }) {
+function OpportunityForm({ open, setOpen, dispatch, initialData=null }) {
+try{
+  const [editMode, setEditMode] = useState(Boolean(initialData)); 
   const [currentStep, setCurrentStep] = useState(0);
-  const [createNewPriceList, setCreateNewPriceList] = useState(true);
-  const [productOfferingsList, setProductOfferingsList] = useState([]);
-
+  const FORM_STORAGE_KEY = 'opportunityFormData'
   // Get required data from Redux store
-  const {
-    salesCycleTypes,
-    stages,
-    accounts,
-    unitOfMeasures,
-    loading,
-    data:productOfferings,
-    priceLists
-  } = useSelector((state) => ({
-    ...state.opportunity,
-    productOfferings: state.productOffering,
-    priceLists: state.priceList
-  }));
+  // More efficient selectors that won't cause unnecessary re-renders
+const loading = useSelector(state => state.opportunity.loading);
+const productOfferings = useSelector(state => state.productOffering.data);
+const priceLists = useSelector(state => state.priceList.priceLists);
+const { 
+  productOfferingPrices, 
+  loading: popLoading, 
+  error 
+} = useSelector(state => state.productOfferingPrice);
 
-  // Fetch required data on component mount
-  useEffect(() => {
-    dispatch(getSalesCycleTypes());
-    dispatch(getStages());
-    dispatch(getAccounts());
-    dispatch(getUnitOfMeasures());
-    dispatch(getProductOfferings({ page: 1, limit: 6}));
-    dispatch(getPriceList());
-  }, [dispatch]);
+// Fetch required data on component mount
+useEffect(() => {
+  // Always fetch these
+  const fetchBaseData = async () => {
+    await dispatch(getSalesCycleTypes());
+    await dispatch(getStages());
+    await dispatch(getAccounts());
+    await dispatch(getUnitOfMeasures());
+    await dispatch(getProductOfferings({ page: 1, limit: 6 }));
+    await dispatch(getPriceList({ page: 1, limit: 1000 }));
+  };
 
-  const formik = useFormik({
-    initialValues: {
-      createNewPriceList: true,
-      selectedPriceList: '',
-      account:{
+  // Only fetch in edit mode
+  const fetchEditModeData = async () => {
+    if (editMode && initialData?.price_list?._id) {
+      await dispatch(getByPriceList(initialData.price_list._id));
+    }
+  };
+
+  fetchBaseData();
+  fetchEditModeData();
+
+}, [dispatch, editMode, initialData?.price_list?._id]); // Proper dependencies
+
+
+  // Get initial values from localStorage or use defaults
+  const getInitialValues = () => {
+    const savedForm = localStorage.getItem(FORM_STORAGE_KEY);
+    if (!editMode && savedForm) return  JSON.parse(savedForm);
+    return {
+      createNewPriceList: initialData?.price_list?._id ?  false : true,
+      selectedPriceList: initialData?.price_list?._id || '',
+      account: {
         name: "",
         email: ""
       },
       opportunity: {
-        short_description: '',
-        estimated_closed_date: formatDateForInput(new Date()),
-        description: '',
-        term_month: '12',
-        sales_cycle_type: '',
-        probability: '50',
-        stage: '',
+        short_description: initialData?.short_description||'',
+        estimated_closed_date: formatDateForInput(initialData?.estimated_closed_date)||formatDateForInput(new Date(new Date().getTime() + 86400000)),
+        description: initialData?.description||'',
+        term_month: initialData?.term_month||'12',
+        sales_cycle_type: initialData?.sales_cycle_type._id||'',
+        probability: initialData?.probability||'50',
+        stage: initialData?.stage._id||'',
         industry: "telecommunications",
-        account: ''
+        account: initialData?.account._id||''
       },
       priceList: {
         name: '',
         currency: 'USD',
         state: 'published',
-        start_date: formatDateForInput(new Date()),
+        start_date: formatDateForInput(new Date("01-01-2010")),
         end_date: '',
         description: ''
       },
@@ -143,47 +106,222 @@ function OpportunityForm({ open, setOpen, dispatch }) {
         validFor: {
           startDateTime: formatDateForInput(new Date()),
           endDateTime: ''
-        }
-      }],
-      productOfferingPrice: {
-        name: '',
-        price: {
-          unit: 'USD',
-          value: ''
         },
-        lifecycleStatus: 'Active',
-        validFor: {
-          startDateTime: formatDateForInput(new Date()),
-          endDateTime: ''
-        },
-        productOffering: {
-          id: ''
-        },
-        priceType: 'recurring',
-        recurringChargePeriodType: 'monthly',
-        unitOfMeasure: {
-          id: ''
-        },
-        priceList: {
-          id: ''
-        },
-        '@type': 'ProductOfferingPrice'
-      },
-      opportunityLineItem: {
-        term_month: '12',
-        quantity: '1'
-      }
-    },
+        term_month: '',
+        quantity: ''
+      }]
+    };
+  };
+
+  const validationSchema = useMemo(() => {
+    return Yup.object().shape({
+      opportunity: Yup.object().shape({
+        short_description: Yup.string().required('Short description is required'),
+        estimated_closed_date: Yup.string()
+          .required('Estimated close date is required')
+          .test(
+            'is-future',
+            'Estimated close date must be in the future',
+            function(value) {
+              if (editMode) return true;
+              if (!value) return false;
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const closeDate = new Date(value);
+              return closeDate > today;
+            }
+          ),
+        sales_cycle_type: Yup.string().required('Sales cycle type is required'),
+        stage: Yup.string().required('Stage is required'),
+        account: Yup.string(),
+        probability: Yup.number().min(0).max(100),
+      }),
+      createNewPriceList: Yup.boolean().required(),
+
+      selectedPriceList: Yup.string().when('createNewPriceList', {
+        is: (value) => value === false,
+        then: () => Yup.string().required('Please select a price list'),
+        otherwise: () => Yup.string().nullable(),
+      }),
+
+      priceList: Yup.object().when('createNewPriceList', {
+        is: (value) => value === true,
+        then: () => Yup.object().shape({
+          name: Yup.string().required('Name is required'),
+          currency: Yup.string().required('Currency is required'),
+          state: Yup.string(),
+          start_date: Yup.string().required('Start date is required'),
+          end_date: Yup.string()
+            .test(
+              'end-after-start',
+              'End date must be after start date',
+              function(value) {
+                const { start_date } = this.parent;
+                if (!start_date || !value) return true;
+                return new Date(value) > new Date(start_date);
+              }
+            ),
+        }),
+        otherwise: () => Yup.object().nullable(),
+      }),
+      productOfferings: Yup.array()
+        .min(1, 'At least one product offering is required')
+        .of(
+          Yup.object().shape({
+            name: Yup.string().required("Name is required"),
+            price: Yup.object().shape({
+              value: Yup.number().min(0).required("Price is required"),
+              unit: Yup.string()
+                .test(
+                  'currency-match',
+                  'Currency must match Price List currency',
+                  function(value) {
+                    const { createNewPriceList, priceList, selectedPriceList } = this.options.context;
+                    
+                    if (createNewPriceList) {
+                      return value === priceList?.currency;
+                    } else {
+                      // Find the selected price list from pre-fetched data
+                      const selectedPL = priceLists.find(pl => pl._id === selectedPriceList);
+                      
+                      return value === selectedPL?.currency;
+                    }
+                  }
+                ),
+            }),
+            validFor: Yup.object().shape({
+              startDateTime: Yup.string()
+                .required('Start date is required')
+                .test(
+                  'not-future',
+                  'Start date cannot be in the future',
+                  function(value) {
+                    if (!value) return false;
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const startDate = new Date(value);
+                    return startDate <= today;
+                  }
+                )
+                .test(
+                  'within-price-list',
+                  'Start date must be within Price List dates',
+                  function(value) {
+                    const { createNewPriceList, priceList, selectedPriceList } = this.options.context;
+                    if (!value) return false;
+                    
+                    const startDate = new Date(value);
+                    let priceListStart, priceListEnd;
+                    
+                    if (createNewPriceList) {
+                      priceListStart = priceList?.start_date ? new Date(priceList.start_date) : null;
+                      priceListEnd = priceList?.end_date ? new Date(priceList.end_date) : null;
+                    } else {
+                      // Use pre-fetched price list data
+                      const selectedPL = priceLists?.find(pl => pl._id === selectedPriceList);
+                      if (!selectedPL) return false;
+                      priceListStart = selectedPL?.start_date ? new Date(selectedPL.start_date) : null;
+                      priceListEnd = selectedPL?.end_date ? new Date(selectedPL.end_date) : null;
+                    }
+                    
+                    if (priceListStart && startDate < priceListStart) return false;
+                    if (priceListEnd && startDate > priceListEnd) return false;
+                    return true;
+                  }
+                ),
+              endDateTime: Yup.string()
+                .required('End date is required')
+                .test(
+                  'after-start',
+                  'End date must be after start date',
+                  function(value) {
+                    const { startDateTime } = this.parent;
+                    if (!startDateTime || !value) return true;
+                    return new Date(value) > new Date(startDateTime);
+                  }
+                )
+                .test(
+                  'within-price-list',
+                  'End date must be within Price List dates',
+                  function(value) {
+                    
+                    const { createNewPriceList, priceList, selectedPriceList } = this.options.context;
+                    if (!value) return false;
+                    
+                    const endDate = new Date(value);
+                    let priceListStart, priceListEnd;
+                    
+                    if (createNewPriceList) {
+                      priceListStart = priceList?.start_date ? new Date(priceList.start_date) : null;
+                      priceListEnd = priceList?.end_date ? new Date(priceList.end_date) : null;
+                    } else {
+                      // Use pre-fetched price list data
+                      const selectedPL = priceLists?.find(pl => pl._id === selectedPriceList);
+                      if (!selectedPL) return false;
+                      priceListStart = selectedPL?.start_date ? new Date(selectedPL.start_date) : null;
+                      priceListEnd = selectedPL?.end_date ? new Date(selectedPL.end_date) : null;
+                    }
+                    
+                    if (priceListStart && endDate < priceListStart) return false;
+                    if (priceListEnd && endDate > priceListEnd) return false;
+                    return true;
+                  }
+                ),
+            }),
+            productOffering: Yup.object().shape({
+              id: Yup.string().required('Product offering is required'),
+            }),
+            unitOfMeasure: Yup.object().shape({
+              id: Yup.string().required('Unit of measure is required'),
+            }),
+            quantity: Yup.number().min(1),
+            term_month: Yup.number().min(1),
+            priceType: Yup.string()
+              .test(
+                'matches-product-offering',
+                'Price type must match product offering pricing type',
+                function(value) {
+                  const { productOffering } = this.parent;
+                  if (!productOffering?.id) return true;
+                  
+                  // Find the product offering from pre-fetched data
+                  const offering = productOfferings?.data?.find(po => po.sys_id === productOffering.id);
+                  if (!offering) return true;
+                  
+                  return value === offering.priceType;
+                }
+              )
+              .required('Price type is required'),
+          }),
+        ),
+      account: Yup.object().shape({
+        name: Yup.string(),
+        email: Yup.string(),
+      }),
+    });
+  }, [priceLists, productOfferings]);
+
+  const formik = useFormik({
+    initialValues: getInitialValues(),
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
       try {
-        dispatch(workflow(values));
-        notification.success({
-              message: 'Opportunity Created',
-              description: 'New Opportunity has been created successfully',
+        if(editMode){
+            await dispatch(updateOpportunityPricing(values));
+            notification.success({
+              message: 'Opportunity Updated',
+              description: 'Opportunity has been updated successfully',
             });
+        }else{
+          await dispatch(workflow(values));
+          notification.success({
+            message: 'Opportunity Created',
+            description: 'New Opportunity has been created successfully',
+          });
+        }
         
         setOpen(false);
+        localStorage.removeItem(FORM_STORAGE_KEY);
         resetForm();
         setCurrentStep(0);
       } catch (error) {
@@ -194,12 +332,31 @@ function OpportunityForm({ open, setOpen, dispatch }) {
         });
       }
     },
+    validateOnMount: true,
   });
 
+  // Save form to localStorage whenever it changes
+  useEffect(() => {
+    if (!editMode && formik.dirty) {
+      localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formik.values));
+    }
+  }, [editMode, formik.values, formik.dirty]);
   
   const handleCancel = () => {
     setOpen(false);
-    formik.resetForm();
+    
+    if(editMode) {
+      setEditMode(false);
+      formik.resetForm({ values: getInitialValues() })
+    };
+    setCurrentStep(0);
+  };
+
+  // Reset form handler
+  const handleReset = () => {
+    setOpen(false);
+    localStorage.removeItem(FORM_STORAGE_KEY);
+    formik.resetForm({ values: getInitialValues() });
     setCurrentStep(0);
   };
 
@@ -300,8 +457,69 @@ function OpportunityForm({ open, setOpen, dispatch }) {
       });
     };
 
-
-
+    useEffect(() => {
+      if (editMode) {
+        // Set initial values
+        formik.setValues(getInitialValues());
+        formik.setFieldValue('opportunityId', initialData._id);
+        
+        // Set touched fields
+        const touched = {
+          createNewPriceList: true,
+          selectedPriceList: true,
+          account: {
+            name: true,
+            email: true
+          },
+          opportunity: {
+            short_description: true,
+            estimated_closed_date: true,
+            description: true,
+            term_month: true,
+            sales_cycle_type: true,
+            probability: true,
+            stage: true,
+            industry: true,
+            account: true
+          },
+          priceList: {
+            name: true,
+            currency: true,
+            state: true,
+            start_date: true,
+            end_date: true,
+            description: true
+          },
+          productOfferings: formik.values.productOfferings.map(() => ({
+            name: true,
+            price: { unit: true, value: true },
+            productOffering: { id: true },
+            unitOfMeasure: { id: true },
+            priceType: true,
+            recurringChargePeriodType: true,
+            validFor: {
+              startDateTime: true,
+              endDateTime: true
+            },
+            term_month: true,
+            quantity: true
+          }))
+        };
+        formik.setTouched(touched);
+      }
+    }, [editMode]);
+    if(loading){
+      return <Modal
+      title="Create New Opportunity"
+      open={open}
+      onCancel={handleCancel}
+      footer={null}
+      width={800}
+      destroyOnHidden
+    >
+      <div className='h-full flex justify-center items-center'><Spin /></div>
+    </Modal>
+    }
   return (
     <Modal
       title="Create New Opportunity"
@@ -309,24 +527,29 @@ function OpportunityForm({ open, setOpen, dispatch }) {
       onCancel={handleCancel}
       footer={null}
       width={800}
-      destroyOnClose
+      destroyOnHidden
     >
       <Steps current={currentStep} className="mb-6">
         <Step title="Opportunity" />
         <Step title="Price List" />
-        <Step title="Product Offerings" />
+        <Step title="Line Items" />
         <Step title="Summary" />
       </Steps>
 
-      <form onSubmit={(e)=>{e.preventDefault()}}className="space-y-4">
+      <form onSubmit={(e) => { e.preventDefault() }} className="space-y-4">
         {currentStep === 0 && (
-          <OpportunityStep1 formik={formik} />
+          <OpportunityStep1 formik={formik} editMode={editMode} />
         )}
         {currentStep === 1 && (
-          <OpportunityStep2 formik={formik} />
+          <OpportunityStep2 formik={formik} editMode={editMode} />
         )}
         {currentStep === 2 && (
-          <OpportunityStep3 formik={formik} />
+          <OpportunityStep3 
+            formik={formik} 
+            editMode={editMode}
+            lineItems={editMode && initialData.line_items}
+            pops={productOfferingPrices.productOfferingPrices}
+          />
         )}
         {currentStep === 3 && (
           <OpportunityStep4 formik={formik} pdfRef={pdfRef} />
@@ -340,10 +563,15 @@ function OpportunityForm({ open, setOpen, dispatch }) {
           handleCancel={handleCancel}
           formik={formik}
           downloadPDF={downloadPDF}
+          resetForm={handleReset}
+          editMode={editMode}
         />
       </form>
     </Modal>
   );
+}catch(error){
+  console.log(error);
+}
 }
 
 export default OpportunityForm;

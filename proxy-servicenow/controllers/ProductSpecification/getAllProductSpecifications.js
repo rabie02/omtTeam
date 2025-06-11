@@ -8,7 +8,7 @@ const ProductSpecification = require('../../models/productSpecification');
 const getAllProductSpecifications = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 8;
+    const limit = parseInt(req.query.limit) || 6;
     const skip = (page - 1) * limit;
     const searchQuery = req.query.q;
 
@@ -17,7 +17,7 @@ const getAllProductSpecifications = async (req, res) => {
       const searchTerm = searchQuery.toLowerCase();
       query = {
         $or: [
-          { display_name: { $regex: `.*${searchTerm}.*`, $options: 'i' } },
+          { displayName: { $regex: `.*${searchTerm}.*`, $options: 'i' } },
           { specification_type: { $regex: `.*${searchTerm}.*`, $options: 'i' } },
         ]
       };

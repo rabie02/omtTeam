@@ -92,12 +92,12 @@ function ProductOfferingTable({ setData, setOpen, searchQuery }) {
         },
         {
             title: 'Product Specification',
-            dataIndex: ['productSpecification', 'display_name'],
+            dataIndex: ['productSpecification', 'displayName'] ,
             key: 'productSpecification',
             render: (text) => text || 'N/A',
             sorter: (a, b) => {
-                const nameA = a.productSpecification?.display_name || '';
-                const nameB = b.productSpecification?.display_name || '';
+                const nameA = a.productSpecification?.displayName || '';
+                const nameB = b.productSpecification?.displayName || '';
                 return nameA.localeCompare(nameB);
             }
         },
@@ -106,7 +106,7 @@ function ProductOfferingTable({ setData, setOpen, searchQuery }) {
             dataIndex: 'status',
             key: 'status',
             render: (status) => (
-                <span className={`px-2 py-1 text-xs capitalize rounded ${status === 'published' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                <span className={`px-2 py-1 text-xs capitalize rounded ${status.toLowerCase() === 'published' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                     {status}
                 </span>
             ),
@@ -177,6 +177,7 @@ function ProductOfferingTable({ setData, setOpen, searchQuery }) {
         }
     ];
     
+    //console.log(products)
 
     if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
     if (error) {

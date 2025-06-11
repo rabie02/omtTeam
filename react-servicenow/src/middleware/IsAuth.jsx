@@ -22,4 +22,5 @@ const IsAuth = ({ children }) => {
   return children;
 };
 
+
 export default IsAuth;

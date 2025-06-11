@@ -9,6 +9,20 @@ async function createProductOfferingPrice(req, res = null) {
 
   
   try {
+    
+    if (req.body.validFor?.startDateTime) {
+      const startDate = new Date(req.body.validFor.startDateTime);
+      const currentDate = new Date();
+      
+      if (isNaN(startDate.getTime())) {
+        return res?.status(400).json({ error: 'Invalid start date format' });
+      }
+      
+      if (startDate > currentDate) {
+        return res?.status(400).json({ error: 'Start date cannot be in the future' });
+      }
+    }
+
     const [productOffering, priceList] = await Promise.all([
       ProductOffering.findById(req.body.productOffering.id),
       PriceList.findById(req.body.priceList.id)
@@ -18,6 +32,22 @@ async function createProductOfferingPrice(req, res = null) {
     if (!productOffering.id) return res?.status(400).json({ error: 'productOffering not synced with ServiceNow' });
     if (!priceList) return res?.status(404).json({ error: 'priceList not found' });
     if (!priceList.sys_id) return res?.status(400).json({ error: 'priceList not synced with ServiceNow' });
+
+    // New validation: Compare Price List start date with Product Offering Price start date
+    if (req.body.validFor?.startDateTime && priceList.start_date) {
+      const priceListStartDate = new Date(priceList.start_date);
+      const productPriceStartDate = new Date(req.body.validFor.startDateTime);
+      
+      if (priceListStartDate > productPriceStartDate) {
+        return res?.status(400).json({ 
+          error: 'Price List start date must be older than Product Offering Price start date',
+          details: {
+            priceListStartDate: priceList.start_date,
+            productPriceStartDate: req.body.validFor.startDateTime
+          }
+        });
+      }
+    }
 
     const payload = {
       ...req.body,

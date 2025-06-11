@@ -25,6 +25,32 @@
 
 
 
+.ant-modal-footer{
+    padding: 2% !important;
+}
+
+.ant-btn-color-primary.ant-btn-variant-solid{
+    background-color: var(--color-cyan-700) !important;
+    color: white !important;
+}
+
+.ant-btn-primary.ant-btn-color-primary.ant-btn-variant-solid.ant-btn-sm{
+    color: var(--color-cyan-700) !important;
+}
+.ant-btn-primary.ant-btn-color-primary.ant-btn-variant-solid.ant-btn-sm:hover{
+    color: white !important;
+}
+
+.ant-btn-color-primary:hover{
+    background-color: var(--color-cyan-900) !important;
+}
+
+.ant-btn-color-default:hover{
+    border-color: var(--color-cyan-700) !important;
+    color: var(--color-cyan-700) !important;
+}
+
+
 /* pagination css */
 .ant-pagination-item-active {
     border-color: #0891b2 !important;
@@ -120,7 +146,8 @@
   color: white !important;
 }
 
-.ant-popconfirm-buttons .ant-btn-primary{
+
+.ant-popconfirm-buttons .ant-btn-color-primary{
   border-color: #007393;
   color: #007393;
   font-weight: 500;

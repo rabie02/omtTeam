@@ -10,7 +10,7 @@ const syncFromServiceNow = async (req, res) => {
     const specData = req.body;
     
     // Validate required fields
-    if (!specData.sys_id) {
+    if (!specData.id && !specData.sys_id) {
       return res.status(400).json({ 
         success: false, 
         message: 'Missing required field: sys_id' 

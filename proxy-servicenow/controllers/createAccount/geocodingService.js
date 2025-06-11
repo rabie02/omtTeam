@@ -1,5 +1,5 @@
 const axios = require('axios');
-const config = require('./config');
+const config = require('../../utils/configCreateAccount');
 
 const validateCoordinates = (latitude, longitude) => {
   if (typeof latitude !== 'number' || typeof longitude !== 'number') {
