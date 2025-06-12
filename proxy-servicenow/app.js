@@ -30,7 +30,11 @@ const chatbotCases = require('./api/ai-search/getCases');
 const Quote = require('./api/quote/index');
 const emailroutes = require('./email/router');
 // const createAccount = require('./api/createAccount/index')
-const chatbotRoutes = require('./api/ai-search/chatboot.js');
+const knowledgeBaseRoute = require('./api/ai-search/chatboot');
+const productOfferingRoute = require('./api/ai-search/productoffering');
+
+
+
 require('dotenv').config();
 
 const app = express();
@@ -103,6 +107,9 @@ app.use('/api', [
     location,
     account,
     logoutRoutes,
+    productOfferingRoute,
+    knowledgeBaseRoute
+    
 
 ]);
 
@@ -122,7 +129,8 @@ app.use('/api', authjwt , [
   opportunityLine,
   ProductOfferingPrice,
   nlpRoutes,
-  chatbotCases
+  chatbotCases,
+
 ]);
 
 

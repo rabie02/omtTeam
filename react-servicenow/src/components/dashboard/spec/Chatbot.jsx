@@ -400,31 +400,20 @@ const handleViewCases = async () => {
 });
 
   // Fonction pour rechercher dans la base de connaissances ServiceNow
-  const searchKnowledgeArticles = async (query = '') => {
-    try {
-      const response = await axios.get(SN_CONFIG.endpoints.searchKB, {
-        baseURL: SN_CONFIG.baseURL,
-        auth: SN_CONFIG.auth,
-        params: {
-          sysparm_query: `active=true^workflow_state=published^${query ? `(short_descriptionLIKE${query}^ORtextLIKE${query})` : ''}`,
-          sysparm_limit: 5,
-          sysparm_fields: 'short_description,number,topic,text,url',
-          sysparm_display_value: true
-        }
-      });
-      
-      return response.data.result.map(article => ({
-        short_description: article.short_description,
-        number: article.number,
-        topic: article.topic,
-        text: article.text,
-        url: article.url
-      }));
-    } catch (error) {
-      console.error('Error searching knowledge base:', error);
-      throw error;
-    }
-  };
+ const searchKnowledgeArticles = async (query = '') => {
+  try {
+    const response = await axios.get(
+      `${backendUrl}/api/chatbot/kb?q=${encodeURIComponent(query)}`,
+      getAuthHeaders()
+    );
+
+    return response.data.articles || [];
+  } catch (error) {
+    console.error('❌ Erreur lors de la recherche dans KB (proxy backend) :', error);
+    return [];
+  }
+};
+
 
   // Fonction pour rechercher les spécifications techniques
   const searchSpecifications = async (query = '') => {
@@ -578,7 +567,6 @@ const processStepResponse = async (input) => {
         addBotMessage("⚠️ Choix invalide. Veuillez entrer un numéro de la liste.");
         return;
       }
-
       const selectedCategory = categories[choice - 1];
       productOfferingDraft.current.category = {
         _id: selectedCategory._id,
@@ -586,11 +574,9 @@ const processStepResponse = async (input) => {
         name: selectedCategory.name,
         status: selectedCategory.status
       };
-
       setCurrentStep('create_product_offering_step1');
       addBotMessage("📝 Entrez le **nom** de l'offre produit.");
       break;
-
     case 'create_product_offering_step1':
       if (!input.trim()) {
         addBotMessage("⚠️ Le nom ne peut pas être vide.");
@@ -600,7 +586,6 @@ const processStepResponse = async (input) => {
       setCurrentStep('create_product_offering_step2');
       addBotMessage("✏️ Entrez une **description** pour cette offre.");
       break;
-
     case 'create_product_offering_step2':
       productOfferingDraft.current.description = input.trim();
       setCurrentStep('create_product_offering_step3');
@@ -706,18 +691,12 @@ const processStepResponse = async (input) => {
          console.log("Payload envoyé:", JSON.stringify(payload, null, 2));
 
     const res = await axios.post(
-      url,
-      JSON.stringify(payload), // Sérialisation explicite
-      {
-        headers: {
-          'Authorization': 'Basic ' + btoa('group2:K5F/Uj/lDbo9YAS'),
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      }
-    );
+    `${backendUrl}/api/product-offering`,
+    payload,
+    getAuthHeaders() // ou juste {} si pas d’auth requise ici
+  )
 
-    addBotMessage(`✅ Offre créée avec succès ! ID: ${res.data.id}`);
+    addBotMessage(`✅ Offre créée avec succès !!`);
   } catch (e) {
     console.error("Erreur détaillée:", {
       request: e.config,
