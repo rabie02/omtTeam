@@ -162,7 +162,7 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
       key: 'actions',
       render: (_, record) => ( record!==undefined && 
         <div className="grid grid-cols-4 gap-2">
-          <CreateQuote opportunityId={record._id} />
+          <div>{ record.stage.type==="closed_won" &&<CreateQuote opportunityId={record._id} />}</div>
           <Tooltip title={`Delete Opportunity`}>
             <Popconfirm
               title="Delete Opportunity"
@@ -208,12 +208,13 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
     },
   ];
 
+  console.log(opportunities);
+
 
   if (!open && loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
   if (error) {
     console.log(error);
       notification.error({
-        
               message: 'Error',
               description: error || 'Failed to create opportunity. Please try again.',
           });
