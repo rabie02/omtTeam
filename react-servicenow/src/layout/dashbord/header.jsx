@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { message } from 'antd';
+import dayjs from 'dayjs';
 import { userLogout, fetchUserInfo } from '../../features/auth/authActions';
 
 function Header() {
@@ -98,15 +99,16 @@ function Header() {
       </header>
     );
   }
+  
 
   return (
     <header className="sticky top-0 z-20 bg-cyan-700">
       {/* Top Bar */}
       <div className="bg-cyan-800 text-blue-100 px-6 py-2 text-sm flex justify-between items-center">
         <div className="flex items-center space-x-4">
-          <span className="font-medium flex items-center">
-            <i className="ri-shield-keyhole-line mr-2 text-blue-200" />
-            Admin Console
+          <span className="font-medium flex items-center capitalize">
+            <i className="ri-shield-keyhole-line mr-2 text-blue-200 " />
+            {currentUser.roles} Console
           </span>
           <span className="w-px h-5 bg-blue-200/30"></span>
           <span className="flex items-center space-x-1.5">
@@ -115,7 +117,7 @@ function Header() {
           </span>
         </div>
         <div className="flex items-center space-x-4">
-          <span>Last login: {currentUser.lastLogin}</span>
+          <span>Last login: {dayjs(currentUser.last_login_time).format('MMM D, YYYY h:mm A')} </span>
           <span className="w-px h-5 bg-blue-200/30"></span>
           <button
             onClick={handleLogout}
