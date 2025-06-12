@@ -1,40 +1,52 @@
+const handleMongoError = require('../../utils/handleMongoError');
+const snConnection = require('../../utils/servicenowConnection');
+const axios = require('axios');
 const ProductSpecification = require('../../models/productSpecification');
 
-const deleteProductSpecification = async (req, res) => {
-  // Logs détaillés pour le débogage
-  console.log('=== DELETE REQUEST RECEIVED ===');
-  console.log('Request params:', req.params);
-  console.log('Request headers:', req.headers);
-  console.log('Request IP:', req.ip);
-  console.log('Timestamp:', new Date().toISOString());
-  
+
+async function deleteProductSpecification (req, res =null) { 
   try {
-    const { sysId } = req.params;
-    console.log(`Attempting to delete product specification with sys_id: ${sysId}`);
+
+    const mongoId = req.params.id || req.id;
     
     // Vérifier si la spécification existe
-    const productSpec = await ProductSpecification.findOne({ sys_id: sysId });
-    
+    const productSpec = await ProductSpecification.findById(mongoId);
     if (!productSpec) {
-      console.log(`Product specification with sys_id ${sysId} not found`);
       return res.status(404).json({
         success: false,
-        message: `Product specification with sys_id ${sysId} not found`
+        message: `Product specification not found`
       });
     }
-    
-    console.log(`Found product specification: ${productSpec.display_name}`);
-    
-    // Supprimer la spécification
-    const result = await ProductSpecification.deleteOne({ sys_id: sysId });
-    console.log('Delete operation result:', result);
-    
-    console.log(`Successfully deleted product specification: ${productSpec.display_name}`);
-    
-    res.status(200).json({
-      success: true,
-      message: `Product specification with sys_id ${sysId} successfully deleted`
-    });
+    const sysId = productSpec.sys_id; 
+
+    if(!sysId){
+      return res.status(400).json({
+        error: " miss sys_id"
+      });
+    }
+
+    // delete spec from servicenow
+    const connection = snConnection.getConnection(req.user.sn_access_token);
+    const snResponse = await axios.delete(
+      `${connection.baseURL}/api/now/table/sn_prd_pm_product_specification/${sysId}`, 
+      { headers: connection.headers }
+    );
+
+    //delete mongodb
+    try{
+      await ProductSpecification.findByIdAndDelete(mongoId);
+    }catch(mongoError){
+        return handleMongoError(res, snResponse.data , mongoError , "delete");
+    }
+
+    res.json({
+      message: 'product spe successfully deleted from both MongoDB and ServiceNow',
+          mongoId: mongoId,
+          servicenowId: sysId,
+          servicenowResponse: snResponse.data
+    })
+
+
   } catch (error) {
     console.error('ERROR in deleteProductSpecification:', error);
     res.status(500).json({
@@ -45,3 +57,4 @@ const deleteProductSpecification = async (req, res) => {
 };
 
 module.exports = deleteProductSpecification;
+module.exports.deleteProductSpecification = deleteProductSpecification;

@@ -22,6 +22,6 @@ router.get('/product-specification/:id', getProductSpecificationById);
 router.patch('/product-specification/:sysId', updateProductSpecification);
 
 // Route pour supprimer une spécification de produit
-router.delete('/product-specification/:sysId', deleteProductSpecification);
+router.delete('/product-specification/:id', deleteProductSpecification);
 
 module.exports = router;

@@ -99,17 +99,16 @@ if (process.env.NODE_ENV === 'development') {
 app.use('/api', [
   authRoutes,    // Login
   signupRoutes,  // Registration + confirmation
-
-  ProductSpecification,
-  emailroutes,
-  // createAccount,
-  contact,
-  location,
-  account,
-  logoutRoutes,
-  productOfferingRoute,
-  knowledgeBaseRoute
-
+    emailroutes,
+    // createAccount,
+    Quote,
+    contact,
+    location,
+    account,
+    logoutRoutes,
+    productOfferingRoute,
+    knowledgeBaseRoute
+    
 
 ]);
 
