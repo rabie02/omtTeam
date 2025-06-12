@@ -5,7 +5,8 @@ import {
   getOpportunities,
   deleteOpportunity,
   generateContract,
-  downloadContract
+  downloadContract,
+  resetError
 } from '../../../features/servicenow/opportunity/opportunitySlice';
 import CreateQuote from '../quote/ButtonCreateQuote';
 import {getAll as getProductOfferingPrice} from '../../../features/servicenow/product-offering-price/productOfferingPriceSlice';
@@ -34,6 +35,7 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
   
 
   useEffect(() => {
+    dispatch(resetError());
     dispatch(getOpportunities({ page: 1, limit: 6, q: searchQuery }));
     dispatch(getProductOfferingPrice());
   }, [dispatch, searchQuery]);
@@ -47,6 +49,7 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
 
   const handleDelete = async (opportunityId) => {
     try {
+      dispatch(resetError());
       await dispatch(deleteOpportunity(opportunityId));
       notification.success({
           message: 'Opportunuity Deleted',
@@ -67,6 +70,7 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
       };
 
   const showPricingModal = (record) => {
+    dispatch(resetError());
     setData(record);
     setOpen(true);
     
@@ -74,8 +78,8 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
 
   const handleGenerateContract = async (opportunityId) =>{
     try {
+      dispatch(resetError());
       const res = await dispatch(generateContract(opportunityId));
-      console.log(res);
       if(!res.error) notification.success({
           message: 'Contract Generated',
           description: 'Contract has been generated successfully',
@@ -92,6 +96,7 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
 
   const handleDownloadContract = async (contractId) =>{
     try {
+      dispatch(resetError());
       await dispatch(downloadContract(contractId));
       notification.success({
           message: 'Contract Downloaded',
@@ -206,11 +211,13 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
 
   if (!open && loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
   if (error) {
+    console.log(error);
       notification.error({
         
               message: 'Error',
               description: error || 'Failed to create opportunity. Please try again.',
           });
+          setTimeout(dispatch(resetError()), 1000)
   }
 
   return (

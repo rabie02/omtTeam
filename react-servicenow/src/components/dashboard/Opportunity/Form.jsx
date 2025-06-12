@@ -15,7 +15,8 @@ import {
   getAccounts,
   getUnitOfMeasures,
   workflow,
-  updateOpportunityPricing
+  updateOpportunityPricing,
+  resetError
 } from '../../../features/servicenow/opportunity/opportunitySlice';
 import { getPriceList } from '../../../features/servicenow/price-list/priceListSlice';
 import { getByPriceList } from '../../../features/servicenow/product-offering-price/productOfferingPriceSlice';
@@ -27,6 +28,7 @@ const { Step } = Steps;
 
 function OpportunityForm({ open, setOpen, dispatch, initialData=null }) {
 try{
+  dispatch(resetError());
   const [editMode, setEditMode] = useState(Boolean(initialData)); 
   const [currentStep, setCurrentStep] = useState(0);
   const FORM_STORAGE_KEY = 'opportunityFormData'
