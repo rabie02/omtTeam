@@ -1,33 +1,34 @@
 const express = require('express');
 const axios = require('axios');
-const jwt = require('jsonwebtoken');
-require('dotenv').config();
-
 const router = express.Router();
 
+// ⚙️ Configuration ServiceNow (sans .env)
+const SN_CONFIG = {
+  baseURL: 'https://dev323456.service-now.com',
+  auth: {
+    username: 'admin',
+    password: 'bz!T-1ThIc1L'
+  },
+  endpoints: {
+    searchKB: '/api/now/table/kb_knowledge'
+  }
+};
+
+// ✅ GET /api/chatbot/kb?q=motclé
 router.get('/chatbot/kb', async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'Missing token' });
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const snToken = decoded.sn_access_token;
-
     const query = req.query.q || '';
-    const serviceNowUrl = `${process.env.SERVICE_NOW_URL}/api/now/table/kb_knowledge`;
 
-    const response = await axios.get(serviceNowUrl, {
-      headers: {
-        Authorization: `Bearer ${snToken}`,
-        Accept: 'application/json'
-      },
+    const response = await axios.get(`${SN_CONFIG.baseURL}${SN_CONFIG.endpoints.searchKB}`, {
+      auth: SN_CONFIG.auth,
       params: {
-        sysparm_query: `active=true^workflow_state=published^short_descriptionLIKE${query}^ORtextLIKE${query}`,
+        sysparm_query: `active=true^workflow_state=published^${query ? `(short_descriptionLIKE${query}^ORtextLIKE${query})` : ''}`,
         sysparm_limit: 5,
         sysparm_fields: 'short_description,number,topic,text,url',
-        sysparm_display_value: true,
-        sysparm_exclude_reference_link: true
+        sysparm_display_value: true
+      },
+      headers: {
+        Accept: 'application/json'
       }
     });
 
@@ -41,14 +42,11 @@ router.get('/chatbot/kb', async (req, res) => {
 
     res.json({ articles });
   } catch (error) {
-    console.error('🔴 KB Error:', error.message);
-    if (axios.isAxiosError(error)) {
-      return res.status(error.response?.status || 500).json({
-        error: 'ServiceNow error',
-        details: error.response?.data || error.message
-      });
-    }
-    res.status(500).json({ error: 'Internal server error', details: error.message });
+    console.error('❌ Erreur KB backend :', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({
+      error: 'Erreur ServiceNow KB',
+      details: error.response?.data || error.message
+    });
   }
 });
 
