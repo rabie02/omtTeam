@@ -23,6 +23,38 @@ classDiagram
       +Date updatedAt
       +Number __v
     }
+    class Contact {
+      +String sys_id
+      +String firstName (required)
+      +String lastName (required)
+      +String email (required)
+      +String phone
+      +String password
+      +String jobTitle
+      +Boolean isPrimaryContact (default: true)
+      +Boolean active (default: true)
+      +ObjectId account (required)
+      +ObjectId _id
+      +Date createdAt
+      +Date updatedAt
+      +Number __v
+    }
+    class Location {
+      +String sys_id
+      +String name (required)
+      +String latitude
+      +String longitude
+      +String street
+      +String city
+      +String state
+      +String country
+      +String zip
+      +ObjectId account (required)
+      +ObjectId _id
+      +Date createdAt
+      +Date updatedAt
+      +Number __v
+    }
     class Opportunity {
       +String sys_id (required, unique)
       +String short_description
@@ -68,6 +100,16 @@ classDiagram
       +ObjectId _id
       +Date createdAt
       +Date updatedAt
+      +Number __v
+    }
+    class Contract {
+      +ObjectId opportunity
+      +ObjectId quote
+      +String file_name
+      +String download_url
+      +Date created_at (default: undefined)
+      +Date updated_at (default: undefined)
+      +ObjectId _id
       +Number __v
     }
     class salesCycleType {
@@ -213,7 +255,7 @@ classDiagram
       +Date updatedAt
     }
     class ProductSpecification {
-      +String sys_id (required, unique)
+      +String sys_id (unique)
       +String display_name
       +String specification_category
       +String specification_type
@@ -269,6 +311,17 @@ classDiagram
   end
 
   subgraph Component_2
+    class Intent {
+      +String tag
+      +Array patterns
+      +Array responses
+      +Array context
+      +ObjectId _id
+      +Number __v
+    }
+  end
+
+  subgraph Component_3
     class User {
       +String serviceNowId (required)
       +String firstName (required)
@@ -294,6 +347,10 @@ classDiagram
 
   CatalogCategoryRelations --> ProductOfferingCatalog : "catalog"
   CatalogCategoryRelations --> ProductOfferingCategory : "category"
+  Contact --> Account : "account"
+  Contract --> Opportunity : "opportunity"
+  Contract --> Quote : "quote"
+  Location --> Account : "account"
   Opportunity --> salesCycleType : "sales_cycle_type"
   Opportunity --> Stage : "stage"
   Opportunity --> Account : "account"
