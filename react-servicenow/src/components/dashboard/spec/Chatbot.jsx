@@ -285,28 +285,25 @@ const handleViewCases = async () => {
     }
   };
   const handleListAllSpecs = async () => {
-    try {
-      const response = await axios.get(`${SN_CONFIG.baseURL}${SN_CONFIG.endpoints.searchSpecs}`, {
-        auth: SN_CONFIG.auth,
-        params: {
-          sysparm_query: "status=published",
-          sysparm_limit: 50,
-          sysparm_fields: 'name,number,specification_type,display_name,description,status'
-        }
-      });
-  
-      const specs = response.data.result || [];
-  
-      return {
-        text: specs.length ? "Voici les spécifications techniques publiées :" : "Aucune spécification trouvée.",
-        data: specs,
-        intent: 'list_specs'
-      };
-    } catch (error) {
-      console.error("Erreur lors de la récupération des spécifications :", error);
-      return handleError("Erreur lors du chargement des spécifications");
-    }
-  };
+  try {
+    const access_token = localStorage.getItem('access_token');
+    const response = await axios.get(`${backendUrl}/api/product-spec`, {
+      headers: { authorization: access_token }
+    });
+
+    const specs = response.data || [];
+
+    return {
+      text: specs.length ? "Voici les spécifications techniques publiées :" : "Aucune spécification trouvée.",
+      data: specs,
+      intent: 'list_specs'
+    };
+  } catch (error) {
+    console.error("Erreur lors de la récupération des spécifications :", error);
+    return handleError("Erreur lors du chargement des spécifications");
+  }
+};
+
   
   const handleRequestQuote = () => {
     setCurrentStep('quote_product_selection');
