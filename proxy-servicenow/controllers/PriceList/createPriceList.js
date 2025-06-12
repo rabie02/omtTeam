@@ -2,6 +2,7 @@ const axios = require('axios');
 const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 const PriceList = require('../../models/priceList');
+const externalIdHelper = require('../../utils/externalIdHelper')
 
 async function createPriceList(req, res = null) {
   try {
@@ -27,6 +28,11 @@ async function createPriceList(req, res = null) {
       }
       throw mongoError;
     }
+
+    await externalIdHelper(connection,
+       `api/now/table/sn_csm_pricing_price_list/${snResponse.data.result.sys_id}`,
+       mongoDocument._id.toString());
+    
     
     // Prepare response with both ServiceNow and MongoDB IDs
     const response = {
