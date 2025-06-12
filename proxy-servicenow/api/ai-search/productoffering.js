@@ -8,7 +8,7 @@ const SN_USERNAME = 'group2';
 const SN_PASSWORD = 'K5F/Uj/lDbo9YAS';
 const SN_API_URL = 'https://dev268291.service-now.com/api/sn_tmf_api/catalogmanagement/productOffering';
 
-router.post('/product-offering', async (req, res) => {
+router.post('/product-offering2', async (req, res) => {
   try {
     const payload = req.body;
 

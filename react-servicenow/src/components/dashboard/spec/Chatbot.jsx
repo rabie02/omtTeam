@@ -688,7 +688,7 @@ const processStepResponse = async (input) => {
          console.log("Payload envoyé:", JSON.stringify(payload, null, 2));
 
     const res = await axios.post(
-    `${backendUrl}/api/product-offering`,
+    `${backendUrl}/api/product-offering2`,
     payload,
     getAuthHeaders() // ou juste {} si pas d’auth requise ici
   )
