@@ -26,10 +26,15 @@ const ProductOfferingPrice = require("./api/productOfferingPrice/index")
 const opportunityLine = require("./api/OpportunityLine/index")
 const priceList = require("./api/PriceList/index")
 const nlpRoutes = require('./api/ai-search/nlp');
+const chatbotCases = require('./api/ai-search/getCases');
 const Quote = require('./api/quote/index');
 const emailroutes = require('./email/router');
 // const createAccount = require('./api/createAccount/index')
-const chatbotRoutes = require('./api/ai-search/chatboot.js');
+const knowledgeBaseRoute = require('./api/ai-search/chatboot');
+const productOfferingRoute = require('./api/ai-search/productoffering');
+
+
+
 require('dotenv').config();
 
 const app = express();
@@ -52,7 +57,8 @@ const limiter = rateLimit({
 // Configuration
 
 const allowedOrigins = [
-  'https://omt-team-hlmx.vercel.app',
+  'https://omt-team-one.vercel.app',
+  'https://omt-team-dhxpck1wp-jmili-mouads-projects.vercel.app',
   'https://delightful-sky-0cdf0611e.6.azurestaticapps.net',
   'http://localhost:5173',
   'https://superb-starburst-b1a498.netlify.app/'
@@ -100,14 +106,16 @@ app.use('/api', [
     contact,
     location,
     account,
+    logoutRoutes,
+    productOfferingRoute,
+    knowledgeBaseRoute
+    
 
 ]);
 
 
 // Protected routes
 app.use('/api', authjwt , [
-  // logout
-  logoutRoutes,
   // routes that need middaleware
   ProductOfferingCatalog,
   ProductOfferingCategory,
@@ -120,7 +128,9 @@ app.use('/api', authjwt , [
   opportunity,
   opportunityLine,
   ProductOfferingPrice,
-  nlpRoutes
+  nlpRoutes,
+  chatbotCases,
+
 ]);
 
 

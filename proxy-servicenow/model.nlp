@@ -7776,7 +7776,7 @@
         ],
         "product.create": [
           {
-            "answer": "Pour créer un produit : Products > Nouveau. Renseignez SKU, description, catégorie et prix. Puis validez."
+            "answer": "Pour créer un produit : Products > dire ok pour afficher les données que tu doit entrer"
           }
         ],
         "product.edit": [

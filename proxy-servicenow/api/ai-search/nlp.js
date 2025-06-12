@@ -129,7 +129,7 @@ manager.addDocument('fr', 'ajout au catalogue', 'product.create');
 manager.addDocument('fr', 'configurer un produit', 'product.create');
 manager.addDocument('fr', 'déclarer un produit', 'product.create');
 
-manager.addAnswer('fr', 'product.create', 'Pour créer un produit : Products > Nouveau. Renseignez SKU, description, catégorie et prix. Puis validez.');
+manager.addAnswer('fr', 'product.create', 'Pour créer un produit : Products > dire ok pour afficher les données que tu doit entrer');
 
 // ----------------------
 manager.addDocument('fr', 'modifier offre produit', 'product.edit');
@@ -328,7 +328,7 @@ router.post('/nlp', async (req, res) => {
     const fallbackReplies = [
     "Pouvez-vous préciser votre demande ?",
     "Essayez avec des mots plus simples.",
-    "Voici ce que je peux faire : créer devis, consulter offres, produits, etc.",
+    "Voici ce que je peux faire : créer devis, consulter offres, produits, etc.faire tapez menu principale pour voir le menu complet",
     "Je suis là pour vous aider sur ServiceNow. Essayez par exemple : 'Créer un devis'"
     ];
     // 🟥 Aucun résultat

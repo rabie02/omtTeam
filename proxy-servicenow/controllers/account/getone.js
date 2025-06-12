@@ -1,48 +1,65 @@
-const axios = require('axios');
 const Account = require('../../models/account');
-const snConnection = require('../../utils/servicenowConnection');
+const { isValidObjectId } = require('mongoose');
 const handleMongoError = require('../../utils/handleMongoError');
 
 module.exports = async (req, res) => {
   try {
-    const mongoId = req.params.id; // MongoDB _id
-    
-    // Try to find account in MongoDB first
-    const account = await Account.findById(mongoId).lean();
-    
-    if (account) {
-      return res.json({
-        result: account,
-        source: 'mongodb'
-      });
-    }
-    
-    // This would require a different approach since we don't have sys_id
-    return res.status(404).json({ 
-      error: 'Account not found in MongoDB',
-      mongoId: mongoId
-    });
-    
-  } catch (error) {
-    console.error('Error fetching account by ID:', error);
-    
-    // Handle invalid MongoDB ObjectId
-    if (error.name === 'CastError') {
+    const { id } = req.params;
+
+    // Validate MongoDB ID format
+    if (!isValidObjectId(id)) {
       return res.status(400).json({ 
-        error: 'Invalid MongoDB ID format',
-        mongoId: req.params.id
+        success: false,
+        error: 'Invalid ID format',
+        message: 'Please provide a valid MongoDB ObjectID'
+      });
+    }
+
+    // Find account in MongoDB with populated data
+    const account = await Account.findById(id)
+      .populate({
+        path: 'contacts',
+        select: 'firstName lastName email phone jobTitle isPrimaryContact active sys_id',
+        options: { sort: { isPrimaryContact: -1, lastName: 1 } } // Primary contacts first
+      })
+      .populate({
+        path: 'locations',
+        select: 'name city state country street zip latitude longitude sys_id',
+        options: { sort: { name: 1 } } // Sort locations alphabetically
+      })
+      .lean(); // Convert to plain JavaScript object
+
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        error: 'Account not found',
+        message: `No account found with ID ${id} in MongoDB`
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: account
+    });
+
+  } catch (error) {
+    console.error('Error in getAccountById:', error);
+    
+    // Handle MongoDB-specific errors
+    if (error.name === 'CastError' || error.name.includes('Mongo')) {
+      const mongoError = handleMongoError(error);
+      return res.status(mongoError.status).json({ 
+        success: false,
+        error: mongoError.message,
+        details: mongoError.details 
       });
     }
     
-    // Handle MongoDB errors
-    if (error.name && error.name.includes('Mongo')) {
-      const mongoError = handleMongoError(error);
-      return res.status(mongoError.status).json({ error: mongoError.message });
-    }
-    
-    // Handle other errors
-    const status = error.response?.status || 500;
-    const message = error.response?.data?.error?.message || error.message;
-    res.status(status).json({ error: message });
+    // Handle other unexpected errors
+    return res.status(500).json({ 
+      success: false,
+      error: 'Internal Server Error',
+      message: error.message
+    });
   }
 };

@@ -6,12 +6,17 @@ const Account = require('../../models/account');
 async function createAccount(req, res=null) {
   try {
     
-    const existingAccount = await Account.findOne({ name: req.body.name });
+    const existingAccount = await Account.findOne({ 
+      $or: [
+        { name: req.body.name },
+        { email: req.body.email }
+      ]
+    });
     if(existingAccount){
       console.log("account already exist", existingAccount.name);
       const result = {
         _id: existingAccount._id,
-        message: 'Account with this name already exists',
+        message: 'Account already exists',
         mongodb: existingAccount,
         source: 'existing'
       };

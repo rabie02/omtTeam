@@ -45,14 +45,6 @@ const confirmCreation = async (req, res) => {
           phone: userData.mobile_phone || '',
           email: userData.email,
           status: 'active',
-          ...(userData.location && {
-            city: userData.location.city,
-            state: userData.location.state,
-            country: userData.location.country,
-            zip: userData.location.postalCode,
-            latitude: userData.location.latitude?.toString(),
-            longitude: userData.location.longitude?.toString()
-          })
         };
 
         // Call the PATCH /account/:id endpoint using MongoDB _id
@@ -78,14 +70,6 @@ const confirmCreation = async (req, res) => {
         email: userData.email,
         phone: userData.mobile_phone || '',
         status: 'active',
-        ...(userData.location && {
-          city: userData.location.city,
-          state: userData.location.state,
-          country: userData.location.country,
-          zip: userData.location.postalCode,
-          latitude: userData.location.latitude?.toString(),
-          longitude: userData.location.longitude?.toString()
-        }),
         ...(userData.type === 'company' && {
           industry: userData.industry || '',
           website: userData.website || ''
@@ -141,6 +125,16 @@ const confirmCreation = async (req, res) => {
       }
     );
 
+   await Account.findByIdAndUpdate(
+      accountId,
+      {
+        $push: {
+          contacts: contactResponse.data._id,
+          locations: locationResponse.data._id
+        }
+      }
+    );
+
     // Clean up the pending registration
     pendingRegistrations.delete(token);
     emailToTokenMap.delete(userData.email);
@@ -157,13 +151,7 @@ const confirmCreation = async (req, res) => {
 
   } catch (error) {
     console.error('Confirmation error:', error);
-    
-    return res.status(500).json({
-      success: false,
-      error: 'confirmation_failed',
-      message: 'Account confirmation failed',
-      details: error.message
-    });
+    return res.status(500).send(getErrorHtml());
   }
 };
 
