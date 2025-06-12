@@ -1128,8 +1128,8 @@ const HelpPopup = () => {
 
   const allExamples = [
     { text: "Je veux voir les produits disponibles", category: 'products' },
-    { text: "Créez un devis pour le produit X", category: 'quotes' },
-    { text: "Quels sont les prix pour les produits Y ?", category: 'quotes' },
+    { text: "un devis ", category: 'quotes' },
+    { text: "Quels sont les prix pour les produits ", category: 'quotes' },
     { text: "Quelles sont les opportunités en cours ?", category: 'sales' },
     { text: "Rechercher des produits avec la spécification Z", category: 'products' },
     { text: "Rechercher dans la base de connaissances", category: 'kb' },

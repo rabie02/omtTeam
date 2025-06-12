@@ -328,7 +328,7 @@ router.post('/nlp', async (req, res) => {
     const fallbackReplies = [
     "Pouvez-vous préciser votre demande ?",
     "Essayez avec des mots plus simples.",
-    "Voici ce que je peux faire : créer devis, consulter offres, produits, etc.",
+    "Voici ce que je peux faire : créer devis, consulter offres, produits, etc.faire tapez menu principale pour voir le menu complet",
     "Je suis là pour vous aider sur ServiceNow. Essayez par exemple : 'Créer un devis'"
     ];
     // 🟥 Aucun résultat
