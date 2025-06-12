@@ -151,13 +151,7 @@ const confirmCreation = async (req, res) => {
 
   } catch (error) {
     console.error('Confirmation error:', error);
-    
-    return res.status(500).json({
-      success: false,
-      error: 'confirmation_failed',
-      message: 'Account confirmation failed',
-      details: error.message
-    });
+    return res.status(500).send(getErrorHtml());
   }
 };
 
