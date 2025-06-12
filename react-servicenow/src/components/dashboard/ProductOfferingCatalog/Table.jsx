@@ -115,6 +115,8 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
                                     title={`${action} Category`}
                                     description={`Are you sure to ${action.toLowerCase()} this category?`}
                                     onConfirm={() => handleUpdateStatus(record._id, newStatus)}
+                                    okText="Yes"
+                                    cancelText="No"
                                 >
                                     <button className="text-gray-500 hover:text-green-600">
                                         <i className="ri-loop-right-line text-2xl"></i>
@@ -141,6 +143,8 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
                                 title="Delete Category"
                                 description="Are you sure to delete this category?"
                                 onConfirm={() => handleDelete(record._id)}
+                                okText="Yes"
+                                cancelText="No"
                             >
                                 <button className="text-gray-500 hover:text-red-600">
                                     <i className="ri-delete-bin-6-line text-2xl"></i>

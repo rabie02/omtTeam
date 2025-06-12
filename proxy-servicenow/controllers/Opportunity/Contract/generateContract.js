@@ -4,7 +4,7 @@ const snConnection = require('../../../utils/servicenowConnection');
 const mongoose = require('mongoose');
 const Contract = require("../../../models/contract");
 
-const getLatestQuoteByOpportunity = require('../../Quote/getLatestQuoteByOpportunity');
+const getLatestQuoteByOpportunity = require('../../Quote/getByOpportunityId');
 
 async function generateContract(req, res) {
   try {
