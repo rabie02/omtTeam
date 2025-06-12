@@ -224,8 +224,8 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
             
 
             {offering.priceType === 'recurring' ? (
-              <div className="grid grid-cols-2 gap-2">
-                <FormSelect
+              <div className="grid grid-cols-1 gap-2">
+                {/* <FormSelect
                 formik={formik}
                 label="Recurring Period*"
                 name={`productOfferings[${index}].recurringChargePeriodType`}
@@ -237,7 +237,7 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
                   { value: 'annually', label: 'Annually' }
                 ]}
                 disabled={!editable && !offering.new}
-              />
+              /> */}
               <FormInput
                 formik={formik}
                   name={`productOfferings[${index}].term_month`}
