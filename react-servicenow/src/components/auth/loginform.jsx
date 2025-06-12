@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
+import { useFormik } from 'formik';
+import * as yup from 'yup';
 import { userLogin, fetchUserInfo } from '../../features/auth/authActions';
 import { message } from 'antd';
 
 const MESSAGE_MAPPINGS = {
-  // Error messages
   missing_token: 'Invalid confirmation link',
   invalid_or_expired_token: 'Invalid or expired confirmation link',
   token_expired: 'Confirmation link has expired',
@@ -14,139 +15,113 @@ const MESSAGE_MAPPINGS = {
   auth_failed: 'Authentication failed',
   invalid_data: 'Invalid registration data',
   unknown_error: 'An unexpected error occurred',
-  
-  // Success messages
   registration_confirmed: 'Registration confirmed successfully! You can now log in.',
   default_success: 'Action completed successfully'
 };
 
+// Yup validation schema
+const validationSchema = yup.object({
+  username: yup.string().required('Username is required'),
+  password: yup.string().required('Password is required')
+});
+
 function LoginForm() {
-  // Initialize with empty strings - no default credentials
-  const [formData, setFormData] = useState({ 
-    username: '',
-    password: '' 
-  });
-  
-  const [messageContent, setMessageContent] = useState({ text: '', type: '' });
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
 
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessageContent({ text: '', type: '' });
+  const formik = useFormik({
+    initialValues: {
+      username: '',
+      password: ''
+    },
+    validationSchema,
+    onSubmit: async (values, { setSubmitting }) => {
+      try {
+        const result = await dispatch(userLogin(values));
 
-    if (!formData.username.trim() || !formData.password.trim()) {
-      setMessageContent({
-        text: 'Please enter both username and password',
-        type: 'error'
-      });
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      const result = await dispatch(userLogin(formData));
+        if (userLogin.fulfilled.match(result)) {
+          const token = result.payload?.id_token;
+          if (token) {
+            localStorage.setItem('access_token', `Bearer ${token}`);
+            await dispatch(fetchUserInfo());
+            message.success('Login successful');
+            navigate('/dashboard');
+          } else {
+            message.error('Login successful but no token received');
+          }
+        } else {
+          const errorPayload = result.payload;
+          const errorMessage = typeof errorPayload === 'object'
+            ? errorPayload.message || MESSAGE_MAPPINGS[errorPayload.type] || MESSAGE_MAPPINGS.unknown_error
+            : errorPayload || MESSAGE_MAPPINGS.unknown_error;
 
-      if (userLogin.fulfilled.match(result)) {
-      const token = result.payload?.id_token;
-      if (token) {
-        localStorage.setItem('access_token', `Bearer ${token}`);
-        await dispatch(fetchUserInfo()); // ✅ Fetch user info here
-        message.success('Login successful');
-        navigate('/dashboard');
-      } else {
-          message.error('Login successful but no token received');
+          message.error(errorMessage);
         }
-      } else if (userLogin.rejected.match(result)) {
-        const errorPayload = result.payload;
-        const errorMessage = typeof errorPayload === 'object' 
-          ? errorPayload.message || MESSAGE_MAPPINGS[errorPayload.type] || MESSAGE_MAPPINGS.unknown_error
-          : errorPayload || MESSAGE_MAPPINGS.unknown_error;
-        
-        setMessageContent({
-          text: errorMessage,
-          type: 'error'
-        });
+      } catch (error) {
+        console.error('Login error:', error);
+        message.error(MESSAGE_MAPPINGS.unknown_error);
+      } finally {
+        setSubmitting(false);
       }
-    } catch (err) {
-      console.error('Login error:', err);
-      setMessageContent({
-        text: MESSAGE_MAPPINGS.unknown_error,
-        type: 'error'
-      });
-    } finally {
-      setLoading(false); // This ensures loading is always reset
     }
-  };
+  });
 
-  
   return (
     <div className="max-w-md mx-auto">
-      <form onSubmit={handleSubmit} className="mb-4">
-        {/* Message display */}
-        {messageContent.text && (
-        <div className={`mb-4 p-3 rounded-md ${
-          messageContent.type === 'success' 
-            ? 'bg-green-100 text-green-800'
-            : messageContent.type === 'error'
-            ? 'bg-red-100 text-red-800'
-            : 'bg-blue-100 text-blue-800'
-        }`}>
-          {messageContent.text}
-        </div>
-        )}
+      <form onSubmit={formik.handleSubmit} className="mb-4 space-y-5">
 
-        {/* Username field */}
-        <div className="mb-4">
-          <label htmlFor="username" className="block text-gray-600 mb-1">
-            Username
-          </label>
-          <input
-            type="text"
-            id="username"
-            name="username"
-            value={formData.username}
-            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-            className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-            autoComplete="new-username"
-          />
+        {/* Username Field */}
+        <div>
+          <div className="shadow-lg flex gap-2 items-center bg-white p-2  rounded group duration-300">
+            <i className="ri-user-2-line group-hover:rotate-[360deg] duration-300"></i>
+            <input
+              type="text"
+              name="username"
+              placeholder="Username"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.username}
+              className="flex-1 focus:outline-none"
+              autoComplete="username"
+            />
+          </div>
+          {formik.touched.username && formik.errors.username && (
+            <p className="text-red-500 text-sm ml-1">{formik.errors.username}</p>
+          )}
         </div>
 
-        {/* Password field */}
-        <div className="mb-6">
-          <label htmlFor="password" className="block text-gray-600 mb-1">
-            Password
-          </label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-blue-500"
-            autoComplete="new-password"
-          />
+        {/* Password Field */}
+        <div>
+          <div className="shadow-lg flex gap-2 items-center bg-white p-2  rounded group duration-300">
+            <i className="ri-lock-2-line group-hover:rotate-[360deg] duration-300"></i>
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              value={formik.values.password}
+              className="flex-1 focus:outline-none"
+              autoComplete="current-password"
+            />
+          </div>
+          {formik.touched.password && formik.errors.password && (
+            <p className="text-red-500 text-sm ml-1">{formik.errors.password}</p>
+          )}
         </div>
 
-        {/* Submit button */}
+        {/* Submit Button */}
         <button
           type="submit"
-          disabled={loading}
-          className={`w-full bg-blue-500 cursor-pointer hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={formik.isSubmitting}
+          className={`w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition duration-300 ${formik.isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
         >
-          {loading ? 'Signing in...' : 'Sign in'}
+          {formik.isSubmitting ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
 
-      {/* Sign up link */}
-      <div className="text-center text-sm text-gray-600">
-        Don't have an account?{' '}
-        <Link to="/register" className="text-blue-500 hover:underline">
-          Sign up
-        </Link>
-      </div>
+
     </div>
   );
 }
