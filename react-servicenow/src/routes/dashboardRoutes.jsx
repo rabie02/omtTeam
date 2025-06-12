@@ -12,6 +12,7 @@ import Quote from '../views/dashbord/quote';
 import Profile from '../views/dashbord/ProfilePage'
 import Opportunity from '../views/dashbord/Opportunity';
 import PriceList from '../views/dashbord/PriceList';
+import Account from '../views/dashbord/Account';
 
 const dashboardRoutes = {
   path: '/dashboard',
@@ -31,6 +32,7 @@ const dashboardRoutes = {
     { path: 'help', element:<AiSearch/>},
     { path: 'quote', element:<Quote/>},
     { path: 'profile', element:<Profile/>},
+    { path: 'account', element:<Account/>},
     // ... other dashboard sub-routes
   ],
 };
