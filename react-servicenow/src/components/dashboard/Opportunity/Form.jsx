@@ -522,7 +522,7 @@ useEffect(() => {
     }
   return (
     <Modal
-      title="Create New Opportunity"
+      title={editMode ? "Update Opportunity" : `Create New Opportunity`}
       open={open}
       onCancel={handleCancel}
       footer={null}
