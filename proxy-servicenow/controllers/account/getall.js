@@ -1,6 +1,4 @@
-const axios = require('axios');
 const Account = require('../../models/account');
-const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 
 module.exports = async (req, res) => {
@@ -35,7 +33,5 @@ module.exports = async (req, res) => {
     // Handle MongoDB errors
     const mongoError = handleMongoError(error);
     return res.status(mongoError.status).json({ error: mongoError.message });
-
-
   }
 };
