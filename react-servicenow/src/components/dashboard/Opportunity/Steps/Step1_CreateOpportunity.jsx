@@ -1,10 +1,12 @@
 import React from 'react';
 import FormInput from './shared/FormInput';
 import FormSelect from './shared/FormSelect';
+import FormSelectSearch from './shared/FormSelectSearch';
 import {useSelector} from 'react-redux';
 import { useRef, useEffect } from 'react';
-const OpportunityStep1 = ({ formik, editMode=false }) => {
-  const { salesCycleTypes, stages, accounts } = useSelector((state) => state.opportunity);
+const OpportunityStep1 = ({ formik, editMode=false, setAccSearchTerm}) => {
+  const { salesCycleTypes, stages } = useSelector((state) => state.opportunity);
+  const { data }=useSelector((state)=>state.account)
    // Focus the input when the component mounts
    const shortDescriptionRef = useRef(null);
   useEffect(() => {
@@ -81,11 +83,13 @@ const OpportunityStep1 = ({ formik, editMode=false }) => {
       </div>}
       
       {(salesCycleTypes.filter(s=> s._id === formik.values.opportunity.sales_cycle_type)?.[0]?.["sys_name"] !== "NEWCUST" || editMode) &&
-      <FormSelect
+      <FormSelectSearch
         formik={formik}
         name="opportunity.account"
         label="Account*"
-        options={accounts.map(account => ({
+        onSearch = {(value)=>{setAccSearchTerm(value)}}
+        filterOption = {false}
+        options={data.map(account => ({
           value: account._id,
           label: account.name
         }))}

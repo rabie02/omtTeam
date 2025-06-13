@@ -11,7 +11,8 @@ async function getLatestOneByOpportunity(req, res = null) {
     const OpportunityObjectId = new mongoose.Types.ObjectId(id);
 
     const result = await Quote.find({
-        opportunity: OpportunityObjectId
+        opportunity: OpportunityObjectId,
+        state:'approved'
       }).sort({ createdAt: -1 })
       .limit(1)
       .lean();

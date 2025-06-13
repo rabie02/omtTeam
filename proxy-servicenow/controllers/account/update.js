@@ -13,7 +13,6 @@ module.exports = async (req, res) => {
     }
     
     const servicenowId = account.sys_id;
-    
     // Create basic auth header using ServiceNow credentials from config
     const auth = {
       username: config.serviceNow.user,
