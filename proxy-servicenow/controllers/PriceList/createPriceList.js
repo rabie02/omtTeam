@@ -6,34 +6,29 @@ const externalIdHelper = require('../../utils/externalIdHelper');
 
 async function createPriceList(req, res = null) {
   try {
+
+    const price = new PriceList(req.body);
+    const mongoDocument = await price.save();
+    
+    const payload={
+      ...req.body,
+      external_id: mongoDocument._id.toString()
+    }
+
     // Create in ServiceNow
     const connection = snConnection.getConnection(req.user.sn_access_token);
     const snResponse = await axios.post(
       `${connection.baseURL}/api/now/table/sn_csm_pricing_price_list`,
-      req.body,
+      payload,
       { headers: connection.headers }
     );
     
-    // Create in MongoDB
-    let mongoDocument;
-    try {
-      const price = new PriceList({
-        sys_id: snResponse.data.result.sys_id,
-        ...req.body
-      });
-      mongoDocument = await price.save();
-    } catch (mongoError) {
-      if (res) {
-        return handleMongoError(res, snResponse.data.result, mongoError, 'creation');
-      }
-      throw mongoError;
-    }
+    // update in MongoDB
+    await PriceList.updateOne(
+      { _id: mongoDocument._id },
+      { sys_id: snResponse.data.result.sys_id }
+    );
 
-    await externalIdHelper(connection,
-       `api/now/table/sn_csm_pricing_price_list/${snResponse.data.result.sys_id}`,
-       mongoDocument._id.toString());
-    
-    
     // Prepare response with both ServiceNow and MongoDB IDs
     const response = {
       ...snResponse.data.result,

@@ -9,6 +9,7 @@ const Stage = require('../../models/stage');
 
 async function createOpportunity(req, res=null) {
   try {
+
     if (req.body.estimated_closed_date) {
       const startDate = new Date(req.body.estimated_closed_date);
       const currentDate = new Date();
@@ -68,10 +69,22 @@ async function createOpportunity(req, res=null) {
       }
       SCTSysId = SCTDoc.sys_id;
     }
-    
+    const initialMongo = {
+      ...req.body,
+      // Override with MongoDB ObjectId references
+      ...(accountDoc && { account: accountDoc._id }),
+      ...(priceListDoc && { price_list: priceListDoc._id }),
+      ...(stageDoc && { stage: stageDoc._id }),
+      ...(SCTDoc && { sales_cycle_type: SCTDoc._id })
+    }
+    //create in mongo
+    const opportunity = new Opportunity(initialMongo);
+    const savedOpportunity = await opportunity.save();
+
     // Step 2: Prepare ServiceNow payload with sys_ids
     const serviceNowPayload = {
       ...opportunityData,
+      external_id: savedOpportunity._id.toString(),
       account: accountSysId,
       price_list: priceListSysId,
       stage: stageSysId,
@@ -93,21 +106,15 @@ async function createOpportunity(req, res=null) {
     // Step 4: Prepare MongoDB document with ObjectId references
     const mongoPayload = {
       sys_id: snResponse.data.result.sys_id,
-      number: snResponse.data.result.number,
-      ...req.body,
-      // Override with MongoDB ObjectId references
-      ...(accountDoc && { account: accountDoc._id }),
-      ...(priceListDoc && { price_list: priceListDoc._id })
+      number: snResponse.data.result.number
     };
     
-    // Step 5: Create in MongoDB
+    // Step 5: update in MongoDB
     try {
-      const opportunity = new Opportunity(mongoPayload);
-      const savedOpportunity = await opportunity.save();
-      console.log('Opportunity created in MongoDB:', savedOpportunity._id);
+      
       
       // Populate the saved opportunity with account and price_list details
-      const populatedOpportunity = await Opportunity.findById(savedOpportunity._id)
+      const populatedOpportunity = await Opportunity.findByIdAndUpdate(savedOpportunity._id, mongoPayload ,{new: true})
         .populate('account', 'name email country city industry')
         .populate('price_list')
         .populate('sales_cycle_type')
@@ -126,6 +133,7 @@ async function createOpportunity(req, res=null) {
       console.error('MongoDB creation failed:', mongoError);
       return handleMongoError(res, snResponse.data.result, mongoError, 'creation');
     }
+    
     
   } catch (error) {
     console.error('Error creating opportunity:', error);
