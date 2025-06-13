@@ -1,9 +1,10 @@
 const axios = require('axios');
-const jwt = require('jsonwebtoken');
 const ProductOffering = require('../../models/ProductOffering');
 const handleMongoError = require('../../utils/handleMongoError');
 const ProductOfferingCategory = require('../../models/ProductOfferingCategory');
 const ProductSpecification = require ('../../models/productSpecification');
+const snConnection = require('../../utils/servicenowConnection');
+const externalIdHelper = require('../../utils/externalIdHelper');
 
 // Create Product Offering 
 module.exports = async (req, res) => {
@@ -32,17 +33,8 @@ module.exports = async (req, res) => {
         }
 
         
-
-        // Authentication and Authorization
-        const authHeader = req.headers.authorization;
-        if (!authHeader) return res.status(401).json({ error: 'Authorization header missing' });
-        
-        const [bearer, token] = authHeader.split(' ');
-        if (bearer !== 'Bearer' || !token) {
-            return res.status(401).json({ error: 'Invalid authorization format' });
-        }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        //initialize servicenow connection
+        const connection = snConnection.getConnection(req.user.sn_access_token);
 
         // Prepare ServiceNow payload
         const snPayload = {
@@ -72,14 +64,9 @@ module.exports = async (req, res) => {
 
         // ServiceNow API Call
         const snResponse = await axios.post(
-            `${process.env.SERVICE_NOW_URL}/api/sn_tmf_api/catalogmanagement/productOffering`,
+            `${connection.baseURL}/api/sn_tmf_api/catalogmanagement/productOffering`,
             snPayload,
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${decoded.sn_access_token}`
-                }
-            }
+            { headers: connection.headers }
         );
 
         // MongoDB Create
@@ -97,6 +84,9 @@ module.exports = async (req, res) => {
 
             console.log(JSON.stringify(mongoDoc,null,2))
             
+            //patch external_id(mongoDB id) to serviceNow
+            await externalIdHelper(connection,`api/now/table/sn_prd_pm_product_offering/${snRecord.id}`, mongoDoc._id.toString());
+
             // Populate the created document
             populatedDoc = await ProductOffering.findById(mongoDoc._id)
                 .populate('productSpecification')

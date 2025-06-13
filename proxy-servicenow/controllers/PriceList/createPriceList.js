@@ -2,7 +2,7 @@ const axios = require('axios');
 const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 const PriceList = require('../../models/priceList');
-const externalIdHelper = require('../../utils/externalIdHelper')
+const externalIdHelper = require('../../utils/externalIdHelper');
 
 async function createPriceList(req, res = null) {
   try {
