@@ -21,7 +21,7 @@ const validationSchema = Yup.object().shape({
 });
 
 function ProductOfferingForm({ open, setOpen, initialData = null, options=null, dispatch, setSearchTerm, setCatSearchTerm }) {
-  
+  console.log(initialData);
   const isEditMode = Boolean(initialData); 
   const formik = useFormik({
     initialValues: {
@@ -34,7 +34,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         po_term: initialData?.productOfferingTerm || 'not_applicable',
         p_spec: initialData?.productSpecification._id || '', // Get ID from nested object
         channel: initialData?.channel?.[0]?.id || 'e561aae4c3e710105252716b7d40dd8f', // Get ID from first item in array
-        category: initialData?.category[0] || '', // Get ID from nested object
+        category: initialData?.category[0]?._id || initialData?.category[0] || '', // Get ID from nested object
         pricing_type: initialData?.productOfferingPrice[0].price?.taxIncludedAmount?.value !== "0" ? 'reccuring':'one_time',
         currency: 'USD'
     },
