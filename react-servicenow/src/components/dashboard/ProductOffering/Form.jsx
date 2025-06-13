@@ -21,7 +21,6 @@ const validationSchema = Yup.object().shape({
 });
 
 function ProductOfferingForm({ open, setOpen, initialData = null, options=null, dispatch, setSearchTerm, setCatSearchTerm }) {
-  console.log(initialData);
   const isEditMode = Boolean(initialData); 
   const formik = useFormik({
     initialValues: {
