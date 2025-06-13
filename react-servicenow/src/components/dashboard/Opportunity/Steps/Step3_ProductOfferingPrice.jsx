@@ -5,8 +5,9 @@ import  FormInput  from './shared/FormInput';
 import  FormSelect  from './shared/FormSelect';
 import {useSelector, shallowEqual } from 'react-redux';
 import { formatDateForInput } from '@/utils/formatDateForInput.js';
+import  FormSelectSearch  from './shared/FormSelectSearch';
 
-const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
+const OpportunityStep3 = ({ formik, lineItems, editMode=false, setOffSearchTerm }) => {
   
   const selectOpportunityData = (state) => ({
     unitOfMeasures: state.opportunity.unitOfMeasures,
@@ -71,6 +72,8 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
 
 
   const addProductOffering = () => {
+
+    setOffSearchTerm('')
     
     formik.setFieldValue('productOfferings', [
       ...formik.values.productOfferings,
@@ -180,13 +183,15 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
               
             </div>
 
-            <FormSelect
+            <FormSelectSearch
               label="Product Offering*"
               formik={formik}
               name={`productOfferings[${index}].productOffering.id`}
               value={offering.productOffering.id}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
+              onSearch = {(value)=>{setOffSearchTerm(value)}}
+              filterOption = {false}
               options={allOfferings
                 .filter(po => po.status.toLowerCase() === "published" && !getSelectedProductOfferings(index).includes(po._id))
                 .map(po => ({
@@ -194,6 +199,7 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
                   label: po.name,
                 }))}
               disabled={!editable && !offering.new}
+              
             />
 
             <FormSelect
@@ -217,7 +223,7 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
               value={offering.priceType}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              options={filterOffering(offering.productOffering.id).productOfferingPrice[0].price.taxIncludedAmount.value !=="0" && filterOffering(offering.productOffering.id).productOfferingPrice[0].priceType === "recurring"? [{ value: 'recurring', label: 'Recurring' }] : [{ value: 'one_time', label: 'One-time' }]}
+              options={filterOffering(offering.productOffering.id) !== undefined ? (filterOffering(offering.productOffering.id).productOfferingPrice[0].price.taxIncludedAmount.value !=="0" && filterOffering(offering.productOffering.id).productOfferingPrice[0].priceType === "recurring"? [{ value: 'recurring', label: 'Recurring' }] : [{ value: 'one_time', label: 'One-time' }]): [{ value: 'recurring', label: 'Recurring' }]}
               //options={[{ value: 'recurring', label: 'Recurring' }, { value: 'one_time', label: 'One-time' }]}
               disabled={!editable && !offering.new}
             />
@@ -307,7 +313,7 @@ const OpportunityStep3 = ({ formik, lineItems, editMode=false }) => {
         icon={<PlusOutlined />}
         className="w-full"
       >
-        Add Product Offering
+        Add Opportunity Line Item
       </Button>
     </div>
   );
