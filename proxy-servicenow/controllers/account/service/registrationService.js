@@ -2,11 +2,11 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const config = require('../../../utils/configCreateAccount');
-const emailTemplates = require('./emailTemplates');
+const { getWelcomeEmail, getConfirmationEmail } = require('./emailTemplates');
 
 // In-memory store with email tracking
 const pendingRegistrations = new Map();
-const emailToTokenMap = new Map(); // New map to track email->token
+const emailToTokenMap = new Map();
 
 const transporter = nodemailer.createTransport({
   service: config.email.service,
@@ -15,15 +15,24 @@ const transporter = nodemailer.createTransport({
     pass: config.email.pass
   }
 });
-const sendWelcomeEmail = async (email, firstName, lastName, password) => {
-    const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
-    return transporter.sendMail({
+
+const sendWelcomeEmail = async (accountEmail, accountName, contacts) => {
+  try {
+    const mailOptions = {
       from: `"${config.app.name}" <${config.email.user}>`,
-      to: email,
-      subject: `Welcome to ${config.app.name}`,
-      html: emailTemplates.getWelcomeEmail(firstName, lastName, email, password)
-    });
-  };
+      to: accountEmail,
+      subject: `Welcome to ${config.app.name} - Team Credentials`,
+      html: getWelcomeEmail(accountName, contacts)
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Message sent: %s', info.messageId);
+    return info;
+  } catch (error) {
+    console.error('Error sending welcome email:', error);
+    throw error;
+  }
+};
 
 const generateToken = () => crypto.randomBytes(32).toString('hex');
 
@@ -34,7 +43,7 @@ const sendConfirmationEmail = async (email, firstName, token) => {
     from: `"${config.app.name}" <${config.email.user}>`,
     to: email,
     subject: `Confirm Your ${config.app.name} Registration`,
-    html: emailTemplates.getConfirmationEmail(firstName, confirmationLink)
+    html: getConfirmationEmail(firstName, confirmationLink)
   });
 };
 

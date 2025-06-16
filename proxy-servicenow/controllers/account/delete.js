@@ -2,64 +2,79 @@ const axios = require('axios');
 const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 const Account = require('../../models/account');
+const Contact = require('../../models/Contact');  // Add this import
+const Location = require('../../models/location');  // Add this import
+const config = require('../../utils/configCreateAccount');
 
 module.exports = async (req, res) => {
   try {
-    const mongoId = req.params.id; // MongoDB _id
-    
-    // First, find the account in MongoDB to get the ServiceNow sys_id
+    const mongoId = req.params.id;
     const account = await Account.findById(mongoId);
-    
+
     if (!account) {
       return res.status(404).json({ error: 'Account not found in MongoDB' });
     }
-    
-    const servicenowId = account.sys_id;
-    
-    console.log(`Deleting account - MongoDB ID: ${mongoId}, ServiceNow ID: ${servicenowId}`);
-    
-    // Step 1: Delete from MongoDB first
+
+    // Create axios instance for internal API calls
+    const apiClient = axios.create({
+      baseURL: config.app.backendUrl,
+      headers: {
+        'Authorization': req.headers.authorization,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    // Step 1: Delete all contacts associated with this account
+    const contacts = await Contact.find({ account: mongoId });
+    for (const contact of contacts) {
+      try {
+        await apiClient.delete(`/api/contact/${contact._id}`);
+        console.log(`Deleted contact ${contact._id}`);
+      } catch (error) {
+        console.error(`Failed to delete contact ${contact._id}:`, error.message);
+      }
+    }
+
+    // Step 2: Delete all locations associated with this account
+    const locations = await Location.find({ account: mongoId });
+    for (const location of locations) {
+      try {
+        await apiClient.delete(`/api/location/${location._id}`);
+        console.log(`Deleted location ${location._id}`);
+      } catch (error) {
+        console.error(`Failed to delete location ${location._id}:`, error.message);
+      }
+    }
+
+    // Step 3: Delete the account from MongoDB
     await Account.findByIdAndDelete(mongoId);
-    console.log(`Account deleted from MongoDB: ${mongoId}`);
-    
-    // Step 2: Delete from ServiceNow if sys_id exists
-    if (servicenowId) {
+    console.log(`Deleted account from MongoDB: ${mongoId}`);
+
+    // Step 4: Delete the account from ServiceNow if sys_id exists
+    if (account.sys_id) {
       try {
         const connection = snConnection.getConnection(req.user.sn_access_token);
-        const snResponse = await axios.delete(
-          `${connection.baseURL}/api/now/table/customer_account/${servicenowId}`, // Adjust table name as needed
+        await axios.delete(
+          `${connection.baseURL}/api/now/table/customer_account/${account.sys_id}`,
           { headers: connection.headers }
         );
-        console.log(`Account deleted from ServiceNow: ${servicenowId}`);
-        
-        res.json({
-          message: 'Account successfully deleted from both MongoDB and ServiceNow',
-          mongoId: mongoId,
-          servicenowId: servicenowId,
-          servicenowResponse: snResponse.data
-        });
-      } catch (snError) {
-        // MongoDB deletion succeeded but ServiceNow failed
-        console.error('ServiceNow deletion failed:', snError);
-        res.status(207).json({ // 207 Multi-Status
-          message: 'Account deleted from MongoDB but ServiceNow deletion failed',
-          mongoId: mongoId,
-          servicenowId: servicenowId,
-          error: snError.response?.data?.error?.message || snError.message
-        });
+        console.log(`Deleted account from ServiceNow: ${account.sys_id}`);
+      } catch (error) {
+        console.error('Failed to delete from ServiceNow:', error.message);
       }
-    } else {
-      // No ServiceNow ID, only MongoDB deletion
-      res.json({
-        message: 'Account successfully deleted from MongoDB (no ServiceNow ID found)',
-        mongoId: mongoId
-      });
     }
-    
+
+    res.json({
+      message: 'Account and associated resources deletion completed',
+      accountId: mongoId,
+      deletedContacts: contacts.length,
+      deletedLocations: locations.length,
+      serviceNowDeleted: !!account.sys_id
+    });
+
   } catch (error) {
-    console.error('Error deleting account:', error);
+    console.error('Account deletion failed:', error);
     
-    // Handle invalid MongoDB ObjectId
     if (error.name === 'CastError') {
       return res.status(400).json({ 
         error: 'Invalid MongoDB ID format',
@@ -67,15 +82,13 @@ module.exports = async (req, res) => {
       });
     }
     
-    // Handle MongoDB errors
-    if (error.name && error.name.includes('Mongo')) {
+    if (error.name?.includes('Mongo')) {
       const mongoError = handleMongoError(error);
       return res.status(mongoError.status).json({ error: mongoError.message });
     }
     
-    // Handle other errors
     const status = error.response?.status || 500;
     const message = error.response?.data?.error?.message || error.message;
-    res.status(status).json({ error: message });
+    return res.status(status).json({ error: message });
   }
 };

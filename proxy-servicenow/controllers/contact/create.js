@@ -23,7 +23,21 @@ async function createContact(req, res = null) {
       password: config.serviceNow.password
     };
 
-    // Prepare ServiceNow contact payload with correct field names
+    // First create in MongoDB to get the ID
+    const contact = new Contact({
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      email: req.body.email,
+      phone: req.body.phone,
+      account: accountDoc._id,
+      isPrimaryContact: req.body.isPrimaryContact || true,
+      active: req.body.active || true,
+      ...(req.body.jobTitle && { jobTitle: req.body.jobTitle })
+    });
+
+    const savedContact = await contact.save();
+
+    // Prepare ServiceNow contact payload with MongoDB ID as external_id
     const contactPayload = {
       first_name: req.body.firstName,
       last_name: req.body.lastName,
@@ -31,8 +45,9 @@ async function createContact(req, res = null) {
       phone: req.body.phone || '',
       account: accountDoc.sys_id,
       user_password: req.body.password || '',
-      is_primary_contact: true,
-      active: true,
+      is_primary_contact: req.body.isPrimaryContact || true,
+      active: req.body.active || true,
+      external_id: savedContact._id.toString(), // Add MongoDB ID here
       ...(req.body.jobTitle && { job_title: req.body.jobTitle }),
       sys_class_name: 'customer_contact'
     };
@@ -45,7 +60,6 @@ async function createContact(req, res = null) {
         headers: { 
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          // Add this if your instance requires it
           'X-SN-Table-Name': 'customer_contact'
         },
         auth
@@ -54,20 +68,9 @@ async function createContact(req, res = null) {
 
     console.log('Contact created in ServiceNow:', snResponse.data.result);
 
-    // Save to MongoDB
-    const contact = new Contact({
-      sys_id: snResponse.data.result.sys_id,
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-      email: req.body.email,
-      phone: req.body.phone,
-      account: accountDoc._id,
-      isPrimaryContact: true,
-      active: true,
-      ...(req.body.jobTitle && { jobTitle: req.body.jobTitle })
-    });
-
-    const savedContact = await contact.save();
+    // Update MongoDB record with ServiceNow sys_id
+    savedContact.sys_id = snResponse.data.result.sys_id;
+    await savedContact.save();
 
     const result = {
       _id: savedContact._id,
@@ -81,6 +84,11 @@ async function createContact(req, res = null) {
 
   } catch (error) {
     console.error('Error creating contact:', error);
+    
+    // Clean up MongoDB record if ServiceNow creation failed
+    if (savedContact) {
+      await Contact.findByIdAndDelete(savedContact._id);
+    }
     
     if (res) {
       if (error.name?.includes('Mongo')) {
