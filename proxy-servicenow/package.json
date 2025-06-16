@@ -28,6 +28,7 @@
     "multer": "^1.4.5-lts.2",
     "node-nlp": "^5.0.0-alpha.5",
     "nodemailer": "^6.10.1",
+    "nodemon": "^3.1.10",
     "string-similarity": "^4.0.4",
     "tunnel": "^0.0.6"
   }

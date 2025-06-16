@@ -27,7 +27,7 @@ module.exports = async (req, res) => {
 
     //create account or use an existing one
     payload.body = acc;
-    account = op.account === "" ? await createAccount(payload) : await Account.findById(op.account);
+    account = acc.name !== "" ? await createAccount(payload) : await Account.findById(op.account);
 
     // Create price list if needed
     if (createNewPriceList) {

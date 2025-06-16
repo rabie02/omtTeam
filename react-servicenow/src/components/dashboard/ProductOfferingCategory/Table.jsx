@@ -68,7 +68,7 @@ function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
             case 'draft': return { action: 'Publish', newStatus: 'published' };
             case 'published': return { action: 'Retire', newStatus: 'retired' };
             case 'retired': return { action: 'Archive', newStatus: 'archived' };
-            default: return { action: 'Update Status', newStatus: currentStatus };
+            default: return { action: "No update possible for this", newStatus: currentStatus };
         }
     };
 
@@ -186,8 +186,11 @@ function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
                                 description={`Are you sure to ${action.toLowerCase()} this category?`}
                                 onConfirm={() => handleUpdateStatus(record._id, newStatus)}
                                 disabled={record.status === "archived"}
+                                okText="Yes"
+                                cancelText="No"
                             >
-                                <button className="mx-1 text-gray-500 hover:text-green-600  ">
+                                <button 
+                                    className={`mx-1 ${record.status == "archived" ? "text-gray-300 cursor-not-allowed" : "mx-1 text-gray-500 hover:text-green-600  "}`}>
                                     <i className="ri-loop-right-line text-2xl"></i>
                                 </button>
                             </Popconfirm>
@@ -212,6 +215,8 @@ function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
                                 title="Delete Category"
                                 description="Are you sure to delete this category?"
                                 onConfirm={() => handleDelete(record._id)}
+                                okText="Yes"
+                                cancelText="No"
                             >
                                 <button className=" mx-1 text-gray-500 hover:text-red-600">
                                     <i className="ri-delete-bin-6-line text-2xl"></i>
@@ -224,17 +229,25 @@ function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
         }
     ];
 
-    if (loading) return (
-        <div className="h-full flex justify-center items-center">
-            <Spin size="large" tip="Loading categories..." />
-        </div>
-    );
+    // if (loading) return (
+    //     <div className="h-full flex justify-center items-center">
+    //         <Spin size="large" tip="Loading categories..." />
+    //     </div>
+    // );
 
-    if (error) return (
-        <div className="text-red-500 p-4">
-            Error: {error.message || 'Failed to load categories'}
-        </div>
-    );
+    // if (error) return (
+    //     <div className="text-red-500 p-4">
+    //         Error: {error.message || 'Failed to load categories'}
+    //     </div>
+    // );
+     useEffect(() => {
+            if (error) {
+                notification.error({
+                    message: 'Error Occurred',
+                    description: error,
+                });
+            }
+        }, [error]);
 
     return (
         <div className='w-full justify-center flex'>

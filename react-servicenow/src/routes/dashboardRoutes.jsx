@@ -31,7 +31,6 @@ const dashboardRoutes = {
     { path: 'category', element:<POCategory/>},
     { path: 'product-offering', element:<PO/>},
     { path: 'product-specification', element:<PS/>},
-    { path: 'Help', element:<AiSearch/>,},
     { path: 'opportunity', element: <Opportunity />},
     { path: 'price-list', element: <PriceList />},
     { path: 'help', element:<AiSearch/>},

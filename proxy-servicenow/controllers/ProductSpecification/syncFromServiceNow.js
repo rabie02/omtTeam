@@ -1,4 +1,6 @@
 const ProductSpecification = require('../../models/productSpecification');
+const externalIdHelper = require('../../utils/externalIdHelper');
+const snConnection = require('../../utils/servicenowConnection'); 
 
 /**
  * Sync product specification from ServiceNow
@@ -8,29 +10,37 @@ const ProductSpecification = require('../../models/productSpecification');
 const syncFromServiceNow = async (req, res) => {
   try {
     const specData = req.body;
-    
-    // Validate required fields
+
     if (!specData.id && !specData.sys_id) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Missing required field: sys_id' 
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required field: sys_id'
       });
     }
-    
-    // Log incoming data
+
     console.log(`Received product specification from ServiceNow: ${specData.display_name}`);
-    
-    // Update or insert the product specification
+
+    // 1. Upsert MongoDB
     const result = await ProductSpecification.updateOne(
       { sys_id: specData.sys_id },
-      { $set: { ...specData.tmf_data, specification_type: specData.specification_type} },
+      { $set: { ...specData.tmf_data, specification_type: specData.specification_type } },
       { upsert: true }
     );
-    
+
     console.log(`Product specification synchronized: ${specData.tmf_data.display_name}`);
-    
-    res.status(200).json({ 
-      success: true, 
+
+    // 2. PATCH externalId to ServiceNow if created (new upsert)
+    if (result.upsertedId) {
+      const connection = snConnection.getConnection(req.user?.sn_access_token); // Assure toi que token existe
+      const mongoId = result.upsertedId.toString();
+      const path = `/api/sn_tmf_api/catalogmanagement/productSpecification/${specData.sys_id}`;
+
+      await externalIdHelper(connection, path, mongoId);
+      console.log(`✅ externalId (${mongoId}) patched to ServiceNow`);
+    }
+
+    res.status(200).json({
+      success: true,
       message: "Product specification synchronized successfully",
       data: {
         modifiedCount: result.modifiedCount,
@@ -39,10 +49,10 @@ const syncFromServiceNow = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error synchronizing product specification:", error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    console.error("❌ Error synchronizing product specification:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 };

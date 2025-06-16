@@ -19,15 +19,43 @@ module.exports = async (req, res) => {
         }
       },
       { $unwind: '$opportunity' },
+      // ➕ NEW: Contracts lookup (add this stage)
+      {
+        $lookup: {
+          from: 'contracts',
+          localField: '_id',
+          foreignField: 'quote',
+          as: 'contracts'
+        }
+      },
+      // Account lookup with nested contacts/locations
       {
         $lookup: {
           from: 'accounts',
           localField: 'account',
           foreignField: '_id',
-          as: 'account'
+          as: 'account',
+          pipeline: [
+            {
+              $lookup: {
+                from: 'contacts',
+                localField: '_id',
+                foreignField: 'account',
+                as: 'contacts',
+              }
+            },
+            {
+              $lookup: {
+                from: 'locations',
+                localField: '_id',
+                foreignField: 'account',
+                as: 'locations'
+              }
+            },
+          ]
         }
       },
-      { $unwind: '$account' },
+      { $unwind: { path: '$account', preserveNullAndEmptyArrays: true } },
       {
         $lookup: {
           from: 'price_lists', // Fixed collection name
@@ -99,7 +127,7 @@ module.exports = async (req, res) => {
     });
 
     const [result] = await Quote.aggregate(pipeline);
-    
+
     const data = result.data;
     const total = result.total[0]?.count || 0;
 

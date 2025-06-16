@@ -14,7 +14,8 @@ const PageLayout = ({
   FormComponent,
   options,
   dispatch,
-  setSearchTerm
+  setSearchTerm,
+  setCatSearchTerm
 }) => {
   return (
     <div className='h-svh'>
@@ -70,6 +71,7 @@ const PageLayout = ({
           options={options} 
           dispatch={dispatch} 
           setSearchTerm={setSearchTerm}
+          setCatSearchTerm={setCatSearchTerm}
         />
       )}
     </div>

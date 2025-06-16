@@ -38,7 +38,6 @@ module.exports = async (req, res) => {
         source: 'mongodb'
       });
     }
-
     return res.json([]);
 
   } catch (error) {

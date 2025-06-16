@@ -1,11 +1,12 @@
 
 import  FormInput  from './shared/FormInput';
 import  FormSelect  from './shared/FormSelect';
+import  FormSelectSearch  from './shared/FormSelectSearch';
 import  FormRadioGroup  from './shared/FormRadioGroup';
 import {useSelector} from 'react-redux';
 
 
-const OpportunityStep2 = ({ formik, editMode=false }) => {
+const OpportunityStep2 = ({ formik, editMode=false, setPLSearchTerm }) => {
   const { priceLists } = useSelector((state) => state.priceList);
 
   return (
@@ -87,7 +88,7 @@ const OpportunityStep2 = ({ formik, editMode=false }) => {
             </div>
         </>
       ) : (
-        <FormSelect
+        <FormSelectSearch
           formik={formik}
           name="selectedPriceList"
           label="Select Price List*"
@@ -98,6 +99,8 @@ const OpportunityStep2 = ({ formik, editMode=false }) => {
             }))}
             onChange={formik.handleChange}
         onBlur={formik.handleBlur}
+        onSearch = {(value)=>{setPLSearchTerm(value)}}
+        filterOption = {false}
         />
       )}
     </div>

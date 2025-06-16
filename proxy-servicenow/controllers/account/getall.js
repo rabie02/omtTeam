@@ -1,6 +1,4 @@
-const axios = require('axios');
 const Account = require('../../models/account');
-const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 
 module.exports = async (req, res) => {

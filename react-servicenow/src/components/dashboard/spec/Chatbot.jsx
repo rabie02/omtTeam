@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { stringSimilarity } from 'string-similarity-js';
 
 const Chatbot = () => {
   // États du chatbot
@@ -10,10 +9,10 @@ const Chatbot = () => {
   const [loading, setLoading] = useState(false);
   const [context, setContext] = useState(null);
   const [currentStep, setCurrentStep] = useState(null);
-  const [categories, setCategories] = useState([]);
   const [loadingIntents, setLoadingIntents] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const messagesEndRef = useRef(null);
+  const [categories, setCategories] = useState([]);
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   // 🔽 Ajoutez cette fonction ici
@@ -62,7 +61,7 @@ const Chatbot = () => {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const response = await axios.get(`${backendUrl}/api/product-offering-catalog-publish/categories`, getAuthHeaders());
+        const response = await axios.get(`${backendUrl}/api/product-offering-category`, getAuthHeaders());
         setCategories(response.data.data || []); // Accéder à response.data.data
         initializeChat();
       } catch (error) {
@@ -94,7 +93,7 @@ const Chatbot = () => {
   // Détection d'intention améliorée
   const detectIntent = (text) => {
     text = text.toLowerCase().trim();
-    
+    if (/^(créer|creer).*offre.*produit/.test(text)) return 'create_product_offering';
     // Détection basée sur le contenu du message
     if (/(bonjour|salut)/.test(text)) return 'greeting';
     if (/(produit|offre|article)/.test(text)) return 'search_products';
@@ -106,103 +105,143 @@ const Chatbot = () => {
     if (/(article|connaissance)/.test(text)) return 'search_kb';
     if (/(spécification|caractéristique)/.test(text)) return 'search_specs';
     if (/(menu|guide|principal)/.test(text)) return 'main_menu';
+    if (/\b(case|cases)\b/.test(text)) return 'view_cases';
     if (/(voir.*devis|mes devis|liste.*devis)/.test(text)) return 'view_quotes';
-
-
     return 'help';
   };
 
   // Gestion de l'envoi de message
   const handleSendMessage = async () => {
-    if (!input.trim() || loading) return;
-
-    const userMessage = { text: input, sender: 'user' };
+  if (!input.trim() || loading) return;
+  const userMessage = { text: input, sender: 'user' };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setLoading(true);
 
-    try {
-      if (currentStep) {
-        await processStepResponse(input);
-        return;
-      }
-
-      // 🧠 Étape 1 : essaye avec logique métier
-      const response = await processUserInput(input);
-
-      // Si l'intention est reconnue (et pas juste 'help')
-      if (response && response.intent && response.intent !== 'help') {
-        setMessages(prev => [...prev, response]);
-
-        if (response.data) {
-          setMessages(prev => [...prev, {
-            text: response.text || "Voici les résultats:",
-            sender: 'bot',
-            isData: true,
-            data: response.data,
-            options: getFollowUpOptions(response.intent)
-          }]);
-        }
-        return;
-      }
-
-      // 🤖 Étape 2 : sinon NLP
-      const aiResponse = await queryNLPBackend(input);
-      if (aiResponse && aiResponse.text && aiResponse.text.trim() !== '') {
-        console.log("✅ Réponse NLP:", aiResponse);
-        setMessages(prev => [...prev, aiResponse]);
-        return;
-      }
-
-      // Si aucune réponse
-      addBotMessage("Je n’ai pas compris votre demande. Pouvez-vous reformuler ?",generateDefaultOptions());
-      const fallback = handleHelp();
-      setMessages(prev => [...prev, fallback]);
-
-    } catch (error) {
-      console.error("Erreur chatbot:", error);
-      addBotMessage("Désolé, une erreur est survenue. Pouvez-vous reformuler votre demande ?");
-    } finally {
-      setLoading(false);
+    // Déplacer la détection de "menu principal" ici
+    if (input.toLowerCase().includes('menu principal')) {
+      setCurrentStep(null);
+      setTimeout(() => {
+        addBotMessage("📋 Voici le menu principal :", generateDefaultOptions());
+        setLoading(false);
+      }, 300);
+      return;
     }
-  };
+    
 
+  try {
+    // 🛑 Si une étape est active (ex: création de product offering), continuer uniquement ce processus
+    if (currentStep) {
+      await processStepResponse(input);
+      return;
+    }
+
+    // 🧠 Étape 1 : détecter l’intention métier
+    const response = await processUserInput(input);
+
+    // ✅ Forcer la séquence de création product_offering sans interruption
+    if (response && response.intent === 'create_product_offering') {
+      setMessages(prev => [...prev, response]);
+      setCurrentStep('create_product_offering_select_category');
+      return;
+    }
+
+    // 🧩 Si une autre intention métier valide (hors création d'offre)
+    if (response && response.intent && response.intent !== 'help') {
+      setMessages(prev => [...prev, response]);
+
+      if (response.data) {
+        setMessages(prev => [...prev, {
+          text: response.text || "Voici les résultats :",
+          sender: 'bot',
+          isData: true,
+          data: response.data,
+          options: getFollowUpOptions(response.intent)
+        }]);
+      }
+      return;
+    }
+
+    // 🤖 Étape 2 : NLP fallback
+    const aiResponse = await queryNLPBackend(input);
+    if (aiResponse && aiResponse.text?.trim()) {
+      console.log("✅ Réponse NLP:", aiResponse);
+      setMessages(prev => [...prev, aiResponse]);
+      return;
+    }
+
+    // ❓ Aucun résultat
+    addBotMessage("Je n’ai pas compris votre demande. Pouvez-vous reformuler ?", generateDefaultOptions());
+    setMessages(prev => [...prev, handleHelp()]);
+
+  } catch (error) {
+    console.error("Erreur chatbot:", error);
+    addBotMessage("Désolé, une erreur est survenue. Pouvez-vous reformuler votre demande ?");
+  } finally {
+    setLoading(false);
+  }
+};
+const handleViewCases = async () => {
+  try {
+    const response = await axios.get(`${backendUrl}/api/chatbot/cases`, getAuthHeaders());
+    const cases = response.data.cases || []; 
+    console.log("📂 Cases reçus :", cases);
+    return {
+      text: cases.length ? "Voici vos cases :" : "Aucun case trouvé.",
+      data: cases,
+      intent: 'view_cases'
+    };
+  } catch (error) {
+    console.error("❌ Erreur lors de la récupération des cases :", error);
+    return handleError("Erreur de récupération des cases.");
+  }
+};
 
   // Traitement de l'input utilisateur
   const processUserInput = async (userInput) => {
-    const intent = detectIntent(userInput);
-    
-    switch(intent) {
-      case 'search_products':
-        return handleSearchProducts();
-      case 'request_quote':
-        return handleRequestQuote();
-      case 'check_price':
-        return handleCheckPrice();
-      case 'check_opportunity':
-        return handleCheckOpportunity();
-      case 'get_channel_info':
-        return handleGetChannelInfo();
-      case 'search_products_by_spec':
-        return handleSearchProductsBySpec();
-      case 'list_categories':
-        return handleListCategories();
-      case 'search_kb':
-        return handleSearchKB();
-      case 'search_specs':
-        return handleSearchSpecs();
-      case 'greeting':
-        return handleGreeting();
-      case 'view_quotes':
-        return handleViewQuotes();
-      case 'list_specs':
-        return handleListAllSpecs();
-      case 'main_menu':
-        return handleMainMenu();
-      default:
-        return handleHelp();
-    }
-  };
+  const intent = detectIntent(userInput);
+
+  switch(intent) {
+    case 'search_products':
+      return handleSearchProducts();
+    case 'request_quote':
+      return handleRequestQuote();
+    case 'check_price':
+      return handleCheckPrice();
+    case 'check_opportunity':
+      return handleCheckOpportunity();
+    case 'get_channel_info':
+      return handleGetChannelInfo();
+    case 'search_products_by_spec':
+      return handleSearchProductsBySpec();
+    case 'list_categories':
+      return handleListCategories();
+    case 'search_kb':
+      return handleSearchKB();
+    case 'search_specs':
+      return handleSearchSpecs();
+    case 'greeting':
+      return handleGreeting();
+    case 'view_quotes':
+      return handleViewQuotes();
+    case 'view_cases':
+      return await handleViewCases();
+    case 'list_specs':
+      return handleListAllSpecs();
+    case 'main_menu':
+      return handleMainMenu();
+    case 'create_product_offering':
+      return {
+        intent: 'create_product_offering',
+        text: "Souhaitez-vous créer une nouvelle offre produit ?",
+        sender: 'bot',
+        options: ["Oui", "Annuler"]
+      };
+    default:
+      return handleHelp(); // ou null selon ton besoin
+  }
+};
+
   const handleMainMenu = () => {
     return {
       text: "Voici le menu principal. Comment puis-je vous aider ?",
@@ -210,7 +249,7 @@ const Chatbot = () => {
       options: generateDefaultOptions()
     };
   };
-
+  
   const handleViewQuotes = async () => {
     try {
       const response = await axios.get(`${backendUrl}/api/quote`, getAuthHeaders());
@@ -246,28 +285,25 @@ const Chatbot = () => {
     }
   };
   const handleListAllSpecs = async () => {
-    try {
-      const response = await axios.get(`${SN_CONFIG.baseURL}${SN_CONFIG.endpoints.searchSpecs}`, {
-        auth: SN_CONFIG.auth,
-        params: {
-          sysparm_query: "status=published",
-          sysparm_limit: 50,
-          sysparm_fields: 'name,number,specification_type,display_name,description,status'
-        }
-      });
-  
-      const specs = response.data.result || [];
-  
-      return {
-        text: specs.length ? "Voici les spécifications techniques publiées :" : "Aucune spécification trouvée.",
-        data: specs,
-        intent: 'list_specs'
-      };
-    } catch (error) {
-      console.error("Erreur lors de la récupération des spécifications :", error);
-      return handleError("Erreur lors du chargement des spécifications");
-    }
-  };
+  try {
+    const access_token = localStorage.getItem('access_token');
+    const response = await axios.get(`${backendUrl}/api/product-spec`, {
+      headers: { authorization: access_token }
+    });
+
+    const specs = response.data || [];
+
+    return {
+      text: specs.length ? "Voici les spécifications techniques publiées :" : "Aucune spécification trouvée.",
+      data: specs,
+      intent: 'list_specs'
+    };
+  } catch (error) {
+    console.error("Erreur lors de la récupération des spécifications :", error);
+    return handleError("Erreur lors du chargement des spécifications");
+  }
+};
+
   
   const handleRequestQuote = () => {
     setCurrentStep('quote_product_selection');
@@ -353,37 +389,28 @@ const Chatbot = () => {
   };
 
   const handleListCategories = () => ({
-    text: "Voici les catégories disponibles:",
-    data: categories,
-    intent: 'list_categories'
-  });
+  text: categories.length 
+    ? "Voici les catégories disponibles:" 
+    : "Aucune catégorie disponible pour le moment.",
+  data: categories,
+  intent: 'list_categories'
+});
 
   // Fonction pour rechercher dans la base de connaissances ServiceNow
-  const searchKnowledgeArticles = async (query = '') => {
-    try {
-      const response = await axios.get(SN_CONFIG.endpoints.searchKB, {
-        baseURL: SN_CONFIG.baseURL,
-        auth: SN_CONFIG.auth,
-        params: {
-          sysparm_query: `active=true^workflow_state=published^${query ? `(short_descriptionLIKE${query}^ORtextLIKE${query})` : ''}`,
-          sysparm_limit: 5,
-          sysparm_fields: 'short_description,number,topic,text,url',
-          sysparm_display_value: true
-        }
-      });
-      
-      return response.data.result.map(article => ({
-        short_description: article.short_description,
-        number: article.number,
-        topic: article.topic,
-        text: article.text,
-        url: article.url
-      }));
-    } catch (error) {
-      console.error('Error searching knowledge base:', error);
-      throw error;
-    }
-  };
+ const searchKnowledgeArticles = async (query = '') => {
+  try {
+    const response = await axios.get(
+      `${backendUrl}/api/chatbot/kb?q=${encodeURIComponent(query)}`,
+      getAuthHeaders()
+    );
+
+    return response.data.articles || [];
+  } catch (error) {
+    console.error('❌ Erreur lors de la recherche dans KB (proxy backend) :', error);
+    return [];
+  }
+};
+
 
   // Fonction pour rechercher les spécifications techniques
   const searchSpecifications = async (query = '') => {
@@ -449,29 +476,241 @@ const Chatbot = () => {
     sender: 'bot',
     options: ["Réessayer", "Menu principal"]
   });
+const opportunityDraft = useRef({});
+const productOfferingDraft = useRef({});
+
+
+
+const handleCreateProductOffering = () => {
+  if (categories.length === 0) {
+    return {
+      text: "Désolé, aucune catégorie disponible pour le moment. Veuillez réessayer plus tard.",
+      sender: 'bot',
+      options: ["Menu principal"]
+    };
+  }
+
+  setCurrentStep('create_product_offering_select_category');
+  productOfferingDraft.current = {};
+  
+  // Afficher la liste des catégories
+  const formattedList = categories
+    .filter(c => c.status === "published")
+    .map((c, index) => `${index + 1}. ${c.name}`)
+    .join('\n');
+  
+  return {
+    text: `Parfait. Choisissez une catégorie pour votre offre produit:\n\n${formattedList}\n\n👉 Tapez le numéro correspondant.`,
+    sender: 'bot',
+    options: ["Annuler"]
+  };
+};
+const url = `https://dev268291.service-now.com/api/sn_tmf_api/catalogmanagement/productOffering`;
 
   // Traitement des étapes
-  const processStepResponse = async (input) => {
-    if (input.toLowerCase() === 'annuler') {
-      setCurrentStep(null);
-      addBotMessage("Opération annulée. Que souhaitez-vous faire?", generateDefaultOptions());
-      return;
-    }
+const processStepResponse = async (input) => {
+  const normalizedInput = input.toLowerCase().trim();
 
-    switch(currentStep) {
-      case 'quote_product_selection':
-        await processQuoteProductSelection(input);
-        break;
-      case 'spec_input':
-        await processSpecInput(input);
-        break;
-      case 'knowledge_query':
-        await processKnowledgeQuery(input);
-        break;
-      default:
-        addBotMessage("Je n'ai pas compris. Pouvez-vous répéter?");
+  if (['annuler', 'menu principal'].includes(normalizedInput)) {
+    setCurrentStep(null);
+    addBotMessage("✅ Opération annulée. Voici le menu principal :", generateDefaultOptions());
+    return;
+  }
+
+  switch (currentStep) {
+    case 'quote_product_selection':
+      await processQuoteProductSelection(input);
+      break;
+
+    case 'spec_input':
+      await processSpecInput(input);
+      break;
+
+    case 'knowledge_query':
+      await processKnowledgeQuery(input);
+      break;
+    case 'create_product_offering_select_category':
+      try {
+        const res = await axios.get(`${backendUrl}/api/product-offering-category`, getAuthHeaders());
+
+        if (!res.data || !res.data.data || !Array.isArray(res.data.data)) {
+          throw new Error("Structure de données invalide");
+        }
+
+        const publishedCategories = res.data.data.filter(c => c.status === "published");
+
+        if (!publishedCategories.length) {
+          addBotMessage("⚠️ Aucune catégorie publiée trouvée.");
+          setCurrentStep(null);
+          return;
+        }
+
+        sessionStorage.setItem('po_categories', JSON.stringify(publishedCategories));
+        const formattedList = publishedCategories.map((c, index) => `${index + 1}. ${c.name}`).join('\n');
+        setCurrentStep('create_product_offering_select_category_choice');
+        addBotMessage(`📂 Choisissez une catégorie pour l'offre :\n\n${formattedList}\n\n👉 Tapez le numéro correspondant.`);
+      } catch (e) {
+        console.error("Erreur de chargement des catégories :", e);
+        addBotMessage("❌ Erreur lors du chargement des catégories. Veuillez réessayer plus tard.");
+        setCurrentStep(null);
+      }
+      break;
+
+    case 'create_product_offering_select_category_choice':
+      const categories = JSON.parse(sessionStorage.getItem('po_categories') || '[]');
+      const choice = parseInt(input);
+
+      if (isNaN(choice) || choice < 1 || choice > categories.length) {
+        addBotMessage("⚠️ Choix invalide. Veuillez entrer un numéro de la liste.");
+        return;
+      }
+      const selectedCategory = categories[choice - 1];
+      productOfferingDraft.current.category = {
+        _id: selectedCategory._id,
+        id: selectedCategory.id || selectedCategory._id,
+        name: selectedCategory.name,
+        status: selectedCategory.status
+      };
+      setCurrentStep('create_product_offering_step1');
+      addBotMessage("📝 Entrez le **nom** de l'offre produit.");
+      break;
+    case 'create_product_offering_step1':
+      if (!input.trim()) {
+        addBotMessage("⚠️ Le nom ne peut pas être vide.");
+        return;
+      }
+      productOfferingDraft.current.name = input.trim();
+      setCurrentStep('create_product_offering_step2');
+      addBotMessage("✏️ Entrez une **description** pour cette offre.");
+      break;
+    case 'create_product_offering_step2':
+      productOfferingDraft.current.description = input.trim();
+      setCurrentStep('create_product_offering_step3');
+      addBotMessage("💰 Quel est le **prix mensuel** (récurrent) en USD ?");
+      break;
+
+    case 'create_product_offering_step3':
+      const recurring = parseFloat(input);
+      if (isNaN(recurring)) {
+        addBotMessage("⚠️ Veuillez entrer un prix mensuel valide.");
+        return;
+      }
+      productOfferingDraft.current.recurring_price = recurring;
+      setCurrentStep('create_product_offering_step4');
+      addBotMessage("💵 Quel est le **prix initial** (non récurrent) en USD ?");
+      break;
+
+    case 'create_product_offering_step4':
+      productOfferingDraft.current.non_recurring_price = parseFloat(input) || 0;
+
+      try {
+      const DEFAULT_SPEC = {
+        id: "0a7c94b9c331ea10db6d9a2ed40131e9",
+        name: "Fiber Optic first gen",
+        version: "",
+        internalVersion: "1",
+        internalId: "0a7c94b9c331ea10db6d9a2ed40131e9"
+      }
+
+       const payload = {
+  name: productOfferingDraft.current.name || "Default Offer Name",
+  description: productOfferingDraft.current.description || "Default description",
+  version: "1",
+  internalVersion: "1",
+  lastUpdate: new Date().toISOString(),
+
+  validFor: {
+    startDateTime: new Date().toISOString(),
+    endDateTime: null
+  },
+
+  productOfferingTerm: [{
+    name: "12_months",
+    duration: {
+      amount: 12,
+      units: "month"
     }
+  }],
+
+  productOfferingPrice: [
+    {
+      priceType: "recurring",
+      price: {
+        taxIncludedAmount: {
+          unit: "USD",
+          value: parseFloat(productOfferingDraft.current.recurring_price || "0")
+        }
+      }
+    },
+    {
+      priceType: "nonRecurring",
+      price: {
+        taxIncludedAmount: {
+          unit: "USD",
+          value: parseFloat(productOfferingDraft.current.non_recurring_price || "0")
+        }
+      }
+    }
+  ],
+
+  productSpecification: {
+    id: "0a7c94b9c331ea10db6d9a2ed40131e9",
+    name: "Fiber Optic first gen",
+    version: "",
+    internalVersion: "1",
+    internalId: "0a7c94b9c331ea10db6d9a2ed40131e9"
+  },
+
+  channel: [
+    {
+      id: "e561aae4c3e710105252716b7d40dd8f",
+      name: "Web",
+      description: "",
+      _id: "683830e4d1c84d9270055da3"
+    }
+  ],
+
+ category: [],
+  
+  catalog: {
+    id: "b7c9f21dc3752a10db6d9a2ed40131b7",
+    name: "Internet Catalog", // Nom plus cohérent
+    href: "/api/sn_tmf_api/catalogmanagement/catalog/b7c9f21dc3752a10db6d9a2ed40131b7"
+  },
+
+  lifecycleStatus: "Active",
+  status: "published"
+
+    // Ajout du catalogue obligatoire
+    
   };
+  
+         console.log("Payload envoyé:", JSON.stringify(payload, null, 2));
+
+    const res = await axios.post(
+    `${backendUrl}/api/product-offering2`,
+    payload,
+    getAuthHeaders() // ou juste {} si pas d’auth requise ici
+  )
+
+    addBotMessage(`✅ Offre créée avec succès !!`);
+  } catch (e) {
+    console.error("Erreur détaillée:", {
+      request: e.config,
+      response: e.response?.data
+    });
+    addBotMessage("❌ Échec de la création. Vérifiez les logs pour plus de détails.");
+  }
+      setCurrentStep(null);
+      break;
+
+    default:
+      addBotMessage("❓ Je ne comprends pas cette étape.");
+      break;
+  }
+};
+
+
 
   // Fonctions de traitement des étapes
   const processQuoteProductSelection = async (productName) => {
@@ -557,18 +796,20 @@ const Chatbot = () => {
     setMessages(prev => [...prev, newMessage]);
   };
 
-  const generateDefaultOptions = () => {
-    return [
-      "Rechercher produits",
-      "Demander un devis",
-      "Voir les prix",
-      "Liste des catégories",
-      "Voir mes devis",
-      "Lister les spécifications",
-      "Base de connaissances",
-      "Aide"
-    ];
-  };
+const generateDefaultOptions = () => {
+  return [
+    "Rechercher produits",
+    "Demander un devis",
+    "Voir les prix",
+    "Liste des catégories",
+    "Voir mes devis",
+    "Lister les spécifications",
+    "Base de connaissances",
+    "Créer une offre produit",
+
+        "Aide"
+  ];
+};
 
   const getFollowUpOptions = (intent) => {
     switch(intent) {
@@ -636,30 +877,30 @@ const Chatbot = () => {
   };
 
   const formatCategories = (categories) => {
-    if (!categories?.length) {
-      return <div className="no-data">Aucune catégorie disponible</div>;
-    }
+  if (!categories?.length) {
+    return <div className="no-data">Aucune catégorie disponible</div>;
+  }
 
-    return (
-      <div className="categories-list">
-        <ul>
-          {categories.map(category => (
-            <li key={category.id}>
-              <button 
-                onClick={() => {
-                  setInput(`Produits dans la catégorie ${category.name}`);
-                  setTimeout(() => handleSendMessage(), 300);
-                }}
-                className="category-button"
-              >
-                {category.name} ({category.productCount || 0})
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
-  };
+  return (
+    <div className="categories-list">
+      <ul>
+        {categories.map((category, index) => (
+          <li key={category._id || index}>
+            <button 
+              onClick={() => {
+                setInput(`Créer une offre produit dans la catégorie ${category.name}`);
+                setTimeout(() => handleSendMessage(), 300);
+              }}
+              className="category-button"
+            >
+              {category.name} {category.productCount ? `(${category.productCount})` : ''}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
 
   const formatQuotes = (quotes) => {
     if (!quotes?.length) {
@@ -829,7 +1070,7 @@ const Chatbot = () => {
     );
   };
 
-  // Composant Popup d'aide
+// Composant Popup d'aide 
 const HelpPopup = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -881,10 +1122,11 @@ const HelpPopup = () => {
     { id: 'technical', label: 'Technique' }
   ];
 
+
   const allExamples = [
     { text: "Je veux voir les produits disponibles", category: 'products' },
-    { text: "Créez un devis pour le produit X", category: 'quotes' },
-    { text: "Quels sont les prix pour les produits Y ?", category: 'quotes' },
+    { text: "un devis ", category: 'quotes' },
+    { text: "Quels sont les prix pour les produits ", category: 'quotes' },
     { text: "Quelles sont les opportunités en cours ?", category: 'sales' },
     { text: "Rechercher des produits avec la spécification Z", category: 'products' },
     { text: "Rechercher dans la base de connaissances", category: 'kb' },
@@ -964,7 +1206,7 @@ const HelpPopup = () => {
         {/* Catégories (visible seulement si pas de recherche) */}
         {!searchTerm && activeFilter === 'all' && (
           <>
-            <p>Choisissez une catégorie :</p>
+            <p className="help-intro">📌 Par quoi souhaitez-vous commencer ? Choisissez une catégorie ci-dessous.</p>
             <div className="help-categories">
               {categories.map(category => (
                 <div 
@@ -972,7 +1214,11 @@ const HelpPopup = () => {
                   className="category-card"
                   onClick={() => handleCategoryClick(category.id)}
                 >
-                  <h4><span role="img" aria-label={category.title}>{category.icon}</span> {category.title}</h4>
+                  <h4>
+                    <span className="icon-circle">{category.icon}</span>
+                    {category.title}
+                  </h4>
+
                   <p>{category.description}</p>
                 </div>
               ))}
@@ -980,17 +1226,7 @@ const HelpPopup = () => {
           </>
         )}
         
-        {/* Liste des fonctionnalités */}
-        <p>Notre assistant peut vous aider avec :</p>
-        <ul>
-          <li><span role="img" aria-label="products">📦</span> Recherche de produits et offres</li>
-          <li><span role="img" aria-label="quotes">📝</span> Demande de devis</li>
-          <li><span role="img" aria-label="prices">💰</span> Consultation des prix</li>
-          <li><span role="img" aria-label="opportunities">📈</span> Gestion des opportunités</li>
-          <li><span role="img" aria-label="channels">📡</span> Information sur les canaux</li>
-          <li><span role="img" aria-label="specs">🛠️</span> Recherche par spécifications techniques</li>
-          <li><span role="img" aria-label="knowledge">📚</span> Consultation de la base de connaissances</li>
-        </ul>
+        
         
         {/* Exemples de requêtes */}
         <p><span role="img" aria-label="examples">📌</span> Exemples de requêtes :</p>
@@ -1014,7 +1250,26 @@ const HelpPopup = () => {
     </div>
   );
 };
+const formatCases = (cases) => {
+  if (!cases?.length) {
+    return <div className="no-data">Aucun case trouvé</div>;
+  }
 
+  return (
+    <div className="cases-list">
+      {cases.map((cs) => (
+        <div key={cs._id || cs.number} className="quote-card">
+          <h4>Case #{cs.number}</h4>
+          <div className="quote-details">
+            <div>Description : {cs.short_description || 'N/A'}</div>
+            <div>Statut : {cs.state}</div>
+            <div>Assigné à : {cs.assigned_to || 'Non assigné'}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
 
   return (
     <div className={`chatbot-container ${isOpen ? 'open' : ''}`}>
@@ -1024,7 +1279,6 @@ const HelpPopup = () => {
             <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
           </svg>
         </div>
-        <span>Assistant Commercial</span>
       </button>
 
       {isOpen && (
@@ -1051,6 +1305,7 @@ const HelpPopup = () => {
                       {msg.intent === 'list_specs' && formatSpecs(msg.data)}
                       {msg.intent === 'check_price' && formatPrices(msg.data)}
                       {msg.intent === 'check_opportunity' && formatOpportunities(msg.data)}
+                      {msg.intent === 'view_cases' && formatCases(msg.data)}
                       {msg.intent === 'get_channel_info' && formatChannels(msg.data)}
                       {msg.intent === 'search_specs' && formatSpecs(msg.data)}
                       {msg.intent === 'search_kb' && formatArticles(msg.data)}
@@ -1058,18 +1313,18 @@ const HelpPopup = () => {
                   )}
                   
                   {msg.options && (
-                    <div className="message-options">
-                      {msg.options.map((option, i) => (
-                        <button 
-                          key={i} 
-                          onClick={() => handleQuickOption(option)}
-                          className="option-button"
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <div className="message-options">
+                    {msg.options.map((option, i) => (
+                      <button 
+                        key={i} 
+                        onClick={() => handleQuickOption(option)}
+                        className="option-button"
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 </div>
               </div>
             ))}
@@ -1109,625 +1364,976 @@ const HelpPopup = () => {
       )}
       {showHelp && <HelpPopup />}
       <style jsx>{`
-        .chatbot-container {
-          position: fixed;
-          bottom: 2rem;
-          right: 2rem;
-          z-index: 1000;
-        }
-        
-        .chatbot-toggle {
-          display: flex;
-          align-items: center;
-          background: #2563eb;
-          color: white;
-          border: none;
-          border-radius: 50px;
-          padding: 0.875rem 1.5rem;
-          cursor: pointer;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          transition: all 0.3s ease;
-          font-weight: 500;
-        }
-        
-        .chatbot-toggle:hover {
-          background: #1d4ed8;
-          transform: scale(1.05);
-        }
-        
-        .chatbot-icon {
-          width: 1.5rem;
-          height: 1.5rem;
-          margin-right: 0.625rem;
-        }
-        
-        .chatbot-window {
-          position: absolute;
-          bottom: 5rem;
-          right: 0;
-          width: 28rem;
-          height: 32rem;
-          background: white;
-          border-radius: 1rem;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-          animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .chatbot-header {
-          background: #2563eb;
-          color: white;
-          padding: 1rem;
-          position: relative;
-        }
-        
-        .chatbot-header h2 {
-          margin: 0;
-          font-size: 1.25rem;
-        }
-        
-        .chatbot-header p {
-          margin: 0.5rem 0 0;
-          font-size: 0.875rem;
-          opacity: 0.9;
-        }
-        /* Styles globaux pour le popup d'aide */
-.help-popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
+  /* ========== VARIABLES & FONDAMENTAUX ========== */
+  :root {
+    /* Couleurs */
+    --primary-color: #00647a;
+    --primary-dark: #00647a;
+    --primary-light: #ebefff;
+    --secondary-color: #00647a;
+    --accent-color: #00647a;
+    --success-color: #4bb543;
+    --error-color: #ff3333;
+    --warning-color: #ffc107;
+    --light-bg: #f8f9fa;
+    --dark-text: #212529;
+    --light-text: #f8f9fa;
+    --gray-text: #6c757d;
+    --border-color: #e9ecef;
+    
+    /* Ombres */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.15);
+    
+    /* Espacements */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    
+    /* Rayons de bordure */
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+    --radius-full: 9999px;
+    
+    /* Animations */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.45s ease;
+  }
 
-.help-popup {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  width: 90%;
-  max-width: 700px;
-  max-height: 80vh;
-  overflow-y: auto;
-  padding: 2rem;
-  position: relative;
-}
+  * {
+    box-sizing: border-box;
+  }
 
-.help-popup h3 {
-  color: #2563eb;
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
+  /* ========== STRUCTURE PRINCIPALE ========== */
+  .chatbot-container {
+    position: fixed;
+    bottom: var(--space-xl);
+    right: var(--space-xl);
+    z-index: 1000;
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+  }
 
-.help-popup p {
-  color: #4b5563;
-  line-height: 1.6;
-  margin-bottom: 1rem;
-}
+  /* ========== BOUTON DE BASULE ========== */
+  .chatbot-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    background: var(--primary-color);
+    color: var(--light-text);
+    border: none;
+    border-radius: var(--radius-full);
+    padding: var(--space-md) var(--space-lg);
+    cursor: pointer;
+    box-shadow: var(--shadow-lg);
+    transition: all var(--transition-normal);
+    font-weight: 600;
+    font-size: 0.95rem;
+    position: relative;
+    overflow: hidden;
+  }
 
-.help-popup ul {
-  margin-bottom: 1.5rem;
-}
+  .chatbot-toggle:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+  }
 
-.help-popup li {
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
+  .chatbot-toggle::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 1%, transparent 1%) center/15000%;
+    opacity: 0;
+    transition: opacity 0.5s, background-size 0.5s;
+  }
 
-/* Barre de recherche */
-.help-search {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-}
+  .chatbot-toggle:active::after {
+    background-size: 100%;
+    opacity: 1;
+    transition: background-size 0s;
+  }
 
-.help-search:focus {
-  outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
+  .chatbot-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+  }
 
-/* Exemples de requêtes */
-.help-examples {
-  list-style: none;
-  padding: 0;
-  margin: 1.5rem 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
+  /* ========== FENÊTRE DU CHATBOT ========== */
+  .chatbot-window {
+    position: absolute;
+    bottom: calc(100% + var(--space-md));
+    right: 0;
+    width: 28rem;
+    max-height: 40rem;
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform-origin: bottom right;
+    animation: fadeInScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 1px solid var(--border-color);
+    opacity: 0;
+    transform: scale(0.95);
+    animation-fill-mode: forwards;
+  }
 
-.example-btn {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 24px;
-  padding: 0.6rem 1.25rem;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-  color: #1e293b;
-  white-space: nowrap;
-}
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
 
-.example-btn:hover {
-  background: #e2e8f0;
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
-}
+  /* ========== EN-TÊTE ========== */
+  .chatbot-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: var(--light-text);
+    padding: var(--space-lg);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-sm);
+    z-index: 10;
+  }
 
-.example-btn:active {
-  transform: translateY(0);
-}
+  .chatbot-header h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
 
-/* Bouton de fermeture */
-.close-btn {
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.2s;
-  margin-top: 1rem;
-  width: 100%;
-}
+  .chatbot-header p {
+    margin: var(--space-sm) 0 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+    font-weight: 400;
+  }
 
-.close-btn:hover {
-  background: #1d4ed8;
-}
+  .close-button {
+    position: absolute;
+    top: var(--space-md);
+    right: var(--space-md);
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: 1.2rem;
+    line-height: 1;
+  }
 
-/* Catégories */
-.help-categories {
+  .close-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg) scale(1.1);
+  }
+
+  /* ========== ZONE DE MESSAGES ========== */
+  .chatbot-messages {
+    flex: 1;
+    padding: var(--space-lg);
+    overflow-y: auto;
+    background: var(--light-bg);
+    scroll-behavior: smooth;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  /* Custom scrollbar */
+  .chatbot-messages::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .chatbot-messages::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: var(--radius-full);
+  }
+
+  .chatbot-messages::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-full);
+  }
+
+  .chatbot-messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.25);
+  }
+
+  /* ========== STYLES DES MESSAGES ========== */
+  .message {
+    max-width: 85%;
+    animation: messageAppear 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+  }
+
+  @keyframes messageAppear {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .message.user {
+    margin-left: auto;
+    align-items: flex-end;
+  }
+
+  .message.bot {
+    margin-right: auto;
+    align-items: flex-start;
+  }
+
+  .message-content {
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--radius-lg);
+    line-height: 1.5;
+    font-size: 0.95rem;
+    position: relative;
+    word-wrap: break-word;
+    max-width: 100%;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .user .message-content {
+    background: var(--primary-color);
+    color: var(--light-text);
+    border-bottom-right-radius: var(--space-xs);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .bot .message-content {
+    background: white;
+    color: var(--dark-text);
+    border-bottom-left-radius: var(--space-xs);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+  }
+
+  /* Bulle triangulaire pour les messages */
+  .message-content::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border: 8px solid transparent;
+  }
+
+  .user .message-content::after {
+    right: -8px;
+    border-left-color: var(--primary-color);
+    border-right: 0;
+    border-bottom: 0;
+  }
+
+  .bot .message-content::after {
+    left: -8px;
+    border-right-color: white;
+    border-left: 0;
+    border-bottom: 0;
+  }
+
+  /* ========== OPTIONS DE RÉPONSE RAPIDE ========== */
+  .message-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+  }
+
+  .option-button {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    color: var(--primary-color);
+    font-weight: 500;
+    box-shadow: var(--shadow-sm);
+    white-space: nowrap;
+  }
+
+  .option-button:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .option-button:active {
+    transform: translateY(0);
+  }
+
+  /* ========== INDICATEUR DE CHARGEMENT ========== */
+  .loading-indicator {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+  }
+
+  .dot {
+    width: 0.7rem;
+    height: 0.7rem;
+    background: var(--primary-color);
+    border-radius: var(--radius-full);
+    animation: bounce 1.4s infinite ease-in-out;
+  }
+
+  .dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes bounce {
+    0%, 80%, 100% { 
+      transform: translateY(0);
+    }  
+    40% { 
+      transform: translateY(-6px);
+    }
+  }
+
+  /* ========== ZONE DE SAISIE ========== */
+  .chatbot-input {
+    display: flex;
+    padding: var(--space-md);
+    background: white;
+    border-top: 1px solid var(--border-color);
+    position: relative;
+  }
+
+  .chatbot-input::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.05), transparent);
+  }
+
+  .chatbot-input input {
+    flex: 1;
+    padding: var(--space-md) var(--space-lg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    outline: none;
+    transition: all var(--transition-normal);
+    font-size: 0.95rem;
+    min-height: 3rem;
+  }
+
+  .chatbot-input input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+  }
+
+  .send-button {
+    margin-left: var(--space-md);
+    padding: 0 var(--space-lg);
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 6rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .send-button:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .send-button:disabled {
+    background: var(--border-color);
+    color: var(--gray-text);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .send-button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.4) 1%, transparent 1%) center/15000%;
+    opacity: 0;
+    transition: opacity 0.5s, background-size 0.5s;
+  }
+
+  .send-button:active::after {
+    background-size: 100%;
+    opacity: 1;
+    transition: background-size 0s;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-full);
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ========== COMPOSANTS DE DONNÉES ========== */
+  /* Conteneur générique */
+  .data-container {
+    margin-top: var(--space-md);
+    width: 100%;
+  }
+
+  /* Message quand pas de données */
+  .no-data {
+    text-align: center;
+    color: var(--gray-text);
+    font-size: 0.9rem;
+    padding: var(--space-lg);
+    background: white;
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--border-color);
+  }
+
+  /* Grille de produits */
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: var(--space-md);
+    margin-top: var(--space-md);
+  }
+
+  .product-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    transition: all var(--transition-normal);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
+  }
+
+  .product-card h4 {
+    margin: 0 0 var(--space-sm);
+    color: var(--primary-color);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .product-details {
+    font-size: 0.85rem;
+    color: var(--dark-text);
+    line-height: 1.5;
+    margin-top: auto;
+  }
+
+  /* Listes */
+  .categories-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .category-button {
+    display: block;
+    width: 100%;
+    padding: var(--space-md);
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    text-align: left;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    font-weight: 500;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .category-button:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Cartes (devis, opportunités, etc.) */
+  .quote-card, .opportunity-card, 
+  .channel-card, .article-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-md);
+    transition: all var(--transition-normal);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .quote-card:hover, .opportunity-card:hover,
+  .channel-card:hover, .article-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
+  }
+
+  .quote-card h4, .opportunity-card h4, 
+  .channel-card h4, .article-card h4 {
+    margin: 0 0 var(--space-sm);
+    font-size: 1rem;
+    color: var(--primary-color);
+    font-weight: 600;
+  }
+
+  .quote-details, .opportunity-details, 
+  .channel-details, .article-details {
+    font-size: 0.85rem;
+    color: var(--dark-text);
+    line-height: 1.5;
+  }
+
+  /* Tableaux */
+  .specs-table, .prices-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: var(--space-md);
+    font-size: 0.85rem;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: 0 0 0 1px var(--border-color);
+  }
+
+  .specs-table th, .specs-table td,
+  .prices-table th, .prices-table td {
+    padding: var(--space-md);
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .specs-table th, .prices-table th {
+    background-color: var(--light-bg);
+    font-weight: 600;
+    color: var(--dark-text);
+    position: sticky;
+    top: 0;
+  }
+
+  .specs-table tr:last-child td,
+  .prices-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .specs-table tr:hover td,
+  .prices-table tr:hover td {
+    background-color: var(--primary-light);
+  }
+
+  /* ========== POPUP D'AIDE ========== */
+  .help-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+    animation: fadeIn var(--transition-normal) forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .help-popup {
+    background: white;
+    border-radius: var(--radius-xl);
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: var(--space-xl);
+    box-shadow: var(--shadow-xl);
+    animation: popupFadeIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 1px solid var(--border-color);
+    position: relative;
+  }
+
+  @keyframes popupFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .help-popup h3 {
+    margin: 0 0 var(--space-lg);
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  /* Barre de recherche */
+  .help-search {
+    width: 100%;
+    padding: var(--space-md) var(--space-lg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-lg);
+    font-size: 1rem;
+    transition: all var(--transition-normal);
+    box-shadow: var(--shadow-sm);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: var(--space-md) center;
+    background-size: 1rem;
+    padding-left: calc(var(--space-md) + 1rem + var(--space-sm));
+  }
+
+  .help-search:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+  }
+
+  /* Filtres */
+  .filter-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+  }
+
+  .filter-tag {
+    background: rgba(67, 97, 238, 0.1);
+    color: var(--primary-color);
+    border-radius: var(--radius-full);
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-weight: 500;
+    border: 1px solid transparent;
+  }
+
+  .filter-tag:hover, .filter-tag.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Catégories */
+  .help-categories {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-xl);
+  margin-bottom: var(--space-xl);
 }
 
 .category-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.3s ease;
+  position: relative;
+  border: 1px solid #eaeaea;
 }
 
 .category-card:hover {
-  background: #e2e8f0;
-  border-color: #cbd5e1;
-  transform: translateY(-2px);
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-color);
+  background: #fefefe;
+}
+
+.icon-circle {
+  width: 3.5rem;
+  height: 3.5rem;
+  font-size: 1.6rem;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.category-card:hover .icon-circle {
+  background: var(--primary-color);
+  color: #fff;
+  transform: scale(1.1);
 }
 
 .category-card h4 {
-  margin: 0 0 0.5rem 0;
-  color: #1e40af;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin: 0.5rem 0;
+}
+
+.category-card p {
+  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.5;
+}
+
+
+
+  .category-card:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .category-card h4 {
+    margin: 0 0 var(--space-sm);
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+  }
+
+  .category-card p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--dark-text);
+    line-height: 1.5;
+  }
+
+  /* Exemples de requêtes */
+  .help-examples {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-lg) 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .example-btn {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+    color: var(--dark-text);
+    text-align: left;
+    font-weight: 500;
+    box-shadow: var(--shadow-sm);
+    width: 100%;
+  }
+
+  .example-btn:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    color: var(--primary-color);
+  }
+
+  /* Bouton de fermeture */
+  .close-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--space-md) var(--space-lg);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    margin-top: var(--space-xl);
+    width: 100%;
+    font-weight: 500;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .close-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .close-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 1%, transparent 1%) center/15000%;
+    opacity: 0;
+    transition: opacity 0.5s, background-size 0.5s;
+  }
+
+  .close-btn:active::after {
+    background-size: 100%;
+    opacity: 1;
+    transition: background-size 0s;
+  }
+
+  /* ========== RESPONSIVE ========== */
+  @media (max-width: 768px) {
+    .chatbot-container {
+      bottom: var(--space-md);
+      right: var(--space-md);
+    }
+    
+    .chatbot-window {
+      width: 95vw;
+      max-height: 80vh;
+      bottom: calc(100% + var(--space-sm));
+    }
+    
+    .help-popup {
+      width: 95vw;
+      padding: var(--space-lg);
+    }
+
+    .help-categories {
+      grid-template-columns: 1fr;
+    }
+
+    .products-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .chatbot-toggle span {
+      display: none;
+    }
+    
+    .chatbot-toggle {
+      padding: var(--space-md);
+      border-radius: var(--radius-full);
+    }
+    
+    .message-options {
+      flex-direction: column;
+    }
+    
+    .option-button {
+      width: 100%;
+    }
+  }
+    .help-categories .icon-circle {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  margin-right: 0.5rem;
+}
+
+.help-intro {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--primary-color);
+  margin-bottom: var(--space-md);
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.category-card p {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #4b5563;
-}
 
-/* Filtres */
-.filter-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.filter-tag {
-  background: #e0f2fe;
-  color: #0369a1;
-  border-radius: 20px;
-  padding: 0.25rem 0.75rem;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.filter-tag:hover, .filter-tag.active {
-  background: #0369a1;
-  color: white;
-}
-
-
-        .close-button {
-          position: absolute;
-          top: 0.875rem;
-          right: 0.875rem;
-          background: transparent;
-          border: none;
-          color: white;
-          font-size: 1.5rem;
-          cursor: pointer;
-          padding: 0.25rem;
-          transition: transform 0.2s;
-        }
-        
-        .close-button:hover {
-          transform: scale(1.1);
-        }
-        
-        .chatbot-messages {
-          flex: 1;
-          padding: 1.25rem;
-          overflow-y: auto;
-          background: #f9fafb;
-        }
-        
-        .message {
-          margin-bottom: 1rem;
-          max-width: 85%;
-          animation: messageAppear 0.3s ease;
-        }
-
-        @keyframes messageAppear {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .message.user {
-          margin-left: auto;
-        }
-
-        .message.bot {
-          margin-right: auto;
-        }
-
-        .message-content {
-          padding: 0.75rem 1rem;
-          border-radius: 1rem;
-          line-height: 1.4;
-        }
-
-        .user .message-content {
-          background: #2563eb;
-          color: white;
-          border-bottom-right-radius: 0.25rem;
-        }
-
-        .bot .message-content {
-          background: #e5e7eb;
-          color: #111827;
-          border-bottom-left-radius: 0.25rem;
-        }
-
-        .message-options {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.5rem;
-          margin-top: 0.75rem;
-        }
-
-        .option-button {
-          background: white;
-          border: 1px solid #d1d5db;
-          border-radius: 1rem;
-          padding: 0.375rem 0.75rem;
-          font-size: 0.75rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .option-button:hover {
-          background: #f3f4f6;
-          border-color: #9ca3af;
-        }
-
-        .loading-indicator {
-          display: flex;
-          justify-content: center;
-          gap: 0.5rem;
-          padding: 1rem;
-        }
-
-        .dot {
-          width: 0.5rem;
-          height: 0.5rem;
-          background: #9ca3af;
-          border-radius: 50%;
-          animation: bounce 1.4s infinite ease-in-out;
-        }
-
-        .dot:nth-child(2) {
-          animation-delay: 0.2s;
-        }
-
-        .dot:nth-child(3) {
-          animation-delay: 0.4s;
-        }
-
-        @keyframes bounce {
-          0%, 80%, 100% { 
-            transform: scale(0);
-          }  
-          40% { 
-            transform: scale(1);
-          }
-        }
-
-        .chatbot-input {
-          display: flex;
-          padding: 1rem;
-          background: white;
-          border-top: 1px solid #e5e7eb;
-        }
-
-        .chatbot-input input {
-          flex: 1;
-          padding: 0.75rem 1rem;
-          border: 1px solid #d1d5db;
-          border-radius: 0.5rem;
-          outline: none;
-          transition: border-color 0.2s;
-        }
-
-        .chatbot-input input:focus {
-          border-color: #2563eb;
-        }
-
-        .send-button {
-          margin-left: 0.75rem;
-          padding: 0 1.25rem;
-          background: #2563eb;
-          color: white;
-          border: none;
-          border-radius: 0.5rem;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-
-        .send-button:hover {
-          background: #1d4ed8;
-        }
-
-        .send-button:disabled {
-          background: #9ca3af;
-          cursor: not-allowed;
-        }
-
-        .spinner {
-          display: inline-block;
-          width: 1rem;
-          height: 1rem;
-          border: 2px solid rgba(255, 255, 255, 0.3);
-          border-radius: 50%;
-          border-top-color: white;
-          animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
-        /* Styles pour les données formatées */
-        .products-grid, .categories-list, .quotes-list, 
-        .prices-table, .opportunities-grid, .channels-list,
-        .specs-list, .articles-grid {
-          margin-top: 1rem;
-        }
-
-        .product-card, .quote-card, .opportunity-card, 
-        .channel-card, .article-card {
-          background: white;
-          border: 1px solid #e5e7eb;
-          border-radius: 0.5rem;
-          padding: 1rem;
-          margin-bottom: 1rem;
-        }
-
-        .product-card h4, .quote-card h4, 
-        .opportunity-card h4, .channel-card h4,
-        .article-card h4 {
-          margin: 0 0 0.5rem;
-          font-size: 0.9rem;
-        }
-
-        .product-details, .quote-details, 
-        .opportunity-details, .channel-details {
-          font-size: 0.8rem;
-          color: #4b5563;
-        }
-
-        .specs {
-          margin-top: 0.5rem;
-          font-size: 0.8rem;
-        }
-
-        .specs ul {
-          padding-left: 1rem;
-          margin: 0.25rem 0;
-        }
-
-        .category-button, .spec-button {
-          background: none;
-          border: none;
-          color: #2563eb;
-          text-align: left;
-          padding: 0.25rem 0;
-          cursor: pointer;
-          font-size: 0.9rem;
-        }
-
-        .category-button:hover, .spec-button:hover {
-          text-decoration: underline;
-        }
-
-        .categories-list ul, .specs-list ul {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-
-        .categories-list li, .specs-list li {
-          margin-bottom: 0.5rem;
-        }
-
-        .prices-table table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 0.8rem;
-        }
-
-        .prices-table th, .prices-table td {
-          padding: 0.5rem;
-          text-align: left;
-          border-bottom: 1px solid #e5e7eb;
-        }
-
-        .prices-table th {
-          background: #f3f4f6;
-          font-weight: 500;
-        }
-
-        .article-content {
-          font-size: 0.8rem;
-          line-height: 1.5;
-          color: #4b5563;
-          max-height: 6rem;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .no-data {
-          text-align: center;
-          color: #6b7280;
-          font-size: 0.9rem;
-          padding: 1rem;
-        }
-
-        /* Styles pour le popup d'aide */
-        .help-popup-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          z-index: 2000;
-        }
-        .help-popup {
-  background: white;
-  border-radius: 0.75rem;
-  width: 32rem;
-  max-width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 1.5rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  animation: popupFadeIn 0.3s ease;
-}
-
-@keyframes popupFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.help-popup h3 {
-  margin: 0 0 1rem;
-  color: #1e40af;
-  font-size: 1.25rem;
-}
-
-.help-popup p {
-  margin: 0.75rem 0;
-  color: #374151;
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.help-popup ul {
-  margin: 0.75rem 0;
-  padding-left: 1.25rem;
-}
-
-.help-popup li {
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  color: #4b5563;
-}
-
-.help-popup button {
-  display: block;
-  margin: 1.5rem auto 0;
-  padding: 0.5rem 1.5rem;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background 0.2s;
-}
-
-.help-popup button:hover {
-  background: #1d4ed8;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .chatbot-container {
-    bottom: 1rem;
-    right: 1rem;
-  }
-  
-  .chatbot-window {
-    width: 90vw;
-    height: 70vh;
-    bottom: 4.5rem;
-    right: 0.5rem;
-  }
-  
-  .help-popup {
-    width: 85vw;
-    padding: 1rem;
-  }
-    
-}
- `}
-      </style>
+`}</style>
     </div> // ← fermeture correcte du return principal du composant
   );
 };
