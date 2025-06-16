@@ -112,6 +112,38 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
     }
   }
 
+  const handleWin = () => {
+    Modal.confirm({
+      title: 'Confirm Win',
+      content: 'Are you sure you want to record this as a Win?',
+      okText: 'Yes, Win',
+      cancelText: 'Cancel',
+      onOk() {
+        //onWin();
+        notification.success({
+          message: 'Win recorded!',
+          description: "We've updated the opportunity to the Colsed-Won stage"
+        });
+      },
+    });
+  };
+
+  const handleLose = () => {
+    Modal.confirm({
+      title: 'Confirm Lose',
+      content: 'Are you sure you want to record this as a Lose?',
+      okText: 'Yes, Lose',
+      cancelText: 'Cancel',
+      onOk() {
+        //onLose();
+        notification.success({
+          message: 'Lose recorded!',
+          description: "We've updated the opportunity to the Colsed-Lost stage"
+        });
+      },
+    });
+  };
+
 
 
   const columns = [
@@ -161,8 +193,22 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => ( record!==undefined && 
-        <div className="grid grid-cols-4 gap-2">
-          <div>{ record.stage.type==="closed_won" &&<CreateQuote opportunityId={record._id} />}</div>
+        <div className="grid grid-cols-5 gap-2">
+          <Tooltip title={`Close Opportunity`}>
+            <Popconfirm
+              title="Close Opportunity"
+              description="Won or Lost the opportunity?"
+              onConfirm={handleWin}
+              onCancel={handleLose}
+              okText="Win"
+              cancelText="Lose"
+            >
+              <button className=" text-gray-500 hover:text-cyan-600">
+                  <i className="ri-door-closed-line text-2xl"></i>
+              </button>
+            </Popconfirm>
+          </Tooltip>
+          {<CreateQuote disabled={record.stage.type !== "closed_won"} opportunityId={record._id} />}
           <Tooltip title={`Delete Opportunity`}>
             <Popconfirm
               title="Delete Opportunity"

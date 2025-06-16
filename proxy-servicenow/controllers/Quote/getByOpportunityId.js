@@ -12,7 +12,7 @@ async function getLatestOneByOpportunity(req, res = null) {
 
     const result = await Quote.find({
         opportunity: OpportunityObjectId,
-        state:'approved'
+        state:'Approved'
       }).sort({ createdAt: -1 })
       .limit(1)
       .lean();
