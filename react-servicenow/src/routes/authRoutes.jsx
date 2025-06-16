@@ -3,7 +3,7 @@ import React from 'react';
 import Register from '../views/auth/Register';
 import Login from '../views/auth/login';
 import IsAuth from '../middleware/IsAuth';
-import CreateAccount from '../components/createAccount/createAccount';
+import CreateAcc from '../components/createAccount/CreateAcc';
 
 const authRoutes = [
   // { path: '/', element: <Login /> },
@@ -16,7 +16,7 @@ const authRoutes = [
       </IsAuth>
     ),
   },
-  { path: '/createAccount', element:<CreateAccount /> },
+  { path: '/createAccount', element:<CreateAcc /> },
   // ... other routes
 ];
 

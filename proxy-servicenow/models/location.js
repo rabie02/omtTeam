@@ -16,7 +16,21 @@ const locationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Account',
     required: true
+  },
+
+  // Reference to a single Contact document
+  contact: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Contact',
+    required: true
+  },
+
+  // Archived flag
+  archived: {
+    type: Boolean,
+    default: false
   }
+
 }, {
   timestamps: true,
   strict: false

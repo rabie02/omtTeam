@@ -47,10 +47,12 @@ const Sidebar = ({ toggleSidebar, open, isSidebarCollapsed }) => {
     },
     {
       path: '/dashboard/account',
-      icon: 'table-line',
+      icon: 'info-card-line',
       text: 'Client',
       children: [
-        { path: '/dashboard/account', icon: 'shining-line', text: 'Accounts' },
+        { path: '/dashboard/account', icon: 'account-circle-line', text: 'Accounts' },
+        { path: '/dashboard/contact', icon: 'contacts-book-line', text: 'Contacts' },
+        { path: '/dashboard/location', icon: 'map-pin-line', text: 'Locations' },
       ]
     }
   ];

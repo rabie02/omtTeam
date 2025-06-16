@@ -11,6 +11,9 @@ import priceListReducer from '../features/servicenow/price-list/priceListSlice';
 import productOfferingPriceReducer from '../features/servicenow/product-offering-price/productOfferingPriceSlice';
 import quoteReducer from "../features/servicenow/quote/quotaSlice"
 import accountReducer from '../features/servicenow/account/accountSlice';
+import contactReducer from '../features/servicenow/contact/contactSlice';
+import locationReducer from '../features/servicenow/location/locationSlice';
+
 const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -24,6 +27,8 @@ const store = configureStore({
     priceList: priceListReducer,
     quotes: quoteReducer,
     account: accountReducer,
+    contact: contactReducer,
+    location: locationReducer,
     productOfferingPrice: productOfferingPriceReducer
   },
   middleware: (getDefaultMiddleware) =>
