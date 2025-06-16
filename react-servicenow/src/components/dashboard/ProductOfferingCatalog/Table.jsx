@@ -55,8 +55,8 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
         switch (currentStatus.toLowerCase()) {
             case 'draft': return { action: 'Publish', newStatus: 'published' };
             case 'published': return { action: 'Retire', newStatus: 'retired' };
-            case 'archived': return { action: 'Archive', newStatus: 'archived' };
-            default: return { action: 'Update Status', newStatus: currentStatus };
+            case 'retired': return { action: 'Archive', newStatus: 'archived' };
+            default: return { action: "No update possible for this", newStatus: currentStatus };
         }
     };
 
@@ -109,21 +109,23 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
                 return (
                     <div className="flex items-center">
                         {/* Status Change Button - Hidden for archived */}
-                        {record.status.toLowerCase() !== 'archived' && (
+                        {
                             <Tooltip title={`${action} Category`}>
                                 <Popconfirm
                                     title={`${action} Category`}
                                     description={`Are you sure to ${action.toLowerCase()} this category?`}
                                     onConfirm={() => handleUpdateStatus(record._id, newStatus)}
+                                    disabled={record.status === "archived"}
                                     okText="Yes"
                                     cancelText="No"
                                 >
-                                    <button className="text-gray-500 hover:text-green-600">
+                                    <button
+                                        className={`mx-1 ${record.status == "archived" ? "text-gray-300 cursor-not-allowed" : "mx-1 text-gray-500 hover:text-green-600  "}`}>
                                         <i className="ri-loop-right-line text-2xl"></i>
                                     </button>
                                 </Popconfirm>
                             </Tooltip>
-                        )}
+                        }
 
 
 
@@ -195,8 +197,16 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
         },
     ];
 
-    if (loading) return <div className="h-full flex justify-center items-center"><Spin size="large" /></div>;
-    if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
+    // if (loading) return <div className="h-full flex justify-center items-center"><Spin size="large" /></div>;
+    // if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
+    useEffect(() => {
+        if (error) {
+            notification.error({
+                message: 'Error Occurred',
+                description: error,
+            });
+        }
+    }, [error]);
 
     return (
         <div className='w-full justify-center flex'>
