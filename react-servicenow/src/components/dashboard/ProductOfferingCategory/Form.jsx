@@ -31,8 +31,8 @@ const validationSchema = Yup.object().shape({
       return new Date(value) >= new Date(this.parent.start_date);
     }),
   code: Yup.string().required('Code is required'),
+  catalog: Yup.string().required('Catalog is required'),
 });
-
 function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
   const dispatch = useDispatch();
   const { data, loading, error } = useSelector((state) => state.productOfferingCatalog);
@@ -216,20 +216,20 @@ function ProductOfferingCategoryForm({ open, setOpen, initialData = null }) {
             {/* Conditional yellow bubbles for edit, green bubbles for create */}
             <span
               className={`absolute w-36 h-32 -top-8 -left-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-bottom ${isEditMode
-                  ? 'bg-yellow-200 group-hover:duration-500 duration-1000'
-                  : 'bg-green-200 group-hover:duration-500 duration-1000'
+                ? 'bg-yellow-200 group-hover:duration-500 duration-1000'
+                : 'bg-green-200 group-hover:duration-500 duration-1000'
                 }`}
             ></span>
             <span
               className={`absolute w-36 h-32 -top-8 -left-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-bottom ${isEditMode
-                  ? 'bg-yellow-400 group-hover:duration-700 duration-700'
-                  : 'bg-green-400 group-hover:duration-700 duration-700'
+                ? 'bg-yellow-400 group-hover:duration-700 duration-700'
+                : 'bg-green-400 group-hover:duration-700 duration-700'
                 }`}
             ></span>
             <span
               className={`absolute w-36 h-32 -top-8 -left-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-bottom ${isEditMode
-                  ? 'bg-yellow-600 group-hover:duration-1000 duration-500'
-                  : 'bg-green-600 group-hover:duration-1000 duration-500'
+                ? 'bg-yellow-600 group-hover:duration-1000 duration-500'
+                : 'bg-green-600 group-hover:duration-1000 duration-500'
                 }`}
             ></span>
 
