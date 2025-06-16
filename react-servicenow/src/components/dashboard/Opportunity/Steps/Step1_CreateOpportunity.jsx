@@ -26,23 +26,29 @@ const OpportunityStep1 = ({ formik, editMode=false, setAccSearchTerm}) => {
         inputRef={shortDescriptionRef}
         autoFocus
       />
-      <div className="grid grid-cols-2 gap-4">
-      <FormInput
+      <div className="grid grid-cols-5 gap-4">
+      <div className="col-span-2">
+        <FormInput
         formik={formik}
         name="opportunity.estimated_closed_date"
         label="Estimated Close Date*"
         type="date"
       />
-
+      </div>
+    <div className="relative w-full"> 
       <FormInput
         formik={formik}
         name="opportunity.probability"
         label="Probability"
         type="number"
       />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-      <FormSelect
+      <span className="absolute right-10 top-11.5 transform -translate-y-1/2 font-medium text-gray-400">
+    %
+  </span>
+    </div>
+      
+      <div className="col-span-2">
+        <FormSelect
         formik={formik}
         name="opportunity.sales_cycle_type"
         label="Sales Cycle Type*"
@@ -54,18 +60,8 @@ const OpportunityStep1 = ({ formik, editMode=false, setAccSearchTerm}) => {
         onBlur={formik.handleBlur}
         disabled={editMode}
       />
+      </div>
       
-        <FormSelect
-        formik={formik}
-        name="opportunity.stage"
-        label="Stage*"
-        options={stages.map(stage => ({
-          value: stage._id,
-          label: stage.sys_name
-        }))}
-        onChange={formik.handleChange}
-        onBlur={formik.handleBlur}
-      />
       </div>
       {(salesCycleTypes.filter(s=> s._id === formik.values.opportunity.sales_cycle_type)?.[0]?.["sys_name"] === "NEWCUST" && !editMode) && 
       <div className="grid grid-cols-2 gap-4">

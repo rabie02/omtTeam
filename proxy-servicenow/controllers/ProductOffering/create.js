@@ -4,7 +4,7 @@ const handleMongoError = require('../../utils/handleMongoError');
 const ProductOfferingCategory = require('../../models/ProductOfferingCategory');
 const ProductSpecification = require ('../../models/productSpecification');
 const snConnection = require('../../utils/servicenowConnection');
-const externalIdHelper = require('../../utils/externalIdHelper');
+const mongoose = require('mongoose');
 
 // Create Product Offering 
 module.exports = async (req, res) => {
@@ -32,7 +32,7 @@ module.exports = async (req, res) => {
             return res.status(404).json({ error: 'prodSpec not found' });
         }
 
-        
+        const newId = new mongoose.Types.ObjectId();
         //initialize servicenow connection
         const connection = snConnection.getConnection(req.user.sn_access_token);
 
@@ -56,7 +56,8 @@ module.exports = async (req, res) => {
                 name: req.body.category.name
             },
             lifecycleStatus: req.body.lifecycleStatus,
-            status: req.body.status
+            status: req.body.status,
+            externalId: newId
         };
 
         console.log(JSON.stringify(snPayload,null,2))
@@ -75,6 +76,7 @@ module.exports = async (req, res) => {
         try {
             const snRecord = snResponse.data;
             mongoDoc = new ProductOffering({    
+                _id: newId,
                 ...snRecord,
                 category: req.body.category._id,
                 productSpecification: req.body.productSpecification._id,
@@ -85,8 +87,7 @@ module.exports = async (req, res) => {
             console.log(JSON.stringify(mongoDoc,null,2))
             
             //patch external_id(mongoDB id) to serviceNow
-            await externalIdHelper(connection,`api/now/table/sn_prd_pm_product_offering/${snRecord.id}`, mongoDoc._id.toString());
-
+           
             // Populate the created document
             populatedDoc = await ProductOffering.findById(mongoDoc._id)
                 .populate('productSpecification')

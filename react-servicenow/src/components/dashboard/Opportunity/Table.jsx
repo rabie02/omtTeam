@@ -6,7 +6,8 @@ import {
   deleteOpportunity,
   generateContract,
   downloadContract,
-  resetError
+  resetError,
+  updateStage
 } from '../../../features/servicenow/opportunity/opportunitySlice';
 import CreateQuote from '../quote/ButtonCreateQuote';
 import {getAll as getProductOfferingPrice} from '../../../features/servicenow/product-offering-price/productOfferingPriceSlice';
@@ -112,6 +113,48 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
     }
   }
 
+  const handleWin = (id) => {
+    Modal.confirm({
+      title: 'Confirm Win',
+      content: 'Are you sure you want to record this as a Win?',
+      okText: 'Yes, Win',
+      cancelText: 'Cancel',
+      async onOk() {
+        const body = { "id":id,
+          "stage":"6834b2d23582eabbafc8bec2"
+        }
+        const res = await dispatch(updateStage(body));
+        if(!res.error){
+          notification.success({
+          message: 'Win recorded!',
+          description: "We've updated the opportunity to the Colsed-Won stage"
+        });
+        }
+      },
+    });
+  };
+
+  const handleLose = (id) => {
+    Modal.confirm({
+      title: 'Confirm Lose',
+      content: 'Are you sure you want to record this as a Lose?',
+      okText: 'Yes, Lose',
+      cancelText: 'Cancel',
+      async onOk() {
+        const body = { "id":id,
+          "stage":"6834b2ee3582eabbafc8bec4"
+        }
+        const res = await dispatch(updateStage(body));
+        if(!res.error){
+          notification.success({
+            message: 'Lose recorded!',
+            description: "We've updated the opportunity to the Colsed-Lost stage"
+          });
+        }
+      },
+    });
+  };
+
 
 
   const columns = [
@@ -161,8 +204,22 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => ( record!==undefined && 
-        <div className="grid grid-cols-4 gap-2">
-          <div>{ record.stage.type==="closed_won" &&<CreateQuote opportunityId={record._id} />}</div>
+        <div className="grid grid-cols-5 gap-2">
+          <Tooltip title={`Close Opportunity`}>
+            <Popconfirm
+              title="Close Opportunity"
+              description="Won or Lost the opportunity?"
+              onConfirm={()=> handleWin(record._id)}
+              onCancel={()=> handleLose(record._id)}
+              okText="Win"
+              cancelText="Lose"
+            >
+              <button className=" text-gray-500 hover:text-cyan-600">
+                  <i className="ri-door-closed-line text-2xl"></i>
+              </button>
+            </Popconfirm>
+          </Tooltip>
+          {<CreateQuote disabled={record.stage.type !== "closed_won"} opportunityId={record._id} />}
           <Tooltip title={`Delete Opportunity`}>
             <Popconfirm
               title="Delete Opportunity"
@@ -207,8 +264,6 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
       ),
     },
   ];
-
-  console.log(opportunities);
 
 
   if (!open && loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;

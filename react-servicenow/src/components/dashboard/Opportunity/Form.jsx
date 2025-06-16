@@ -12,7 +12,6 @@ import { formatDateForInput } from '@/utils/formatDateForInput.js';
 import {
   getSalesCycleTypes,
   getStages,
-  getAccounts,
   getUnitOfMeasures,
   workflow,
   updateOpportunityPricing,
@@ -103,7 +102,7 @@ useEffect( () => {
         term_month: initialData?.term_month||'12',
         sales_cycle_type: initialData?.sales_cycle_type._id||'',
         probability: initialData?.probability||'50',
-        stage: initialData?.stage._id||'',
+        stage: initialData?.stage._id||'6834b29a3582eabbafc8bec0',
         industry: "telecommunications",
         account: initialData?.account._id||''
       },
@@ -151,7 +150,6 @@ useEffect( () => {
             }
           ),
         sales_cycle_type: Yup.string().required('Sales cycle type is required'),
-        stage: Yup.string().required('Stage is required'),
         account: Yup.string().when('sales_cycle_type', {
           is: (value) => value !== '6834b3513582eabbafc8bec7',
           then: () => Yup.string().required('Account is required'),
@@ -340,6 +338,7 @@ useEffect( () => {
               description: 'Opportunity has been updated successfully',
             });
         }else{
+          values.opportunity.stage = "6834b29a3582eabbafc8bec0";
           await dispatch(workflow(values));
           notification.success({
             message: 'Opportunity Created',
@@ -397,7 +396,7 @@ useEffect( () => {
       formik.setFieldTouched('opportunity.short_description', true);
       formik.setFieldTouched('opportunity.estimated_closed_date', true);
       formik.setFieldTouched('opportunity.sales_cycle_type', true);
-      formik.setFieldTouched('opportunity.stage', true);
+      // formik.setFieldTouched('opportunity.stage', true);
       formik.setFieldTouched('opportunity.account', true);
       formik.setFieldTouched('opportunity.probability', true);
       
@@ -505,7 +504,7 @@ useEffect( () => {
             term_month: true,
             sales_cycle_type: true,
             probability: true,
-            stage: true,
+            //stage: true,
             industry: true,
             account: true
           },

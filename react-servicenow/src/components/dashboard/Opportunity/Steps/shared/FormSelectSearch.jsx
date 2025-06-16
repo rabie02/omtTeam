@@ -66,7 +66,7 @@ const FormSelectSearch = ({
           option.label.toLowerCase().includes(input.toLowerCase())
         }
         options={options}
-        className={`w-full border ${error ? 'border-red-500' : ''} ${props.disabled ? 'disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500' : ''}`}
+        className={`w-full border ${touched && error ? 'border-red-500' : ''} ${props.disabled ? 'disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500' : ''}`}
         status={error && touched ? 'error' : ''}
         {...props}
       />
