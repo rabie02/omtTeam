@@ -96,6 +96,7 @@ export const userLogout = createAsyncThunk(
 export const createAccount = createAsyncThunk(
   'auth/createAccount',
   async (userData, { rejectWithValue }) => {
+    console.log(userData)
     try {
       const response = await axios.post('/api/request-creation', userData, {
         headers: { 'Content-Type': 'application/json' },

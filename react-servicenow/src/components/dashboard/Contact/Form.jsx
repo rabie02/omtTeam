@@ -1,12 +1,12 @@
 import React from 'react';
 import { Modal } from 'antd';
 
-function AccountInfoForm({ open, setOpen, initialData = {} }) {
+function ContactInfoForm({ open, setOpen, initialData = {} }) {
   const handleCancel = () => setOpen(false);
 
   return (
     <Modal
-      title="Account Details"
+      title="Contact Details"
       open={open}
       onCancel={handleCancel}
       footer={null}
@@ -16,17 +16,26 @@ function AccountInfoForm({ open, setOpen, initialData = {} }) {
     >
       <form className="grid grid-cols-2 gap-4">
         {/* Name */}
-        <div className="col-span-2">
-          <label className="block font-medium mb-1">Name</label>
+        <div>
+          <label className="block font-medium mb-1">First Name</label>
           <input
-            value={initialData?.name || 'N/A'}
+            value={initialData?.firstName || 'N/A'}
+            disabled
+            className="w-full border rounded px-3 py-2 bg-gray-100"
+          />
+        </div>
+        
+        <div>
+          <label className="block font-medium mb-1">Last Name</label>
+          <input
+            value={initialData?.lastName || 'N/A'}
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
         </div>
 
         {/* Email */}
-        <div>
+        <div className="col-span-2">
           <label className="block font-medium mb-1">Email</label>
           <input
             value={initialData?.email || 'N/A'}
@@ -44,17 +53,17 @@ function AccountInfoForm({ open, setOpen, initialData = {} }) {
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
         </div>
-      
 
-        {/* Website */}
-        <div className="col-span-2">
-          <label className="block font-medium mb-1">Active</label>
+        {/* Account */}
+        <div>
+          <label className="block font-medium mb-1">Account</label>
           <input
-            value={initialData?.status || 'N/A'}
+            value={initialData?.account?.name || 'N/A'}
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
         </div>
+
         {/* Created Info */}
         <div>
           <label className="block font-medium mb-1">Created On</label>
@@ -64,6 +73,7 @@ function AccountInfoForm({ open, setOpen, initialData = {} }) {
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
         </div>
+        
         <div>
           <label className="block font-medium mb-1">Updated At</label>
           <input
@@ -88,4 +98,4 @@ function AccountInfoForm({ open, setOpen, initialData = {} }) {
   );
 }
 
-export default AccountInfoForm;
+export default ContactInfoForm;
