@@ -29,6 +29,7 @@ const nlpRoutes = require('./api/ai-search/nlp');
 const chatbotCases = require('./api/ai-search/getCases');
 const Quote = require('./api/quote/index');
 const emailroutes = require('./email/router');
+const contract = require('./api/contract')
 // const createAccount = require('./api/createAccount/index')
 const knowledgeBaseRoute = require('./api/ai-search/chatboot');
 const productOfferingRoute = require('./api/ai-search/productoffering');
@@ -99,23 +100,22 @@ app.use('/api', [
   authRoutes,    // Login
   signupRoutes,  // Registration + confirmation
 
-    ProductSpecification,
-    emailroutes,
-    // createAccount,
-    Quote,
-    contact,
-    location,
-    account,
-    logoutRoutes,
-    productOfferingRoute,
-    knowledgeBaseRoute
-    
+  ProductSpecification,
+  emailroutes,
+  // createAccount,
+  contact,
+  location,
+  account,
+  logoutRoutes,
+  productOfferingRoute,
+  knowledgeBaseRoute
+
 
 ]);
 
 
 // Protected routes
-app.use('/api', authjwt , [
+app.use('/api', authjwt, [
   // routes that need middaleware
   ProductOfferingCatalog,
   ProductOfferingCategory,
@@ -130,6 +130,8 @@ app.use('/api', authjwt , [
   ProductOfferingPrice,
   nlpRoutes,
   chatbotCases,
+  contract,
+  Quote
 
 ]);
 
@@ -139,7 +141,7 @@ app.use('/api', authjwt , [
 
 // Health check
 app.get('/health', (req, res) => {
-  res.status(200).json({ 
+  res.status(200).json({
     status: 'healthy',
     timestamp: new Date(),
     environment: process.env.NODE_ENV || 'development'

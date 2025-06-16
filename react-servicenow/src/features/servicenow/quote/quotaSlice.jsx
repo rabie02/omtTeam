@@ -9,6 +9,8 @@ const initialState = {
   error: null,
   createLoading: false,
   createError: null,
+  updateLoading: false,
+  updateError: null,
   deleteLoading: false,
   deleteError: null,
   page: 1,
@@ -51,6 +53,29 @@ export const createQuote = createAsyncThunk(
   }
 );
 
+export const updateQuoteState = createAsyncThunk(
+  'quotes/update',
+  async ({ id, state }, { rejectWithValue }) => {
+    try {
+      const access_token = localStorage.getItem('access_token');
+console.log(state);
+
+      const response = await axios.patch(
+        `${backendUrl}/api/quote-state/${id}`,
+         {state},
+        { headers: { authorization: access_token } }
+      );
+      return response.data.result; // Updated quote object
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.error?.message || 
+        error.response?.data?.message || 
+        error.message
+      );
+    }
+  }
+);
+
 export const deleteQuote = createAsyncThunk(
   'quotes/delete',
   async (quoteId, { rejectWithValue }) => {
@@ -81,6 +106,7 @@ const quoteSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Get Quotes
       .addCase(getQuotes.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -100,6 +126,8 @@ const quoteSlice = createSlice({
         state.total = 0;
         state.totalPages = 0;
       })
+      
+      // Create Quote
       .addCase(createQuote.pending, (state) => {
         state.createLoading = true;
         state.createError = null;
@@ -111,6 +139,25 @@ const quoteSlice = createSlice({
         state.createLoading = false;
         state.createError = action.payload;
       })
+      
+      // Update Quote
+      .addCase(updateQuoteState.pending, (state) => {
+        state.updateLoading = true;
+        state.updateError = null;
+      })
+      .addCase(updateQuoteState.fulfilled, (state, action) => {
+        state.updateLoading = false;
+        // Update specific quote in state
+        state.data = state.data.map(quote => 
+          quote._id === action.payload._id ? action.payload : quote
+        );
+      })
+      .addCase(updateQuoteState.rejected, (state, action) => {
+        state.updateLoading = false;
+        state.updateError = action.payload;
+      })
+      
+      // Delete Quote
       .addCase(deleteQuote.pending, (state) => {
         state.deleteLoading = true;
         state.deleteError = null;

@@ -1,13 +1,21 @@
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Table, Empty, Spin, Pagination, Tooltip, Popconfirm, notification } from 'antd';
-import { getQuotes, deleteQuote } from '../../../features/servicenow/quote/quotaSlice';
+import {
+    getQuotes,
+    deleteQuote,
+    updateQuoteState,
+} from '../../../features/servicenow/quote/quotaSlice';
+import {
+    generateContract,downloadContract
+} from '../../../features/servicenow/contract/contractSlice';
 
 function QuoteTable({ setData, setOpen, searchQuery }) {
     const dispatch = useDispatch();
     const {
         data: quotes,
         loading,
+        partiallyLoading,
         error,
         page: currentPage,
         total: totalItems,
@@ -43,6 +51,80 @@ function QuoteTable({ setData, setOpen, searchQuery }) {
         }
     };
 
+    const handleStatusUpdate = async (id, newStatus) => {
+        try {
+            await dispatch(updateQuoteState({ id, state: newStatus }));
+            notification.success({
+                message: 'Status Updated',
+                description: `Quote status changed to ${newStatus}`
+            });
+            dispatch(getQuotes({ page: currentPage, limit, q: searchQuery }));
+        } catch (error) {
+            notification.error({
+                message: 'Update Failed',
+                description: error.message || 'Failed to update quote status'
+            });
+        }
+    };
+
+    // Contract generation handlers
+    const handleGenerateContract = async (quoteId) => {
+        try {
+            const res = await dispatch(generateContract(quoteId));
+            if (!res.error) {
+                notification.success({
+                    message: 'Contract Generated',
+                    description: 'Contract has been generated successfully',
+                });
+                dispatch(getQuotes({ page: currentPage, limit, q: searchQuery }));
+            }
+        } catch (error) {
+            notification.error({
+                message: 'Generation Failed',
+                description: error.message || 'Failed to generate Contract'
+            });
+        }
+    };
+
+const handleDownloadContract = async (contractId, quoteNumber = '') => {
+  try {
+    // Pass as single object
+    const action = await dispatch(downloadContract({ 
+      contract_id: contractId, 
+      quoteNumber 
+    }));
+    
+    if (action.payload) {
+      const { content, fileName } = action.payload;
+      const url = window.URL.createObjectURL(content);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+    }
+  } catch (error) {
+    notification.error({
+      message: 'Download Failed',
+      description: error.message || 'Failed to download Contract'
+    });
+  }
+};
+
+    // Status action mapping function
+    const getStatusAction = (currentStatus) => {
+        const status = (currentStatus || '').toLowerCase();
+        switch (status) {
+            case 'draft': return { action: 'Approve', newStatus: 'approved' };
+            default: return { action: 'Update Status', newStatus: status };
+        }
+    };
 
     const mainColumns = [
         {
@@ -66,14 +148,24 @@ function QuoteTable({ setData, setOpen, searchQuery }) {
         {
             title: 'Status',
             key: 'state',
-            render: (_, record) => (
-                <span className={`px-2 py-1 capitalize rounded ${record.state === 'published'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-700'
-                    }`}>
-                    {record.state || 'N/A'}
-                </span>
-            ),
+            render: (_, record) => {
+                const status = record.state || 'N/A';
+                let statusClass = 'bg-gray-100 text-gray-700';
+
+                if (status.toLowerCase() === 'published') {
+                    statusClass = 'bg-green-100 text-green-700';
+                } else if (status.toLowerCase() === 'retired') {
+                    statusClass = 'bg-yellow-100 text-yellow-700';
+                } else if (status.toLowerCase() === 'archived') {
+                    statusClass = 'bg-red-100 text-red-700';
+                }
+
+                return (
+                    <span className={`px-2 py-1 capitalize rounded ${statusClass}`}>
+                        {status}
+                    </span>
+                );
+            },
             width: 120,
         },
         {
@@ -94,32 +186,87 @@ function QuoteTable({ setData, setOpen, searchQuery }) {
         {
             title: 'Actions',
             key: 'actions',
-            render: (_, record) => (
-                <>
-                    <Tooltip title="View Quote Details">
-                        <button
-                            className="text-gray-500 hover:text-blue-600"
-                            onClick={() => seeData(record)}
-                        >
-                            <i className="ri-eye-line text-2xl"></i>
-                        </button>
-                    </Tooltip>
-                    <Tooltip title="Delete This Quote">
-                        <Popconfirm
-                            title="Delete Quote"
-                            description="Are you sure you want to delete this quote?"
-                            onConfirm={() => handleDelete(record._id)}
-                            okText="Yes"
-                            cancelText="No"
-                        >
-                            <button className="text-gray-500 hover:text-red-600 ml-2">
-                                <i className="ri-delete-bin-6-line text-2xl"></i>
+            render: (_, record) => {
+                const { action, newStatus } = getStatusAction(record.state);
+                const isApproved = (record.state || '').toLowerCase() === 'approved';
+                
+                return (
+                    <div className="flex space-x-2">
+                        <Tooltip title="View Quote Details">
+                            <button
+                                className="text-gray-500 hover:text-blue-600"
+                                onClick={() => seeData(record)}
+                            >
+                                <i className="ri-eye-line text-2xl"></i>
                             </button>
-                        </Popconfirm>
-                    </Tooltip>
-                </>
-            ),
-            width: 100,
+                        </Tooltip>
+
+                        {/* Status toggle button */}
+                        {!isApproved && (
+                            <Tooltip title={`${action} Quote`}>
+                                <Popconfirm
+                                    title={`${action} Quote`}
+                                    description={`Are you sure you want to ${action.toLowerCase()} this quote?`}
+                                    onConfirm={() => handleStatusUpdate(record._id, newStatus)}
+                                    okText="Yes"
+                                    cancelText="No"
+                                >
+                                    <button className="text-gray-500 hover:text-green-600">
+                                        <i className="ri-check-line text-2xl"></i>
+                                    </button>
+                                </Popconfirm>
+                            </Tooltip>
+                        )}
+                        {isApproved && (
+                            <Tooltip title={record.contracts?.length > 0 ? "Download Contract" : "Generate Contract"}>
+                                {record.contracts?.length > 0 ? (
+                                    <button
+                                        className="text-gray-500 hover:text-orange-300"
+                                        onClick={() => handleDownloadContract(record?.contracts[0]._id, record.number)}
+                                        disabled={partiallyLoading}
+                                    >
+                                        <i className="ri-contract-fill text-2xl"></i>
+                                    </button>
+                                ) : (
+                                    <Popconfirm
+                                        title="Generate Contract"
+                                        description="Generate a contract for this quote?"
+                                        onConfirm={() => handleGenerateContract(record._id)}
+                                        okText="Yes"
+                                        cancelText="No"
+                                    >
+                                        <button
+                                            className="text-gray-500 hover:text-orange-300"
+                                            disabled={partiallyLoading}
+                                        >
+                                            <i className="ri-contract-line text-2xl"></i>
+                                        </button>
+                                    </Popconfirm>
+                                )}
+                            </Tooltip>
+
+                        )}
+
+                        <Tooltip title="Delete This Quote">
+                            <Popconfirm
+                                title="Delete Quote"
+                                description="Are you sure you want to delete this quote?"
+                                onConfirm={() => handleDelete(record._id)}
+                                okText="Yes"
+                                cancelText="No"
+                            >
+                                <button className="text-gray-500 hover:text-red-600">
+                                    <i className="ri-delete-bin-6-line text-2xl"></i>
+                                </button>
+                            </Popconfirm>
+                        </Tooltip>
+
+                        {/* Contract Button */}
+
+                    </div>
+                );
+            },
+            width: 200,
         },
     ];
 
