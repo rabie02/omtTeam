@@ -1,5 +1,7 @@
 const Opportunity = require('../../models/opportunity');
 const handleMongoError = require('../../utils/handleMongoError');
+const quote = require('../../models/quote');
+const opportunity = require('../../models/opportunity');
 
 module.exports = async (req, res) => {
   try {
@@ -50,7 +52,7 @@ module.exports = async (req, res) => {
     })
     .populate('productOffering')
     .lean();
-
+  
     // Group line items by opportunity ID
     const lineItemsByOpportunity = {};
     lineItems.forEach(item => {
@@ -61,12 +63,17 @@ module.exports = async (req, res) => {
       lineItemsByOpportunity[oppId].push(item);
     });
 
+    const quoteItem = await quote.find({
+      opportunity : opportunityIds
+    }).lean();
+
     // Format response with line items attached
     const formattedData = mongoData.map(item => ({
       ...item,
       _id: item._id.toString(),
       mongoId: item._id.toString(),
-      line_items: lineItemsByOpportunity[item._id.toString()] || [] // Add line items here
+      line_items: lineItemsByOpportunity[item._id.toString()] || [] ,// Add line items here
+      quote: quoteItem || [], 
     }));
 
     return res.json({
