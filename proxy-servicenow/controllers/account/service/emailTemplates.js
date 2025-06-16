@@ -86,38 +86,56 @@ const getErrorHtml = () => `
 </body>
 </html>
 `;
-const getWelcomeEmail = (firstName, lastName, email, password) => {
-    const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
-    
+const getWelcomeEmail = (accountName, contacts) => {
+  const credentialsList = contacts.map(contact => {
+    const username = `${contact.firstName.toLowerCase()}.${contact.lastName.toLowerCase()}`;
     return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
-      <h2 style="color: #3498db; text-align: center;">Welcome to ${config.app.name}</h2>
-      <p>Hello ${firstName},</p>
-      <p>Your account has been successfully created. Here are your login details:</p>
-      
-      <div style="background-color: #f0f0f0; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <p><strong>Username:</strong> ${username}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Password:</strong> ${password}</p>
-      </div>
-      
-      <p style="font-weight: bold;">Please keep this information secure.</p>
-      
-      <div style="text-align: center; margin: 30px 0;">
-        <a href="${config.app.frontendUrl}/login"
-           style="background-color: #3498db; color: white; padding: 12px 24px;
-                  text-decoration: none; border-radius: 5px; display: inline-block;
-                  font-size: 16px; font-weight: bold;">
-          Login Now
-        </a>
-      </div>
-      
-      <p style="font-size: 12px; color: #777;">If you didn't request this account, please contact our support team immediately.</p>
-      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-      <p style="text-align: center; font-size: 10px; color: #aaa;">&copy; ${new Date().getFullYear()} ${config.app.name}. All rights reserved.</p>
-    </div>
+      <tr>
+        <td style="padding: 10px; border: 1px solid #ddd;">${contact.firstName} ${contact.lastName}</td>
+        <td style="padding: 10px; border: 1px solid #ddd;">${contact.email}</td>
+        <td style="padding: 10px; border: 1px solid #ddd;">${username}</td>
+        <td style="padding: 10px; border: 1px solid #ddd;">${contact.password}</td>
+      </tr>
     `;
-  };
+  }).join('');
+
+  return `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+    <h2 style="color: #3498db; text-align: center;">Welcome to ${config.app.name}</h2>
+    <p>Hello ${accountName},</p>
+    <p>Your account and all associated contacts have been successfully created. Here are the login credentials for your team:</p>
+    
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <thead>
+        <tr style="background-color: #3498db; color: white;">
+          <th style="padding: 10px; border: 1px solid #ddd;">Contact Name</th>
+          <th style="padding: 10px; border: 1px solid #ddd;">Email</th>
+          <th style="padding: 10px; border: 1px solid #ddd;">Username</th>
+          <th style="padding: 10px; border: 1px solid #ddd;">Password</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${credentialsList}
+      </tbody>
+    </table>
+    
+    <p style="font-weight: bold; margin-top: 20px;">Please distribute these credentials securely to your team members.</p>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${config.app.frontendUrl}/login"
+         style="background-color: #3498db; color: white; padding: 12px 24px;
+                text-decoration: none; border-radius: 5px; display: inline-block;
+                font-size: 16px; font-weight: bold;">
+        Access Your Account
+      </a>
+    </div>
+    
+    <p style="font-size: 12px; color: #777;">If you didn't request this account, please contact our support team immediately.</p>
+    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+    <p style="text-align: center; font-size: 10px; color: #aaa;">&copy; ${new Date().getFullYear()} ${config.app.name}. All rights reserved.</p>
+  </div>`;
+};
+
 
 module.exports = {
   getConfirmationEmail,
