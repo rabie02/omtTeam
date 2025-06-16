@@ -8,9 +8,11 @@ const getLatestQuoteByOpportunity = require('../../Quote/getByOpportunityId');
 
 async function generateContract(req, res) {
   try {
+    
     const op_id = req.params.id;
 
     const quote = await getLatestQuoteByOpportunity(req);
+    
     if(!quote) {return res.status(404).json({ error: 'Quote not found, you must generate a quote!' });  }
 
     const opObjectId = new mongoose.Types.ObjectId(op_id);
