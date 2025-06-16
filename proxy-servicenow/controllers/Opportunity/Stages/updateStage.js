@@ -3,6 +3,7 @@ const Stage = require('../../../models/stage');
 const handleMongoError = require('../../../utils/handleMongoError');
 const Opportunity = require('../../../models/opportunity');
 const snConnection = require('../../../utils/servicenowConnection');
+const getOpportunityWithDetails = require('../getOpportuntityWithdetails');
 
 async function updateStage(req, res) {
   try {
@@ -32,10 +33,11 @@ async function updateStage(req, res) {
     // Update MongoDB
     opportunity.stage = stage;
     const updatedOpportunity = await opportunity.save();
+    const dataOpportunity = await getOpportunityWithDetails(updatedOpportunity._id);
 
     return res.json({
       message: 'Stage updated successfully',
-      data: updatedOpportunity
+      data: dataOpportunity
     });
     
   } catch (error) {
