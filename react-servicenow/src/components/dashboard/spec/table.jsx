@@ -171,7 +171,7 @@ console.log(data);
     <>
       <List
         itemLayout="vertical"
-        dataSource={filteredOfferings.slice((currentPage - 1) * 10, currentPage * 10)}
+        dataSource={filteredOfferings.slice((currentPageModal - 1) * 10, currentPageModal * 10)}
         renderItem={(item) => (
           <List.Item key={item.sys_id}>
             <List.Item.Meta title={item.display_name || (item.displayName || 'Nom inconnu')} />
@@ -180,10 +180,10 @@ console.log(data);
       />
       <div className="mt-4 flex justify-center">
         <Pagination
-          current={currentPage}
+        current={currentPageModal}
           pageSize={10}
           total={filteredOfferings.length}
-          onChange={(page) => setCurrentPage(page)}
+          onChange={(page) => setCurrentPageModal(page)}
         />
       </div>
     </>
