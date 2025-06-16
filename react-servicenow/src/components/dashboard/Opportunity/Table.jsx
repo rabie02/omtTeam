@@ -6,7 +6,8 @@ import {
   deleteOpportunity,
   generateContract,
   downloadContract,
-  resetError
+  resetError,
+  updateStage
 } from '../../../features/servicenow/opportunity/opportunitySlice';
 import CreateQuote from '../quote/ButtonCreateQuote';
 import {getAll as getProductOfferingPrice} from '../../../features/servicenow/product-offering-price/productOfferingPriceSlice';
@@ -112,34 +113,44 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
     }
   }
 
-  const handleWin = () => {
+  const handleWin = (id) => {
     Modal.confirm({
       title: 'Confirm Win',
       content: 'Are you sure you want to record this as a Win?',
       okText: 'Yes, Win',
       cancelText: 'Cancel',
-      onOk() {
-        //onWin();
-        notification.success({
+      async onOk() {
+        const body = { "id":id,
+          "stage":"6834b2d23582eabbafc8bec2"
+        }
+        const res = await dispatch(updateStage(body));
+        if(!res.error){
+          notification.success({
           message: 'Win recorded!',
           description: "We've updated the opportunity to the Colsed-Won stage"
         });
+        }
       },
     });
   };
 
-  const handleLose = () => {
+  const handleLose = (id) => {
     Modal.confirm({
       title: 'Confirm Lose',
       content: 'Are you sure you want to record this as a Lose?',
       okText: 'Yes, Lose',
       cancelText: 'Cancel',
-      onOk() {
-        //onLose();
-        notification.success({
-          message: 'Lose recorded!',
-          description: "We've updated the opportunity to the Colsed-Lost stage"
-        });
+      async onOk() {
+        const body = { "id":id,
+          "stage":"6834b2ee3582eabbafc8bec4"
+        }
+        const res = await dispatch(updateStage(body));
+        if(!res.error){
+          notification.success({
+            message: 'Lose recorded!',
+            description: "We've updated the opportunity to the Colsed-Lost stage"
+          });
+        }
       },
     });
   };
@@ -198,8 +209,8 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
             <Popconfirm
               title="Close Opportunity"
               description="Won or Lost the opportunity?"
-              onConfirm={handleWin}
-              onCancel={handleLose}
+              onConfirm={()=> handleWin(record._id)}
+              onCancel={()=> handleLose(record._id)}
               okText="Win"
               cancelText="Lose"
             >
@@ -253,8 +264,6 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
       ),
     },
   ];
-
-  console.log(opportunities);
 
 
   if (!open && loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;

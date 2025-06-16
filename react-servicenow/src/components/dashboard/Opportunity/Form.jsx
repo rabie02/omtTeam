@@ -12,7 +12,6 @@ import { formatDateForInput } from '@/utils/formatDateForInput.js';
 import {
   getSalesCycleTypes,
   getStages,
-  getAccounts,
   getUnitOfMeasures,
   workflow,
   updateOpportunityPricing,
