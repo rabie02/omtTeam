@@ -37,7 +37,6 @@ async function updateOpportunityCore(req) {
 
   // Get stage sys_id if stage is provided 
   if(stage){
-    console.log("here")
     stageDoc = await Stage.findById(stage);
     if (!stageDoc) {
       return res.status(404).json({ error: `PriceList not found with id: ${stage}` });

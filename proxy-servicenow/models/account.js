@@ -7,7 +7,7 @@ const accountSchema = new mongoose.Schema({
   },
   sys_id: String,
   sys_created_on: {
-    type: Date // Changed from String to Date (optional)
+    type: Date
   },
   sys_created_by: String,
   business_owners: String,
@@ -16,6 +16,12 @@ const accountSchema = new mongoose.Schema({
   email: String,
   website: String,
   customer: String,
+
+  // New field
+  archived: {
+    type: Boolean,
+    default: false // Default to false so it's active by default
+  },
 
   contacts: [{
     type: mongoose.Schema.Types.ObjectId,
