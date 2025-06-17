@@ -5,7 +5,7 @@ import Login from '../views/auth/login';
 import IsAuth from '../middleware/IsAuth';
 import CreateAcc from '../components/createAccount/CreateAcc';
 import VerifyToken from '../middleware/VerifyToken.jsx';
-import VerificationErrorPage from '../features/pages/VerificationErrorPage.jsx';
+import VerificationErrorPage from '../views/error/VerificationErrorPage.jsx';
 
 const authRoutes = [
   // { path: '/', element: <Login /> },
