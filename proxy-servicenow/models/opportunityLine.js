@@ -21,7 +21,6 @@ const opportunityLineItemSchema = new mongoose.Schema({
   number: String,
   sys_id: {
     type: String,
-    required: true,
     unique: true,
     index: true
   },

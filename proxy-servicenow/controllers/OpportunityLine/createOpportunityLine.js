@@ -1,10 +1,10 @@
 const axios = require('axios');
 const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
-const OpportunityLine = require('../../models/opportunityLine');
 const PriceList = require('../../models/priceList');
 const ProductOffering = require('../../models/ProductOffering');
 const Opportunity = require('../../models/opportunity'); 
+const opportunityLine = require('../../models/opportunityLine');
 
 
 async function createOpportunityLine(req, res = null) {
@@ -29,12 +29,16 @@ async function createOpportunityLine(req, res = null) {
       throw new Error(`Opportunity with ID ${opportunity} not found`);
     }
 
+    const oppLine = new opportunityLine(req.body);
+    const mongoDocument = await oppLine.save();
+
     // Prepare ServiceNow payload with sys_ids
     const snPayload = {
       ...rest,
       price_list: priceListDoc.sys_id,
       product_offering: productOfferingDoc.id,
-      opportunity: opportunityDoc.sys_id
+      opportunity: opportunityDoc.sys_id,
+      external_id:mongoDocument._id.toString()
     };
 
     // Create in ServiceNow
@@ -45,8 +49,8 @@ async function createOpportunityLine(req, res = null) {
       { headers: connection.headers }
     );
     
-    // Prepare MongoDB document with references
-    const mongoDoc = {
+    // Prepare MongoDB document 
+    const mongoPayload = {
       ...snResponse.data.result,
       priceList: price_list,
       productOffering: product_offering,
@@ -54,10 +58,10 @@ async function createOpportunityLine(req, res = null) {
       
     };
 
-    // Create in MongoDB
+    // update in MongoDB
     try {
-      const opportunityLine = new OpportunityLine(mongoDoc);
-      await opportunityLine.save();
+      
+      const opportunityLine = await opportunityLine.findByIdAndUpdate(mongoDocument._id, mongoPayload , {new: true});
 
       // Prepare response
       const response = {
