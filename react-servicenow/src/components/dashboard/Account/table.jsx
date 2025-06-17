@@ -135,6 +135,19 @@ function AccountTable({ setData, setOpen, searchQuery }) {
             dataIndex: 'phone',
             key: 'phone',
         },
+        {
+            title: 'Primary',
+            dataIndex: 'isPrimaryContact',
+            key: 'isPrimaryContact',
+            render: (isPrimary) => (
+                <span className={`px-2 py-1 rounded ${isPrimary
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'bg-gray-100 text-gray-700'
+                    }`}>
+                    {isPrimary ? 'Yes' : 'No'}
+                </span>
+            ),
+        }
     ];
 
     const locationColumns = [
