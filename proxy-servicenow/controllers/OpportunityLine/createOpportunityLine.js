@@ -38,7 +38,8 @@ async function createOpportunityLine(req, res = null) {
       external_id:mongoDocument._id.toString(),
       price_list: priceListDoc.sys_id,
       product_offering: productOfferingDoc.id,
-      opportunity: opportunityDoc.sys_id
+      opportunity: opportunityDoc.sys_id,
+      external_id:mongoDocument._id.toString()
     };
 
     // Create in ServiceNow
