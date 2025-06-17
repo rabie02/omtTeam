@@ -10,7 +10,7 @@ const opportunityLine = require('../../models/opportunityLine');
 async function createOpportunityLine(req, res = null) {
   try {
 
-    const { price_list, product_offering, opportunity, ...rest } = req.body;
+    const { price_list, product_offering, opportunity,external_id, ...rest } = req.body;
 
     // Look up ServiceNow sys_ids for referenced documents
     const [priceListDoc, productOfferingDoc, opportunityDoc] = await Promise.all([
@@ -35,10 +35,10 @@ async function createOpportunityLine(req, res = null) {
     // Prepare ServiceNow payload with sys_ids
     const snPayload = {
       ...rest,
+      external_id:mongoDocument._id.toString(),
       price_list: priceListDoc.sys_id,
       product_offering: productOfferingDoc.id,
-      opportunity: opportunityDoc.sys_id,
-      external_id:mongoDocument._id.toString()
+      opportunity: opportunityDoc.sys_id
     };
 
     // Create in ServiceNow
