@@ -109,6 +109,21 @@ export const deleteAccount = createAsyncThunk(
   }
 );
 
+export const verifyAccountToken = createAsyncThunk(
+  'account/verifyToken',
+  async (token, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(
+        `${backendUrl}/api/verify-account-token/${token}`,
+        { headers: getHeaders() }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+)
+
 const accountSlice = createSlice({
   name: 'account',
   initialState,
@@ -208,6 +223,18 @@ const accountSlice = createSlice({
       .addCase(deleteAccount.rejected, (state, action) => {
         state.deleteLoading = false;
         state.deleteError = action.payload;
+      })
+      .addCase(verifyAccountToken.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(verifyAccountToken.fulfilled, (state, action) => {
+        state.loading = false;
+        state.verifiedAccount = action.payload; // Add this to your initialState
+      })
+      .addCase(verifyAccountToken.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   }
 });
