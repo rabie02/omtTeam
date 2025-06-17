@@ -4,6 +4,8 @@ import Register from '../views/auth/Register';
 import Login from '../views/auth/login';
 import IsAuth from '../middleware/IsAuth';
 import CreateAcc from '../components/createAccount/CreateAcc';
+import VerifyToken from '../middleware/VerifyToken.jsx';
+import VerificationErrorPage from '../features/pages/VerificationErrorPage.jsx';
 
 const authRoutes = [
   // { path: '/', element: <Login /> },
@@ -16,7 +18,8 @@ const authRoutes = [
       </IsAuth>
     ),
   },
-  { path: '/createAccount', element:<CreateAcc /> },
+  { path: '/createAccount', element:<VerifyToken><CreateAcc /></VerifyToken> },
+  { path: '/verification-error', element: <VerificationErrorPage /> }
   // ... other routes
 ];
 
