@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   const backendUrl = mode === 'development'
-    ? 'http://localhost:5000'
+    ? 'http://localhost:3000'
     : env.VITE_BACKEND_URL
 
   return {

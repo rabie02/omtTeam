@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { message } from 'antd';
+import { message, Badge, Dropdown } from 'antd';
+import { SearchOutlined, BellOutlined, LogoutOutlined, UserOutlined, SettingOutlined } from '@ant-design/icons';
 import { userLogout, fetchUserInfo } from '../../features/auth/authActions';
+import ProductSearch from '../../views/dashbord/npl-search';
 
 function Header() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { userInfo } = useSelector(state => state.auth);
-  const [notificationOpen, setNotificationOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState([]);
 
   // Fetch user info on component mount
   useEffect(() => {
@@ -28,9 +29,20 @@ function Header() {
     };
 
     loadUserData();
+
+    // Demo notifications
+    setNotifications([
+      {
+        id: 1,
+        title: 'Security Alert',
+        message: 'Unauthorized login attempt detected',
+        time: '1 hour ago',
+        read: false,
+        icon: 'ri-shield-keyhole-line'
+      },
+    ]);
   }, [dispatch, userInfo]);
 
-  // Get user data from Redux or localStorage
   const currentUser = userInfo || JSON.parse(localStorage.getItem('currentUser')) || {
     name: 'Admin User',
     email: 'admin@company.com',
@@ -38,29 +50,6 @@ function Header() {
     lastLogin: new Date().toLocaleString()
   };
 
-  // Admin notifications
-  useEffect(() => {
-    // Simulate fetching notifications
-    const fetchNotifications = async () => {
-      // In a real app, you would fetch these from an API
-      const demoNotifications = [
-        {
-          id: 1,
-          title: 'Security Alert',
-          message: 'Unauthorized login attempt detected',
-          time: '1 hour ago',
-          read: false,
-          icon: 'ri-shield-keyhole-line'
-        },
-        // ... other notifications
-      ];
-      setNotifications(demoNotifications);
-    };
-
-    fetchNotifications();
-  }, []);
-
-  const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleLogout = async () => {
     try {
@@ -75,34 +64,56 @@ function Header() {
     }
   };
 
-  // const markAsRead = (id) => {
-  //   setNotifications(notifications.map(n => 
-  //     n.id === id ? {...n, read: true} : n
-  //   ));
-  // };
-
-  // const markAllAsRead = () => {
-  //   setNotifications(notifications.map(n => ({...n, read: true})));
-  // };
-
   const quickAccessItems = [
-    { label: 'Dashboard', path: '/dashboard' },
-    // ... other menu items
+    { label: 'Dashboard', path: '/dashboard', icon: 'ri-dashboard-line' },
   ];
 
+  const profileMenuItems = [
+    {
+      key: 'profile',
+      label: (
+        <Link to="/dashboard/profile" className="flex items-center">
+          <UserOutlined className="mr-2" />
+          My Profile
+        </Link>
+      )
+    },
+    {
+      key: 'settings',
+      label: (
+        <Link to="/settings" className="flex items-center">
+          <SettingOutlined className="mr-2" />
+          Settings
+        </Link>
+      )
+    },
+    {
+      type: 'divider'
+    },
+    {
+      key: 'logout',
+      label: (
+        <button onClick={handleLogout} className="flex items-center w-full">
+          <LogoutOutlined className="mr-2" />
+          Sign Out
+        </button>
+      )
+    }
+  ];
+
+ 
   if (loading) {
     return (
-      <header className="sticky top-0 z-20 bg-cyan-700 h-20">
-        {/* Loading skeleton */}
+      <header className="sticky top-0 z-20 bg-gradient-to-r from-cyan-700 to-cyan-600 h-20 shadow-md">
         <div className="animate-pulse h-full w-full"></div>
       </header>
     );
   }
 
   return (
-    <header className="sticky top-0 z-20 bg-cyan-700">
+    <header className="sticky top-0 z-20 bg-gradient-to-r from-cyan-700 to-cyan-600 shadow-lg">
       {/* Top Bar */}
-      <div className="bg-cyan-800 text-blue-100 px-6 py-2 text-sm flex justify-between items-center">
+      <div className="bg-cyan-800/90 text-blue-100 px-6 py-2 text-sm flex justify-between items-center border-b border-cyan-900/20">
         <div className="flex items-center space-x-4">
           <span className="font-medium flex items-center">
             <i className="ri-shield-keyhole-line mr-2 text-blue-200" />
@@ -110,36 +121,36 @@ function Header() {
           </span>
           <span className="w-px h-5 bg-blue-200/30"></span>
           <span className="flex items-center space-x-1.5">
-            <span className="w-2 h-2 rounded-full bg-green-400"></span>
-            <span>Production</span>
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+            <span>Production Environment</span>
           </span>
         </div>
         <div className="flex items-center space-x-4">
-          <span>Last login: {currentUser.lastLogin}</span>
-          <span className="w-px h-5 bg-blue-200/30"></span>
+          <span className="hidden md:block">Last login: {currentUser.lastLogin}</span>
+          <span className="w-px h-5 bg-blue-200/30 hidden md:block"></span>
           <button
             onClick={handleLogout}
-            className="hover:text-blue-200 transition-colors flex items-center"
+            className="hover:text-blue-200 transition-colors flex items-center text-sm"
           >
             <i className="ri-logout-circle-r-line mr-1" />
-            Sign Out
+            <span className="hidden md:inline">Sign Out</span>
           </button>
         </div>
       </div>
 
       {/* Main Header */}
-      <div className="px-6 py-3 flex items-center justify-between bg-cyan-700">
+      <div className="px-6 py-3 flex items-center justify-between">
         {/* Logo and Navigation */}
         <div className="flex items-center space-x-8">
-          <div className="flex items-center">
-            <div className="w-10 h-10 rounded-lg bg-cyan-800 flex items-center justify-center text-white mr-3">
+          <Link to="/dashboard" className="flex items-center group">
+            <div className="w-10 h-10 rounded-lg bg-cyan-800 flex items-center justify-center text-white mr-3 transition-all duration-300 group-hover:bg-cyan-900">
               <i className="ri-admin-line text-xl" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">Admin Portal</h1>
               <p className="text-xs text-blue-200">System Management</p>
             </div>
-          </div>
+          </Link>
 
           <nav className="hidden md:flex space-x-6">
             {quickAccessItems.map((item) => (
@@ -148,6 +159,7 @@ function Header() {
                 to={item.path}
                 className="text-white hover:text-blue-200 font-medium transition-colors relative group"
               >
+                <i className={`${item.icon} mr-1`} />
                 {item.label}
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-200 transition-all duration-300 group-hover:w-full"></span>
               </Link>
@@ -155,71 +167,31 @@ function Header() {
           </nav>
         </div>
 
-        {/* Action Icons */}
+        {/* Search and Action Icons */}
         <div className="flex items-center space-x-6">
-          {/* Notification Dropdown */}
-          <div className="relative">
-            {/* <button 
-              onClick={() => setNotificationOpen(!notificationOpen)}
-              className="p-2 rounded-full hover:bg-cyan-800 text-blue-100 hover:text-white transition-colors relative"
-            >
-              <i className="ri-notification-3-line text-xl"></i>
-              {unreadCount > 0 && (
-                <span className="absolute top-0 right-0 h-5 w-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center transform translate-x-1 -translate-y-1">
-                  {unreadCount}
-                </span>
-              )}
-            </button> */}
-
-            {notificationOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-[#007B98] rounded-lg shadow-xl border border-cyan-800 z-50 overflow-hidden">
-                {/* Notification dropdown content */}
-                {/* ... (same as your existing notification dropdown) ... */}
-              </div>
-            )}
+          {/* Enhanced Product Search */}
+          <div className="w-84">
+            <ProductSearch />
           </div>
+
+
 
           {/* User Profile */}
-          <div className="flex items-center space-x-3 group relative cursor-pointer">
-            <div className="h-10 w-10 rounded-full bg-cyan-800 flex items-center justify-center text-white font-medium shadow-sm">
-              {currentUser.name.charAt(0).toUpperCase()}
-            </div>
-            <div className="hidden md:block text-white">
-              <p className="text-sm font-medium">{currentUser.name}</p>
-              <p className="text-xs text-blue-200">{currentUser.role}</p>
-            </div>
-
-            {/* Profile Dropdown */}
-            <div className="absolute right-0 top-full mt-1 w-64 bg-[#007B98] rounded-md shadow-lg py-1 z-50 hidden group-hover:block border border-cyan-800">
-              <div className="px-4 py-3 border-b border-cyan-800 bg-cyan-800">
-                <p className="font-medium text-white">{currentUser.name}</p>
-                <p className="text-sm text-blue-200 truncate">{currentUser.email}</p>
-                <div className="mt-2 flex justify-between text-xs">
-                  <span className="text-blue-300">System Access</span>
-                  <span className="text-blue-300">Full Privileges</span>
-                </div>
+          <Dropdown 
+            menu={{ items: profileMenuItems }}
+            trigger={['click']}
+            placement="bottomRight"
+          >
+            <div className="flex items-center space-x-3 cursor-pointer group">
+              <div className="w-10 h-10 rounded-full bg-cyan-800 flex items-center justify-center text-white font-medium shadow-sm group-hover:bg-cyan-900 transition-colors">
+                {currentUser.name.charAt(0).toUpperCase()}
               </div>
-              <Link
-                to="/dashboard/profile"
-                className="block px-4 py-2.5 text-white hover:bg-cyan-800 hover:text-blue-200 transition-colors"
-              >
-                <i className="ri-user-settings-line mr-2" /> My Profile
-              </Link>
-              {/* <Link 
-                to="/settings" 
-                className="block px-4 py-2.5 text-white hover:bg-cyan-800 hover:text-blue-200 transition-colors"
-              >
-                <i className="ri-shield-user-line mr-2" /> Settings
-              </Link> */}
-              <div className="border-t border-cyan-800"></div>
-              <button
-                onClick={handleLogout}
-                className="block w-full text-left px-4 py-2.5 text-white hover:bg-cyan-800 hover:text-red-400 transition-colors"
-              >
-                <i className="ri-logout-circle-r-line mr-2" /> Sign Out
-              </button>
+              <div className="hidden md:block text-white">
+                <p className="text-sm font-medium truncate max-w-[120px]">{currentUser.name}</p>
+                <p className="text-xs text-blue-200 truncate max-w-[120px]">{currentUser.role}</p>
+              </div>
             </div>
-          </div>
+          </Dropdown>
         </div>
       </div>
     </header>
