@@ -66,7 +66,7 @@ function AccountTable({ setData, setOpen, searchQuery }) {
                 return (
                     <span className={`px-2 py-1 capitalize rounded ${
                         isEmpty
-                            ? 'bg-red-100 text-red-700'
+                            ? 'bg-gray-100 text-gray-700'
                             : status === 'active'
                             ? 'bg-green-100 text-green-700'
                             : 'bg-gray-100 text-gray-700'
