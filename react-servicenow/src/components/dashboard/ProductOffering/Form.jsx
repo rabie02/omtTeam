@@ -3,7 +3,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Modal, notification, Select } from 'antd';
 import { updateProductOffering, createProductOffering } from '../../../features/servicenow/product-offering/productOfferingSlice';
-
+import { formatDateForInput } from '@/utils/formatDateForInput.js';
 
 
 
@@ -25,7 +25,7 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
   const formik = useFormik({
     initialValues: {
         name: initialData?.name || '',
-        start_date: initialData?.validFor?.startDateTime?.split('T')[0] || '', // Handle potential timestamp
+        start_date: initialData?.validFor?.startDateTime?.split('T')[0] || formatDateForInput(new Date(new Date().getTime() - 86400000)), // Handle potential timestamp
         end_date: initialData?.validFor?.endDateTime?.split('T')[0] || '',     // Handle potential timestamp
         description: initialData?.description || '',
         recurring_price: initialData?.productOfferingPrice[0].price?.taxIncludedAmount?.value || '', // Use nullish coalescing
