@@ -31,7 +31,7 @@ import {
   Award,
   Globe,
   CreditCard,
-  Zap
+  Zap,
 } from "lucide-react";
 import axios from 'axios';
 import { Tooltip, Table, Input, Select, DatePicker, Button, Card, Divider, Badge, Progress, Radio, Tabs, Dropdown, Menu } from 'antd';
@@ -1287,7 +1287,7 @@ const Home = () => {
       <footer className="bg-white border-t border-gray-200 py-4 px-6 mt-8"> 
         <div className="flex items-center justify-between text-sm text-gray-500">
           <div>
-            © {new Date().getFullYear()} ProductHub. All rights reserved.
+            ©️ {new Date().getFullYear()} ProductHub. All rights reserved.
           </div>
           <div className="flex items-center space-x-4">
             <a href="#" className="hover:text-gray-700">Privacy</a>
@@ -1300,4 +1300,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Home; 
