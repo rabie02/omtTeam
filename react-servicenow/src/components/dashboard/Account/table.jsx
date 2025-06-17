@@ -60,14 +60,21 @@ function AccountTable({ setData, setOpen, searchQuery }) {
         {
             title: 'Status',
             key: 'status',
-            render: (_, record) => (
-                <span className={`px-2 py-1 capitalize rounded ${record.status === 'active'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-700'
+            render: (_, record) => {
+                const status = record.status?.toLowerCase();
+                const isEmpty = !status;
+                return (
+                    <span className={`px-2 py-1 capitalize rounded ${
+                        isEmpty
+                            ? 'bg-red-100 text-red-700'
+                            : status === 'active'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-700'
                     }`}>
-                    {record.status}
-                </span>
-            ),
+                        {isEmpty ? 'inactive' : status}
+                    </span>
+                );
+            },
         },
         {
             title: 'Updated At',
@@ -128,19 +135,6 @@ function AccountTable({ setData, setOpen, searchQuery }) {
             dataIndex: 'phone',
             key: 'phone',
         },
-        {
-            title: 'Primary',
-            dataIndex: 'isPrimaryContact',
-            key: 'isPrimaryContact',
-            render: (isPrimary) => (
-                <span className={`px-2 py-1 rounded ${isPrimary
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-gray-100 text-gray-700'
-                    }`}>
-                    {isPrimary ? 'Yes' : 'No'}
-                </span>
-            ),
-        }
     ];
 
     const locationColumns = [

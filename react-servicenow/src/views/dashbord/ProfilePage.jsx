@@ -32,7 +32,7 @@ const ProfilePage = () => {
   const userData = getUserData();
 
   return (
-    <section className="w-full overflow-hidden bg-gray-50 dark:bg-gray-900">
+    <section className="w-full overflow-hidden bg-gray-50">
       <div className="flex flex-col">
         {/* Cover Image */}
         <div className="w-full xl:h-[10rem] lg:h-[18rem] md:h-[16rem] sm:h-[14rem] h-[11rem] bg-gradient-to-b from-cyan-700  from-10% to-cyan-700/40  to-90%  to-white">
@@ -44,15 +44,15 @@ const ProfilePage = () => {
             <img 
               src={userData.avatar} 
               alt="User Profile"
-              className="rounded-md lg:w-[12rem] lg:h-[12rem] md:w-[10rem] md:h-[10rem] sm:w-[8rem] sm:h-[8rem] w-[7rem] h-[7rem] border-4 border-white dark:border-gray-800 shadow-md relative lg:bottom-[5rem] sm:bottom-[4rem] bottom-[3rem] object-cover"
+              className="rounded-md lg:w-[12rem] lg:h-[12rem] md:w-[10rem] md:h-[10rem] sm:w-[8rem] sm:h-[8rem] w-[7rem] h-[7rem] border-4 border-white shadow-md relative lg:bottom-[5rem] sm:bottom-[4rem] bottom-[3rem] object-cover"
             />
             
             <div className="sm:ml-4 pl-4 sm:mt-0 mt-4 lg:-mt-0">
-              <h1 className="text-gray-800 dark:text-white lg:text-4xl md:text-3xl sm:text-3xl text-xl font-bold">
+              <h1 className="text-gray-800 lg:text-4xl md:text-3xl sm:text-3xl text-xl font-bold">
                 {userData.name}
               </h1>
-              <p className="text-blue-600 dark:text-blue-400 mt-1">{userData.role}</p>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
+              <p className="text-blue-600">{userData.role}</p>
+              <p className="text-gray-600">
                 <i className="ri-login-circle-line mr-1"></i> Last login: {userData.lastLogin}
               </p>
             </div>
@@ -65,26 +65,26 @@ const ProfilePage = () => {
             <div className="w-full flex sm:flex-row flex-col gap-6 justify-center">
               {/* Personal Info Column */}
               <div className="w-full">
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200 ">
                     Personal Information
                   </h2>
                   <dl className="space-y-4">
                     <div>
-                      <dt className="text-gray-500 dark:text-gray-400">First Name</dt>
-                      <dd className="text-lg font-medium text-gray-800 dark:text-white mt-1">{userData.firstName}</dd>
+                      <dt className="text-gray-500">First Name</dt>
+                      <dd className="text-lg font-medium text-gray-800">{userData.firstName}</dd>
                     </div>
                     <div>
-                      <dt className="text-gray-500 dark:text-gray-400">Last Name</dt>
-                      <dd className="text-lg font-medium text-gray-800 dark:text-white mt-1">{userData.lastName}</dd>
+                      <dt className="text-gray-500">Last Name</dt>
+                      <dd className="text-lg font-medium text-gray-800">{userData.lastName}</dd>
                     </div>
                     <div>
-                      <dt className="text-gray-500 dark:text-gray-400">Email</dt>
-                      <dd className="text-lg font-medium text-gray-800 dark:text-white mt-1">{userData.email}</dd>
+                      <dt className="text-gray-500">Email</dt>
+                      <dd className="text-lg font-medium text-gray-800">{userData.email}</dd>
                     </div>
                     <div>
-                      <dt className="text-gray-500 dark:text-gray-400">Phone</dt>
-                      <dd className="text-lg font-medium text-gray-800 dark:text-white mt-1">{userData.phone}</dd>
+                      <dt className="text-gray-500">Phone</dt>
+                      <dd className="text-lg font-medium text-gray-800">{userData.phone}</dd>
                     </div>
                   </dl>
                 </div>
@@ -92,28 +92,28 @@ const ProfilePage = () => {
               
               {/* System Info Column */}
               <div className="w-full">
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h2 className="text-xl font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">
                     System Information
                   </h2>
                   <dl className="space-y-4">
                     <div>
-                      <dt className="text-gray-500 dark:text-gray-400">Username</dt>
-                      <dd className="text-lg font-medium text-gray-800 dark:text-white mt-1">
-                        <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{userData.username}</code>
+                      <dt className="text-gray-500">Username</dt>
+                      <dd className="text-lg font-medium text-gray-800">
+                        <code className="bg-gray-100 px-2 py-1 rounded">{userData.username}</code>
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-gray-500 dark:text-gray-400">Active</dt>
-                      <dd className="text-lg font-medium text-gray-800 dark:text-white mt-1">{userData.active}</dd>
+                      <dt className="text-gray-500">Active</dt>
+                      <dd className="text-lg font-medium text-gray-800">{userData.active}</dd>
                     </div>
                     <div>
-                      <dt className="text-gray-500 dark:text-gray-400">Manager</dt>
-                      <dd className="text-lg font-medium text-gray-800 dark:text-white mt-1">{userData.manager}</dd>
+                      <dt className="text-gray-500">Manager</dt>
+                      <dd className="text-lg font-medium text-gray-800">{userData.manager}</dd>
                     </div>
                     <div>
-                      <dt className="text-gray-500 dark:text-gray-400">Location</dt>
-                      <dd className="text-lg font-medium text-gray-800 dark:text-white mt-1">{userData.location}</dd>
+                      <dt className="text-gray-500">Location</dt>
+                      <dd className="text-lg font-medium text-gray-800">{userData.location}</dd>
                     </div>
                   </dl>
                 </div>
@@ -130,7 +130,7 @@ const ProfilePage = () => {
               </button>
               <button
                 onClick={() => navigate('/change-password')}
-                className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white rounded-lg transition-colors flex items-center justify-center"
+                className="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg transition-colors flex items-center justify-center"
               >
                 <i className="ri-lock-password-line mr-2"></i> Change Password
               </button>
