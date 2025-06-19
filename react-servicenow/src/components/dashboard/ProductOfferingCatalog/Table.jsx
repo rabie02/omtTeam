@@ -106,56 +106,69 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
             key: 'actions',
             render: (_, record) => {
                 const { action, newStatus } = getStatusAction(record.status);
+
+                // Disable all actions if ANY category is published
+                const hasPublishedCategory = record.categories?.some(cat => cat.status === 'published');
+                const disableAll = hasPublishedCategory;
+
+                // Tooltip message when disabled
+                const disabledTooltipMsg = "Action disabled due to published categories";
+
                 return (
                     <div className="flex items-center">
-                        {/* Status Change Button - Hidden for archived */}
-                        {
-                            <Tooltip title={`${action} Catalog`}>
-                                <Popconfirm
-                                    title={`${action} Catalog`}
-                                    description={`Are you sure to ${action.toLowerCase()} this catalog?`}
-                                    onConfirm={() => handleUpdateStatus(record._id, newStatus)}
-                                    disabled={record.status === "archived"}
-                                    okText="Yes"
-                                    cancelText="No"
+                        {/* Status Change Button */}
+                        <Tooltip title={disableAll ? disabledTooltipMsg : `${action} Catalog`}>
+                            <Popconfirm
+                                title={`${action} Catalog`}
+                                description={`Are you sure to ${action.toLowerCase()} this catalog?`}
+                                onConfirm={() => handleUpdateStatus(record._id, newStatus)}
+                                disabled={record.status === "archived" || disableAll}
+                                okText="Yes"
+                                cancelText="No"
+                            >
+                                <button
+                                    className={`mx-1 ${record.status === "archived" || disableAll
+                                        ? "text-gray-300 cursor-not-allowed"
+                                        : "text-gray-500 hover:text-green-600"
+                                        }`}
                                 >
-                                    <button
-                                        className={`mx-1 ${record.status == "archived" ? "text-gray-300 cursor-not-allowed" : "mx-1 text-gray-500 hover:text-green-600  "}`}>
-                                        <i className="ri-loop-right-line text-2xl"></i>
-                                    </button>
-                                </Popconfirm>
-                            </Tooltip>
-                        }
+                                    <i className="ri-loop-right-line text-2xl"></i>
+                                </button>
+                            </Popconfirm>
+                        </Tooltip>
 
-
-
-                        <Tooltip title="Edit This Catalog">
+                        {/* Edit Button */}
+                        <Tooltip title={disableAll ? disabledTooltipMsg : "Edit This Catalog"}>
                             <button
-                                className="mx-2 text-gray-500 hover:text-yellow-400"
-                                onClick={() => changeData(record)}
+                                disabled={disableAll}
+                                className={`mx-2 ${disableAll ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-yellow-400"}`}
+                                onClick={() => !disableAll && changeData(record)}
                             >
                                 <i className="ri-pencil-line text-2xl"></i>
                             </button>
                         </Tooltip>
 
-
-                        {/* Delete Button - Always shown */}
-                        <Tooltip title="Delete This Catalog">
+                        {/* Delete Button */}
+                        <Tooltip title={disableAll ? disabledTooltipMsg : "Delete This Catalog"}>
                             <Popconfirm
                                 title="Delete Catalog"
                                 description="Are you sure to delete this catalog?"
                                 onConfirm={() => handleDelete(record._id)}
+                                disabled={disableAll}
                                 okText="Yes"
                                 cancelText="No"
                             >
-                                <button className="text-gray-500 hover:text-red-600">
+                                <button
+                                    className={` ${disableAll ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-red-600"}`}
+                                >
                                     <i className="ri-delete-bin-6-line text-2xl"></i>
                                 </button>
                             </Popconfirm>
                         </Tooltip>
                     </div>
                 );
-            },
+            }
+
         }
     ];
 
