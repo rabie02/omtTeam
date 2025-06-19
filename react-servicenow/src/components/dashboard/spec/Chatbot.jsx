@@ -1339,27 +1339,37 @@ const formatCases = (cases) => {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="chatbot-input">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Tapez votre message ici..."
-              disabled={loading}
-            />
-            <button 
-              onClick={handleSendMessage} 
-              disabled={loading || !input.trim()}
-              className="send-button"
-            >
-              {loading ? (
-                <span className="spinner"></span>
-              ) : (
-                <span>Envoyer</span>
-              )}
-            </button>
-          </div>
+         <div className="chatbot-input">
+  <input
+    type="text"
+    value={input}
+    onChange={(e) => setInput(e.target.value)}
+    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+    placeholder="Tapez votre message ici..."
+    disabled={loading}
+  />
+
+  <button
+    onClick={() => {
+      setInput('menu principal');
+      handleSendMessage();
+    }}
+    className="send-button"
+    style={{ marginRight: "0.5rem" }} // ✅ ajoute un peu d’espace
+    disabled={loading}
+  >
+    Menu principal
+  </button>
+
+  <button
+    onClick={handleSendMessage}
+    disabled={loading || !input.trim()}
+    className="send-button"
+  >
+    {loading ? <span className="spinner" /> : <span>Envoyer</span>}
+  </button>
+</div>
+
         </div>
       )}
       {showHelp && <HelpPopup />}
@@ -1778,7 +1788,7 @@ const formatCases = (cases) => {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 6rem;
+    min-width: 4rem;
     position: relative;
     overflow: hidden;
   }

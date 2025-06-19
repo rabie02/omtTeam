@@ -110,7 +110,7 @@ useEffect( () => {
         name: '',
         currency: 'USD',
         state: 'published',
-        start_date: formatDateForInput(new Date("01-01-2010")),
+        start_date: formatDateForInput(new Date("01-01-2025")),
         end_date: '',
         description: ''
       },
@@ -122,8 +122,8 @@ useEffect( () => {
         priceType: 'recurring',
         recurringChargePeriodType: 'monthly',
         validFor: {
-          startDateTime: formatDateForInput(new Date()),
-          endDateTime: ''
+          startDateTime: formatDateForInput(new Date(new Date().getTime() - 86400000)),
+          endDateTime: formatDateForInput(new Date(new Date().getTime() + 86400000*29))
         },
         term_month: '',
         quantity: ''
