@@ -29,7 +29,7 @@ const syncFromServiceNow = async (req, res) => {
 
     console.log(`Product specification synchronized: ${specData.tmf_data.displayName}`);
     const mongoDoc = ProductSpecification.findOne({ sys_id: specData.sys_id })
-    console.log(JSON.stringify(mongoDoc,null,2));
+    console.log(mongoDoc);
     // 2. PATCH externalId to ServiceNow if created (new upsert)
     if (mongoDoc._id) {
       const connection = snConnection.getConnection(req.user?.sn_access_token); // Assure toi que token existe
