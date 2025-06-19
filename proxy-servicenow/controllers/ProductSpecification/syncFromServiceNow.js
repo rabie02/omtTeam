@@ -32,9 +32,10 @@ const syncFromServiceNow = async (req, res) => {
 
     // 2. PATCH externalId to ServiceNow if created (new upsert)
     if (mongoDoc._id) {
-      const connection = snConnection.getBasicConnection(); // Assure toi que token existe
+      const connection = await snConnection.getBasicConnection(); // Assure toi que token existe
+      console.log(connection)
       const mongoId = mongoDoc._id.toString();
-      const path = `/api/now/table/sn_prd_pm_product_specification/${specData.sys_id}`;
+      const path = `api/now/table/sn_prd_pm_product_specification/${specData.sys_id}`;
       await externalIdHelper(connection, path, mongoId);
       console.log(`✅ externalId (${mongoId}) patched to ServiceNow`);
     }
