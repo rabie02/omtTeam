@@ -1,5 +1,6 @@
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
+const dayjs = require('dayjs');
 const Quote = require('../../models/quote');
 const Account = require('../../models/account');
 const Opportunity = require('../../models/opportunity');
@@ -64,6 +65,8 @@ module.exports = async (req, res) => {
       opportunity: opportunity._id,
       price_list: priceList._id,
       account: account._id,
+      subscription_start_date: dayjs().toISOString(),
+      subscription_end_date: dayjs().add(opportunity.term_month, 'month').toISOString()
     });
 
     try {

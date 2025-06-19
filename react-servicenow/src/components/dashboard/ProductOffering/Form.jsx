@@ -3,7 +3,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { Modal, notification, Select } from 'antd';
 import { updateProductOffering, createProductOffering } from '../../../features/servicenow/product-offering/productOfferingSlice';
-
+import { formatDateForInput } from '@/utils/formatDateForInput.js';
 
 
 
@@ -20,21 +20,22 @@ const validationSchema = Yup.object().shape({
     category: Yup.string().required('Category is required'), // Category ID
 });
 
-function ProductOfferingForm({ open, setOpen, initialData = null, options=null, dispatch, setSearchTerm }) {
-  console.log(initialData?.productSpecification);
+function ProductOfferingForm({ open, setOpen, initialData = null, options=null, dispatch, setSearchTerm, setCatSearchTerm }) {
   const isEditMode = Boolean(initialData); 
   const formik = useFormik({
     initialValues: {
         name: initialData?.name || '',
-        start_date: initialData?.validFor?.startDateTime?.split('T')[0] || '', // Handle potential timestamp
+        start_date: initialData?.validFor?.startDateTime?.split('T')[0] || formatDateForInput(new Date(new Date().getTime() - 86400000)), // Handle potential timestamp
         end_date: initialData?.validFor?.endDateTime?.split('T')[0] || '',     // Handle potential timestamp
         description: initialData?.description || '',
         recurring_price: initialData?.productOfferingPrice[0].price?.taxIncludedAmount?.value || '', // Use nullish coalescing
         non_recurring_price: initialData?.productOfferingPrice[1].price?.taxIncludedAmount?.value || '', // Use nullish coalescing
         po_term: initialData?.productOfferingTerm || 'not_applicable',
         p_spec: initialData?.productSpecification._id || '', // Get ID from nested object
-        channel: initialData?.channel?.[0]?.id || '', // Get ID from first item in array
-        category: initialData?.category[0]?._id || '', // Get ID from nested object
+        channel: initialData?.channel?.[0]?.id || 'e561aae4c3e710105252716b7d40dd8f', // Get ID from first item in array
+        category: initialData?.category[0]?._id || initialData?.category[0] || '', // Get ID from nested object
+        pricing_type: initialData?.productOfferingPrice[0].price?.taxIncludedAmount?.value !== "0" ? 'reccuring':'one_time',
+        currency: 'USD'
     },
     validationSchema,
     onSubmit: async (values, {resetForm}) => {
@@ -91,8 +92,8 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
                 priceType: "recurring", 
                 price: { 
                   taxIncludedAmount: { 
-                    unit: "USD", 
-                    value: parseFloat(values.recurring_price || 0) 
+                    unit: values.currency, 
+                    value: parseFloat(values.pricing_type === "reccuring" ? values.recurring_price : 0) 
                   }
                 }
               },
@@ -100,8 +101,8 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
                 priceType: "nonRecurring", 
                 price: { 
                   taxIncludedAmount: { 
-                    unit: "USD", 
-                    value: parseFloat(values.non_recurring_price || 0) 
+                    unit: values.currency, 
+                    value: parseFloat(values.pricing_type === "one_time" ? values.non_recurring_price : 0) 
                   }
                 }
               }
@@ -161,7 +162,6 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
 
 
   const handleCancel = () => setOpen(false);
-  
   return (
     <Modal
       title={isEditMode ? 'Edit Record ' : 'Add New Record'}
@@ -220,71 +220,95 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           />
         </div>
         </div>
+        
+        
 
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-8 gap-3">
           <div className="col-span-2">
-            <label className="block font-medium mb-1">Recurring Price</label>
-            <input
-              type="number"
-              name="recurring_price"
-              value={formik.values.recurring_price}
+            <label className="block font-medium mb-1">Pricing type</label>
+            <select
+              id="pricing_type"
+              name="pricing_type"
+              value={formik.values.pricing_type}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               disabled={formik.isSubmitting}
-              className="w-full border rounded px-3 py-2"
-              placeholder='USD'
-              step="0.01"
-            />
+              className="w-full border rounded px-3 py-2.5"
+            >
+              <option value="reccuring">Reccuring</option>
+              <option value="one_time">One time</option>
+            </select>
           </div>
           <div className="col-span-2">
-            <label className="block font-medium mb-1">Non Recurring Price</label>
-            <input
-              type="number"
-              name="non_recurring_price"
-              value={formik.values.non_recurring_price}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              disabled={formik.isSubmitting}
-              className="w-full border rounded px-3 py-2"
-              placeholder='USD'
-              step="0.01"
+            <label className="block font-medium mb-1"> Price</label>
+            {
+              formik.values.pricing_type === "reccuring" ? <input
+                type="number"
+                name="recurring_price"
+                value={formik.values.recurring_price}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                disabled={formik.isSubmitting}
+                className="w-full border rounded px-3 py-2"
+                placeholder={formik.values.currency}
+                step="0.01"
+                min="0"
+              /> : <input
+                type="number"
+                name="non_recurring_price"
+                value={formik.values.non_recurring_price}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                disabled={formik.isSubmitting}
+                className="w-full border rounded px-3 py-2"
+                placeholder='USD'
+                step="0.01"
+                min="0"
             />
+            }
+            
           </div>
-          <div>
+          <div className="col-span-2">
             <label className="block font-medium mb-1">Currency</label>
-            <input
-            className="w-full border rounded px-3 py-2"
-              type="string"
-              readOnly
-              disabled
-              placeholder='USD'
-            />
+
+            <select
+              id="currency"
+              name="currency"
+              value={formik.values.currency}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              disabled={formik.isSubmitting}
+              className="w-full border rounded px-3 py-2.5"
+            >
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+            </select>
+          </div>
+
+          <div className="col-span-2">
+            <label className="block font-medium mb-1">Contract Term:</label>
+              <select
+                id="po_term"
+                name="po_term"
+                value={formik.values.po_term}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                disabled={formik.isSubmitting}
+                className="w-full border rounded px-3 py-2.5"
+              >
+                <option value="not_applicable">Not Applicable</option>
+                <option value="12_months">12 Months</option>
+                <option value="24_months">24 Months</option>
+                <option value="36_months">36 Months</option>
+                <option value="48_months">48 Months</option>
+                <option value="60_months">60 Months</option>
+                
+              </select>
           </div>
         </div>
 
           <div className="grid grid-cols-3 gap-4">
-        {/* Product Offering Term */}
-        <div>
-        <label className="block font-medium mb-1">Contract Term:</label>
-        <select
-          id="po_term"
-          name="po_term"
-          value={formik.values.po_term}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          disabled={formik.isSubmitting}
-          className="w-full border rounded px-3 py-2"
-        >
-          <option value="not_applicable">Not Applicable</option>
-          <option value="12_months">12 Months</option>
-          <option value="24_months">24 Months</option>
-          <option value="36_months">36 Months</option>
-          <option value="48_months">48 Months</option>
-          <option value="60_months">60 Months</option>
-          
-        </select>
-      </div>
-
        {/* {Product Specification} */}
        <div className="col-span-2">
         <label className="block font-medium mb-1">Product Specification:</label>
@@ -311,62 +335,34 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
         <p className="text-red-500 text-sm mt-1">{formik.errors.p_spec}</p>
      )}
       </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-       {/* {Product Offering Category} */}
-       <div>
+      <div>
         <label className="block font-medium mb-1">Category:</label>
-        <select
+        <Select
           id="category"
           name="category"
-          value={formik.values.category}
-          onChange={formik.handleChange}
+          showSearch
+          placeholder="Select a Category"
+          value={formik.values.category || undefined} // Use undefined instead of empty string
+          onChange={(value) => formik.setFieldValue('category', value)}
           onBlur={formik.handleBlur}
+          options={options.categories
+            .filter(cat => cat.status === "published")
+            .map(cat => ({
+              value: cat._id,
+              label: cat.name
+            }))
+          }
           disabled={formik.isSubmitting || isEditMode}
           className="w-full border rounded px-3 py-2 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500"
-        >
-          <option value="">Select a Category</option>
-          {/* Map over the categories passed via props */}
-          {options.categories.map(cat => ( cat.status ==="published" ?
-                <option key={cat._id} value={cat._id}> {/* Use correct ID field */}
-                    {cat.name} {/* Use correct Name field */}
-                </option> : ""
-                ))}
-          </select>
+          filterOption={false}
+          onSearch={(value) => setCatSearchTerm(value)}
+        />
            {/* Add validation message display */}
      {formik.touched.category && formik.errors.category && (
         <p className="text-red-500 text-sm mt-1">{formik.errors.category}</p>
      )}
       </div>
-
-      {/* {Distribution Channel} */}
-      <div>
-        <label className="block font-medium mb-1">Channel:</label>
-        <select
-          id="channel"
-          name="channel"
-          value={formik.values.channel}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          disabled={formik.isSubmitting || isEditMode}
-          
-          className="w-full border rounded px-3 py-2 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500"
-          
-        >
-          <option value="">Select the Web Channel</option>
-          {/* Map over the channels passed via props */}
-          {options.channels.map(channel => ( channel.name ==="Web"?
-                <option key={channel.id || channel.sys_id} value={channel.id || channel.sys_id}> {/* Use correct ID field */}
-                    {channel.name} {/* Use correct Name field */}
-                </option> : ""
-                ))}
-          </select>
-           {/* Add validation message display */}
-     {formik.touched.channel && formik.errors.channel && (
-        <p className="text-red-500 text-sm mt-1">{formik.errors.channel}</p>
-     )}
       </div>
-</div>
         {/* Description */}
         <div>
           <label className="block font-medium mb-1">Description</label>
@@ -407,32 +403,32 @@ function ProductOfferingForm({ open, setOpen, initialData = null, options=null, 
           <button
             type="submit"
             disabled={formik.isSubmitting}
-            className="overflow-hidden relative w-32 h-10 bg-cyan-700 text-white border-none rounded-md text-xl font-bold cursor-pointer z-10 group disabled:opacity-50 disabled:cursor-not-allowed"
+            className="overflow-hidden relative w-50 h-10 bg-cyan-700 text-white border-none rounded-md text-xl font-bold cursor-pointer z-10 group flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {formik.isSubmitting ? 'Please wait...' : isEditMode ? 'Update' : 'Create'}
 
             {/* Conditional yellow bubbles for edit, green bubbles for create */}
             <span
-              className={`absolute w-36 h-32 -top-8 -left-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-bottom ${isEditMode
+              className={`absolute w-56 h-32 -top-8 -left-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-bottom ${isEditMode
                 ? 'bg-yellow-200 group-hover:duration-500 duration-1000'
                 : 'bg-green-200 group-hover:duration-500 duration-1000'
                 }`}
             ></span>
             <span
-              className={`absolute w-36 h-32 -top-8 -left-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-bottom ${isEditMode
+              className={`absolute w-56 h-32 -top-8 -left-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-bottom ${isEditMode
                 ? 'bg-yellow-400 group-hover:duration-700 duration-700'
                 : 'bg-green-400 group-hover:duration-700 duration-700'
                 }`}
             ></span>
             <span
-              className={`absolute w-36 h-32 -top-8 -left-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-bottom ${isEditMode
+              className={`absolute w-56 h-32 -top-8 -left-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-bottom ${isEditMode
                 ? 'bg-yellow-600 group-hover:duration-1000 duration-500'
                 : 'bg-green-600 group-hover:duration-1000 duration-500'
                 }`}
             ></span>
 
             {!formik.isSubmitting && (
-              <span className="group-hover:opacity-100 group-hover:duration-1000 duration-100 opacity-0 absolute top-1.25 left-7 z-10">
+              <span className="group-hover:opacity-100 group-hover:duration-1000 duration-100 opacity-0 absolute text-center z-10">
                 Product Offering
               </span>
             )}

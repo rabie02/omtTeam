@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const opportunitySchema = new mongoose.Schema({
   sys_id: {
     type: String,
-    required: true,
     unique: true,
     index: true
   },

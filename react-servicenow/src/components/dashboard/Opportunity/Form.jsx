@@ -12,11 +12,12 @@ import { formatDateForInput } from '@/utils/formatDateForInput.js';
 import {
   getSalesCycleTypes,
   getStages,
-  getAccounts,
   getUnitOfMeasures,
   workflow,
-  updateOpportunityPricing
+  updateOpportunityPricing,
+  resetError
 } from '../../../features/servicenow/opportunity/opportunitySlice';
+import {getAccount} from '../../../features/servicenow/account/accountSlice';
 import { getPriceList } from '../../../features/servicenow/price-list/priceListSlice';
 import { getByPriceList } from '../../../features/servicenow/product-offering-price/productOfferingPriceSlice';
 import {getall as getProductOfferings} from '../../../features/servicenow/product-offering/productOfferingSlice';
@@ -27,7 +28,11 @@ const { Step } = Steps;
 
 function OpportunityForm({ open, setOpen, dispatch, initialData=null }) {
 try{
+  dispatch(resetError());
   const [editMode, setEditMode] = useState(Boolean(initialData)); 
+  const [offSearchTerm, setOffSearchTerm] = useState(''); 
+  const [pLSearchTerm, setPLSearchTerm] = useState('');
+  const [accSearchTerm, setAccSearchTerm] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
   const FORM_STORAGE_KEY = 'opportunityFormData'
   // Get required data from Redux store
@@ -47,10 +52,10 @@ useEffect(() => {
   const fetchBaseData = async () => {
     await dispatch(getSalesCycleTypes());
     await dispatch(getStages());
-    await dispatch(getAccounts());
+    await dispatch(getAccount({ page: 1, limit: 99, q:accSearchTerm }));
     await dispatch(getUnitOfMeasures());
-    await dispatch(getProductOfferings({ page: 1, limit: 6 }));
-    await dispatch(getPriceList({ page: 1, limit: 1000 }));
+    await dispatch(getProductOfferings({ page: 1, limit: 99, q:offSearchTerm }));
+    await dispatch(getPriceList({ page: 1, limit: 99, q:pLSearchTerm }));
   };
 
   // Only fetch in edit mode
@@ -63,7 +68,20 @@ useEffect(() => {
   fetchBaseData();
   fetchEditModeData();
 
-}, [dispatch, editMode, initialData?.price_list?._id]); // Proper dependencies
+}, [dispatch, editMode, initialData?.price_list?._id,]); // Proper dependencies
+
+useEffect( () => {
+   dispatch(getProductOfferings({ page: 1, limit: 99, q:offSearchTerm }));
+}, [dispatch, offSearchTerm]);
+
+useEffect( () => {
+   dispatch(getPriceList({ page: 1, limit: 99, q:pLSearchTerm }));
+}, [dispatch, pLSearchTerm]);
+
+useEffect( () => {
+   dispatch(getAccount({ page: 1, limit: 99, q:accSearchTerm }));
+}, [dispatch, accSearchTerm]);
+
 
 
   // Get initial values from localStorage or use defaults
@@ -84,7 +102,7 @@ useEffect(() => {
         term_month: initialData?.term_month||'12',
         sales_cycle_type: initialData?.sales_cycle_type._id||'',
         probability: initialData?.probability||'50',
-        stage: initialData?.stage._id||'',
+        stage: initialData?.stage._id||'6834b29a3582eabbafc8bec0',
         industry: "telecommunications",
         account: initialData?.account._id||''
       },
@@ -92,7 +110,7 @@ useEffect(() => {
         name: '',
         currency: 'USD',
         state: 'published',
-        start_date: formatDateForInput(new Date("01-01-2010")),
+        start_date: formatDateForInput(new Date("01-01-2025")),
         end_date: '',
         description: ''
       },
@@ -104,8 +122,8 @@ useEffect(() => {
         priceType: 'recurring',
         recurringChargePeriodType: 'monthly',
         validFor: {
-          startDateTime: formatDateForInput(new Date()),
-          endDateTime: ''
+          startDateTime: formatDateForInput(new Date(new Date().getTime() - 86400000)),
+          endDateTime: formatDateForInput(new Date(new Date().getTime() + 86400000*29))
         },
         term_month: '',
         quantity: ''
@@ -132,8 +150,11 @@ useEffect(() => {
             }
           ),
         sales_cycle_type: Yup.string().required('Sales cycle type is required'),
-        stage: Yup.string().required('Stage is required'),
-        account: Yup.string(),
+        account: Yup.string().when('sales_cycle_type', {
+          is: (value) => value !== '6834b3513582eabbafc8bec7',
+          then: () => Yup.string().required('Account is required'),
+          otherwise: () => Yup.string().nullable()
+        }),
         probability: Yup.number().min(0).max(100),
       }),
       createNewPriceList: Yup.boolean().required(),
@@ -294,9 +315,13 @@ useEffect(() => {
               .required('Price type is required'),
           }),
         ),
-      account: Yup.object().shape({
-        name: Yup.string(),
-        email: Yup.string(),
+      account: Yup.object().when('opportunity.sales_cycle_type', {
+        is: (value) => value === '6834b3513582eabbafc8bec7',
+        then: () => Yup.object().shape({
+          name: Yup.string().required('Account name is required'),
+          email: Yup.string().email('Invalid email').required('Email is required'),
+        }),
+        otherwise: () => Yup.object().nullable()
       }),
     });
   }, [priceLists, productOfferings]);
@@ -313,6 +338,7 @@ useEffect(() => {
               description: 'Opportunity has been updated successfully',
             });
         }else{
+          values.opportunity.stage = "6834b29a3582eabbafc8bec0";
           await dispatch(workflow(values));
           notification.success({
             message: 'Opportunity Created',
@@ -370,7 +396,7 @@ useEffect(() => {
       formik.setFieldTouched('opportunity.short_description', true);
       formik.setFieldTouched('opportunity.estimated_closed_date', true);
       formik.setFieldTouched('opportunity.sales_cycle_type', true);
-      formik.setFieldTouched('opportunity.stage', true);
+      // formik.setFieldTouched('opportunity.stage', true);
       formik.setFieldTouched('opportunity.account', true);
       formik.setFieldTouched('opportunity.probability', true);
       
@@ -478,7 +504,7 @@ useEffect(() => {
             term_month: true,
             sales_cycle_type: true,
             probability: true,
-            stage: true,
+            //stage: true,
             industry: true,
             account: true
           },
@@ -538,10 +564,10 @@ useEffect(() => {
 
       <form onSubmit={(e) => { e.preventDefault() }} className="space-y-4">
         {currentStep === 0 && (
-          <OpportunityStep1 formik={formik} editMode={editMode} />
+          <OpportunityStep1 formik={formik} editMode={editMode} setAccSearchTerm={setAccSearchTerm} />
         )}
         {currentStep === 1 && (
-          <OpportunityStep2 formik={formik} editMode={editMode} />
+          <OpportunityStep2 formik={formik} editMode={editMode} setPLSearchTerm={setPLSearchTerm}/>
         )}
         {currentStep === 2 && (
           <OpportunityStep3 
@@ -549,6 +575,7 @@ useEffect(() => {
             editMode={editMode}
             lineItems={editMode && initialData.line_items}
             pops={productOfferingPrices.productOfferingPrices}
+            setOffSearchTerm={setOffSearchTerm}
           />
         )}
         {currentStep === 3 && (

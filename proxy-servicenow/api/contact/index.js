@@ -3,10 +3,15 @@ const router = express.Router();
 
 // Import controllers
 const create = require('../../controllers/contact/create');
-const getByAccount = require('../../controllers/contact/getByAccount');
+const update = require('../../controllers/contact/update');
+const deleteContact = require('../../controllers/contact/delete');
+const getAll = require('../../controllers/contact/getall');
+
 
 //routes
 router.post('/contact', create)
-router.get('/contact/account/:id', getByAccount)
+router.patch('/contact/:id',update);
+router.delete('/contact/:id',deleteContact);
+router.get('/contact', getAll);
 
 module.exports = router;

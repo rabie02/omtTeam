@@ -1,9 +1,10 @@
 const axios = require('axios');
-const jwt = require('jsonwebtoken');
 const ProductOffering = require('../../models/ProductOffering');
 const handleMongoError = require('../../utils/handleMongoError');
 const ProductOfferingCategory = require('../../models/ProductOfferingCategory');
 const ProductSpecification = require ('../../models/productSpecification');
+const snConnection = require('../../utils/servicenowConnection');
+const mongoose = require('mongoose');
 
 // Create Product Offering 
 module.exports = async (req, res) => {
@@ -31,18 +32,9 @@ module.exports = async (req, res) => {
             return res.status(404).json({ error: 'prodSpec not found' });
         }
 
-        
-
-        // Authentication and Authorization
-        const authHeader = req.headers.authorization;
-        if (!authHeader) return res.status(401).json({ error: 'Authorization header missing' });
-        
-        const [bearer, token] = authHeader.split(' ');
-        if (bearer !== 'Bearer' || !token) {
-            return res.status(401).json({ error: 'Invalid authorization format' });
-        }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const newId = new mongoose.Types.ObjectId();
+        //initialize servicenow connection
+        const connection = snConnection.getConnection(req.user.sn_access_token);
 
         // Prepare ServiceNow payload
         const snPayload = {
@@ -64,7 +56,8 @@ module.exports = async (req, res) => {
                 name: req.body.category.name
             },
             lifecycleStatus: req.body.lifecycleStatus,
-            status: req.body.status
+            status: req.body.status,
+            externalId: newId
         };
 
         console.log(JSON.stringify(snPayload,null,2))
@@ -72,14 +65,9 @@ module.exports = async (req, res) => {
 
         // ServiceNow API Call
         const snResponse = await axios.post(
-            `${process.env.SERVICE_NOW_URL}/api/sn_tmf_api/catalogmanagement/productOffering`,
+            `${connection.baseURL}/api/sn_tmf_api/catalogmanagement/productOffering`,
             snPayload,
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${decoded.sn_access_token}`
-                }
-            }
+            { headers: connection.headers }
         );
 
         // MongoDB Create
@@ -88,6 +76,7 @@ module.exports = async (req, res) => {
         try {
             const snRecord = snResponse.data;
             mongoDoc = new ProductOffering({    
+                _id: newId,
                 ...snRecord,
                 category: req.body.category._id,
                 productSpecification: req.body.productSpecification._id,
@@ -97,6 +86,8 @@ module.exports = async (req, res) => {
 
             console.log(JSON.stringify(mongoDoc,null,2))
             
+            //patch external_id(mongoDB id) to serviceNow
+           
             // Populate the created document
             populatedDoc = await ProductOffering.findById(mongoDoc._id)
                 .populate('productSpecification')

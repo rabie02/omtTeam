@@ -14,22 +14,25 @@ module.exports = async (req, res) => {
     
     const servicenowId = account.sys_id;
     
-    // Create basic auth header using ServiceNow credentials from config
-    const auth = {
-      username: config.serviceNow.user,
-      password: config.serviceNow.password
+    // Prepare update data for ServiceNow
+    const snUpdateData = {
+      ...req.body,
+      external_id: mongoId.toString() // Add MongoDB ID to external_id
     };
     
     // Update in ServiceNow using basic auth
     const snResponse = await axios.patch(
       `${config.serviceNow.url}/api/now/table/customer_account/${servicenowId}`,
-      req.body,
+      snUpdateData,
       {
         headers: { 
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        auth // This will add Basic Auth header
+        auth: {
+          username: config.serviceNow.user,
+          password: config.serviceNow.password
+        }
       }
     );
     

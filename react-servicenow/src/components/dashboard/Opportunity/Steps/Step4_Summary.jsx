@@ -15,9 +15,10 @@ const OpportunityStep4 = ({ formik, pdfRef }) => {
   } = formik.values;
 
 
-  const { unitOfMeasures, accounts } = useSelector(
+  const { unitOfMeasures } = useSelector(
     (state) =>   state.opportunity
   );
+  const {data: accounts} = useSelector((state)=> state.account);
   const { priceLists } = useSelector((state) => state.priceList);
   const { data: allOfferings } = useSelector((state) => state.productOffering);
   const getSelectedPriceList = () => {
@@ -38,7 +39,7 @@ const OpportunityStep4 = ({ formik, pdfRef }) => {
   const currentPriceList = getSelectedPriceList();
 
   const getAccountName = (id) => {
-     const account = accounts.find(u => u._id === id);
+    const account = accounts.find(u => u._id === id);
     return account ? account.name : false;
   }
 

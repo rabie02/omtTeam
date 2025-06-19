@@ -56,7 +56,7 @@ const FormInput = ({ formik, name, label, type = 'text', inputRef, autoFocus, ..
         value={value}
         onChange={formik.handleChange}
         onBlur={formik.handleBlur}
-        className={`w-full border rounded px-3 py-2 ${error ? 'border-red-500' : 'border-gray-300'} disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500`}
+        className={`w-full border rounded px-3 py-2 ${touched && error ? 'border-red-500' : 'border-gray-300'} disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500`}
         ref={inputRef}
         autoFocus={autoFocus}
         {...props}

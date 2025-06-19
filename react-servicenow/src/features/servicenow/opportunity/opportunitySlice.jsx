@@ -127,15 +127,17 @@ export const getStages = createAsyncThunk(
   }
 );
 
-export const getAccounts = createAsyncThunk(
-  'opportunity/getAccounts',
-  async (_, { rejectWithValue }) => {
+export const updateStage = createAsyncThunk(
+  'opportunity/updateStage',
+  async (stageBody, { rejectWithValue }) => {
     try {
-      const response = await axios.get(
-        `${backendUrl}/api/account`,
+      console.log(stageBody);
+      const response = await axios.patch(
+        `${backendUrl}/api/opportunity-stage/${stageBody.id}`,
+        stageBody,
         { headers: getHeaders() }
       );
-      return response.data.result;
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -157,7 +159,6 @@ export const getUnitOfMeasures = createAsyncThunk(
     }
   }
 );
-
 
 export const generateContract = createAsyncThunk(
   'opportunity/generateContract',
@@ -268,7 +269,7 @@ const opportunitySlice = createSlice({
         state.error = action.payload?.error || 'Failed to fetch opportunities';
       })
 
-      // Update Opportunity Status
+      // Update Opportunity Pricing
       .addCase(updateOpportunityPricing.pending, (state) => {
         state.loading = true;
       })
@@ -283,7 +284,25 @@ const opportunitySlice = createSlice({
       })
       .addCase(updateOpportunityPricing.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.error?.message || 'Failed to update opportunity status';
+        state.error = action.payload?.error?.message || 'Failed to update opportunity pricings';
+      })
+
+      // Update Opportunity Stage
+      .addCase(updateStage.pending, (state) => {
+        state.partiallyLoading = true;
+      })
+      .addCase(updateStage.fulfilled, (state, action) => {
+        state.partiallyLoading = false;
+        const index = state.opportunities.findIndex(
+          opp => opp._id === action.payload.data._id
+        );
+        if (index !== -1) {
+          state.opportunities[index] = action.payload.data;
+        }
+      })
+      .addCase(updateStage.rejected, (state, action) => {
+        state.partiallyLoading = false;
+        state.error = action.payload?.error?.message || 'Failed to update opportunity stage';
       })
 
       // Delete Opportunity
@@ -325,19 +344,6 @@ const opportunitySlice = createSlice({
       .addCase(getStages.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.error?.message || 'Failed to fetch stages';
-      })
-
-      // Get Accounts
-      .addCase(getAccounts.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(getAccounts.fulfilled, (state, action) => {
-        state.loading = false;
-        state.accounts = action.payload;
-      })
-      .addCase(getAccounts.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload?.error?.message || 'Failed to fetch accounts';
       })
 
       // Get Unit of Measures

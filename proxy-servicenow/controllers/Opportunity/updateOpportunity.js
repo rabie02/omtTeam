@@ -4,10 +4,12 @@ const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 const Account = require('../../models/account');
 const PriceList = require('../../models/priceList');
+const SCT = require('../../models/salesCycleType');
+const Stage = require('../../models/stage');
 
 async function updateOpportunityCore(req) {
   const { id } = req.params;
-  const { account, price_list, ...updateData } = req.body;
+  const { account, price_list, stage, sales_cycle_type, ...updateData } = req.body;
   
   // Find opportunity in MongoDB
   const opportunity = await Opportunity.findById(id);
@@ -33,6 +35,24 @@ async function updateOpportunityCore(req) {
     updateData.price_list = priceListDoc.sys_id;
   }
 
+  // Get stage sys_id if stage is provided 
+  if(stage){
+    stageDoc = await Stage.findById(stage);
+    if (!stageDoc) {
+      return res.status(404).json({ error: `PriceList not found with id: ${stage}` });
+    }
+    updateData.stage = stageDoc.sys_id;
+  }
+
+  // Get Sales Cycle Type sys_id if sales_cycle_type is provided 
+  if(sales_cycle_type){
+    SCTDoc = await SCT.findById(sales_cycle_type);
+    if (!SCTDoc) {
+      return res.status(404).json({ error: `PriceList not found with id: ${SCT}` });
+    }
+    updateData.sales_cycle_type = SCTDoc.sys_id;
+  }
+
   // Update in ServiceNow
   const connection = snConnection.getConnection(req.user.sn_access_token);
   const snResponse = await axios.patch(
@@ -45,7 +65,8 @@ async function updateOpportunityCore(req) {
   const mongoUpdate = { ...updateData };
   if (account) mongoUpdate.account = account;
   if (price_list) mongoUpdate.price_list = price_list;
-
+  if (sales_cycle_type) mongoUpdate.sales_cycle_type = sales_cycle_type;
+  if (stage) mongoUpdate.stage = stage;
   // Update in MongoDB
   const updatedOpportunity = await Opportunity.findByIdAndUpdate(
     id,

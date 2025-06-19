@@ -44,22 +44,13 @@ function AccountInfoForm({ open, setOpen, initialData = {} }) {
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />
         </div>
-        
-        {/* Industry */}
-        <div>
-          <label className="block font-medium mb-1">Industry</label>
-          <input
-            value={initialData?.industry || 'N/A'}
-            disabled
-            className="w-full border rounded px-3 py-2 bg-gray-100"
-          />
-        </div>
+      
 
         {/* Website */}
         <div className="col-span-2">
-          <label className="block font-medium mb-1">Website</label>
+          <label className="block font-medium mb-1">Active</label>
           <input
-            value={initialData?.website || 'N/A'}
+            value={initialData?.status || 'N/A'}
             disabled
             className="w-full border rounded px-3 py-2 bg-gray-100"
           />

@@ -285,28 +285,25 @@ const handleViewCases = async () => {
     }
   };
   const handleListAllSpecs = async () => {
-    try {
-      const response = await axios.get(`${SN_CONFIG.baseURL}${SN_CONFIG.endpoints.searchSpecs}`, {
-        auth: SN_CONFIG.auth,
-        params: {
-          sysparm_query: "status=published",
-          sysparm_limit: 50,
-          sysparm_fields: 'name,number,specification_type,display_name,description,status'
-        }
-      });
-  
-      const specs = response.data.result || [];
-  
-      return {
-        text: specs.length ? "Voici les spécifications techniques publiées :" : "Aucune spécification trouvée.",
-        data: specs,
-        intent: 'list_specs'
-      };
-    } catch (error) {
-      console.error("Erreur lors de la récupération des spécifications :", error);
-      return handleError("Erreur lors du chargement des spécifications");
-    }
-  };
+  try {
+    const access_token = localStorage.getItem('access_token');
+    const response = await axios.get(`${backendUrl}/api/product-spec`, {
+      headers: { authorization: access_token }
+    });
+
+    const specs = response.data || [];
+
+    return {
+      text: specs.length ? "Voici les spécifications techniques publiées :" : "Aucune spécification trouvée.",
+      data: specs,
+      intent: 'list_specs'
+    };
+  } catch (error) {
+    console.error("Erreur lors de la récupération des spécifications :", error);
+    return handleError("Erreur lors du chargement des spécifications");
+  }
+};
+
   
   const handleRequestQuote = () => {
     setCurrentStep('quote_product_selection');
@@ -1342,27 +1339,37 @@ const formatCases = (cases) => {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="chatbot-input">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Tapez votre message ici..."
-              disabled={loading}
-            />
-            <button 
-              onClick={handleSendMessage} 
-              disabled={loading || !input.trim()}
-              className="send-button"
-            >
-              {loading ? (
-                <span className="spinner"></span>
-              ) : (
-                <span>Envoyer</span>
-              )}
-            </button>
-          </div>
+         <div className="chatbot-input">
+  <input
+    type="text"
+    value={input}
+    onChange={(e) => setInput(e.target.value)}
+    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+    placeholder="Tapez votre message ici..."
+    disabled={loading}
+  />
+
+  <button
+    onClick={() => {
+      setInput('menu principal');
+      handleSendMessage();
+    }}
+    className="send-button"
+    style={{ marginRight: "0.5rem" }} // ✅ ajoute un peu d’espace
+    disabled={loading}
+  >
+    Menu principal
+  </button>
+
+  <button
+    onClick={handleSendMessage}
+    disabled={loading || !input.trim()}
+    className="send-button"
+  >
+    {loading ? <span className="spinner" /> : <span>Envoyer</span>}
+  </button>
+</div>
+
         </div>
       )}
       {showHelp && <HelpPopup />}
@@ -1781,7 +1788,7 @@ const formatCases = (cases) => {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 6rem;
+    min-width: 4rem;
     position: relative;
     overflow: hidden;
   }

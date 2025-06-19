@@ -2,7 +2,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { createQuote } from '../../../features/servicenow/quote/quotaSlice';
 import { notification, Tooltip, Popconfirm } from 'antd';
 
-const CreateQuoteButton = ({ opportunityId }) => {
+const CreateQuoteButton = ({ opportunityId, disabled }) => {
   const dispatch = useDispatch();
   const { createLoading } = useSelector((state) => state.quotes);
 
@@ -29,11 +29,11 @@ const CreateQuoteButton = ({ opportunityId }) => {
         onConfirm={handleCreate}
         okText="Yes"
         cancelText="No"
-        disabled={createLoading}
+        disabled={createLoading || disabled}
       >
-        <Tooltip title="Create Quote">
-          <button disabled={createLoading} className='group'>
-            <i className="ri-file-edit-line text-gray-500 text-2xl group-hover:text-green-600"></i>
+        <Tooltip title={disabled ? `Must win the opportunity!`:`Create Quote`}>
+          <button disabled={createLoading || disabled} className='group'>
+            <i className="ri-file-edit-line text-gray-500 text-2xl group-hover:text-green-600 group-disabled:text-gray-200"></i>
           </button>
         </Tooltip>
       </Popconfirm>

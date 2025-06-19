@@ -12,8 +12,8 @@ async function generateContract(req, res) {
     const op_id = req.params.id;
 
     const quote = await getLatestQuoteByOpportunity(req);
-    
-    if(!quote) {return res.status(404).json({ error: 'Quote not found, you must generate a quote!' });  }
+
+    if(!quote) {return res.status(404).json({ error: 'Quote not found, you must generate a quote or approve one!' });  }
 
     const opObjectId = new mongoose.Types.ObjectId(op_id);
     
