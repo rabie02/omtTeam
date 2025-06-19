@@ -29,13 +29,12 @@ const syncFromServiceNow = async (req, res) => {
 
     console.log(`Product specification synchronized: ${specData.tmf_data.displayName}`);
     const mongoDoc = await ProductSpecification.findOne({ sys_id: specData.sys_id }).lean();
-    console.log(mongoDoc);
+
     // 2. PATCH externalId to ServiceNow if created (new upsert)
     if (mongoDoc._id) {
-      const connection = snConnection.getConnection(req.user?.sn_access_token); // Assure toi que token existe
+      const connection = snConnection.getBasicConnection(); // Assure toi que token existe
       const mongoId = mongoDoc._id.toString();
       const path = `/api/now/table/sn_prd_pm_product_specification/${specData.sys_id}`;
-      console.log(mongoId)
       await externalIdHelper(connection, path, mongoId);
       console.log(`✅ externalId (${mongoId}) patched to ServiceNow`);
     }
