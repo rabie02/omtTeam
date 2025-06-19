@@ -110,10 +110,10 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
                     <div className="flex items-center">
                         {/* Status Change Button - Hidden for archived */}
                         {
-                            <Tooltip title={`${action} Category`}>
+                            <Tooltip title={`${action} Catalog`}>
                                 <Popconfirm
-                                    title={`${action} Category`}
-                                    description={`Are you sure to ${action.toLowerCase()} this category?`}
+                                    title={`${action} Catalog`}
+                                    description={`Are you sure to ${action.toLowerCase()} this catalog?`}
                                     onConfirm={() => handleUpdateStatus(record._id, newStatus)}
                                     disabled={record.status === "archived"}
                                     okText="Yes"
@@ -129,7 +129,7 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
 
 
 
-                        <Tooltip title="Edit This Category">
+                        <Tooltip title="Edit This Catalog">
                             <button
                                 className="mx-2 text-gray-500 hover:text-yellow-400"
                                 onClick={() => changeData(record)}
@@ -140,10 +140,10 @@ function CatalogTable({ setData, setOpen, searchQuery }) {
 
 
                         {/* Delete Button - Always shown */}
-                        <Tooltip title="Delete This Category">
+                        <Tooltip title="Delete This Catalog">
                             <Popconfirm
-                                title="Delete Category"
-                                description="Are you sure to delete this category?"
+                                title="Delete Catalog"
+                                description="Are you sure to delete this catalog?"
                                 onConfirm={() => handleDelete(record._id)}
                                 okText="Yes"
                                 cancelText="No"

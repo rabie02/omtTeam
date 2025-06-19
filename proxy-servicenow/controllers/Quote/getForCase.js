@@ -1,15 +1,9 @@
 const Quote = require('../../models/quote');
+const dayjs = require('dayjs'); // Make sure to install if not already: npm install dayjs
 
 module.exports = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 6;
-    const skip = (page - 1) * limit;
-    const searchQuery = req.query.q;
-
-    // Build aggregation pipeline
     const pipeline = [
-      // Opportunity lookup with null preservation
       {
         $lookup: {
           from: 'opportunities',
@@ -19,8 +13,7 @@ module.exports = async (req, res) => {
         }
       },
       { $unwind: { path: '$opportunity', preserveNullAndEmptyArrays: true } },
-      
-      // Contracts lookup
+
       {
         $lookup: {
           from: 'contracts',
@@ -29,8 +22,7 @@ module.exports = async (req, res) => {
           as: 'contracts'
         }
       },
-      
-      // Account lookup with nested population
+
       {
         $lookup: {
           from: 'accounts',
@@ -38,26 +30,27 @@ module.exports = async (req, res) => {
           foreignField: '_id',
           as: 'account',
           pipeline: [
-            { $lookup: {
+            {
+              $lookup: {
                 from: 'contacts',
                 localField: '_id',
                 foreignField: 'account',
-                as: 'contacts',
-              } 
+                as: 'contacts'
+              }
             },
-            { $lookup: {
+            {
+              $lookup: {
                 from: 'locations',
                 localField: '_id',
                 foreignField: 'account',
                 as: 'locations'
               }
-            },
+            }
           ]
         }
       },
       { $unwind: { path: '$account', preserveNullAndEmptyArrays: true } },
-      
-      // Price list lookup
+
       {
         $lookup: {
           from: 'price_lists',
@@ -67,15 +60,19 @@ module.exports = async (req, res) => {
         }
       },
       { $unwind: { path: '$price_list', preserveNullAndEmptyArrays: true } },
-      
-      // Quote lines lookup with product offerings
+
       {
         $lookup: {
           from: 'quotelines',
           let: { quoteId: '$_id' },
           pipeline: [
-            { $match: { $expr: { $eq: ['$quote', '$$quoteId'] } } },
-            { $lookup: {
+            {
+              $match: {
+                $expr: { $eq: ['$quote', '$$quoteId'] }
+              }
+            },
+            {
+              $lookup: {
                 from: 'productofferings',
                 localField: 'product_offering',
                 foreignField: '_id',
@@ -83,7 +80,8 @@ module.exports = async (req, res) => {
               }
             },
             { $unwind: { path: '$product_offering', preserveNullAndEmptyArrays: true } },
-            { $lookup: {
+            {
+              $lookup: {
                 from: 'price_lists',
                 localField: 'price_list',
                 foreignField: '_id',
@@ -97,41 +95,38 @@ module.exports = async (req, res) => {
       }
     ];
 
-    // Add search AFTER all lookups (fields must be available)
-    if (searchQuery) {
-      const searchRegex = new RegExp(searchQuery, 'i');
-      pipeline.push({
-        $match: {
-          $or: [
-            { 'account.name': searchRegex },
-            { 'opportunity.name': searchRegex },
-            { assigned_to: searchRegex },
-            { short_description: searchRegex },
-            { $expr: { $regexMatch: { input: { $toString: "$version" }, regex: searchRegex } } },
-            { $expr: { $regexMatch: { input: { $toString: "$number" }, regex: searchRegex } } }
-          ]
-        }
-      });
-    }
+    const quotes = await Quote.aggregate(pipeline);
 
-    // Add pagination
-    pipeline.push({
-      $facet: {
-        data: [{ $skip: skip }, { $limit: limit }],
-        total: [{ $count: 'count' }]
-      }
+    // Flatten and transform all quote lines
+    const transformed = quotes.flatMap((quote) => {
+      const orderId = quote.sys_id;
+      const locationId = quote.account?.locations?.[0]?.sys_id || null;
+      const contactId = quote.account?.contacts?.find(c => c.isPrimaryContact)?.sys_id || quote.account?.contacts?.[0]?.sys_id || null;
+      const accountId = quote.account?.sys_id || null;
+      const currency = quote.currency || 'USD';
+
+      // const now = dayjs();
+      // const term = quote.opportunity?.term_month || 12;
+      // const startDate = now.toISOString();
+      // const endDate = now.add(term, 'month').toISOString();
+
+      return quote.quote_lines.map((line) => ({
+        orderId,
+        locationId,
+        productOfferingId: line.product_offering?.sys_id || null,
+        productSpecificationId: line.product_offering?.productSpecification || null,
+        quantity: Number(line.quantity) || 1,
+        currencyIsoCode: currency,
+        action: line.action || 'add',
+        account: accountId,
+        contact: contactId,
+        startDate: quote.subscription_start_date,
+        endDate: quote.subscription_end_date,
+        characteristics: line.product_offering?.prodSpecCharValueUse || []
+      }));
     });
 
-    const [result] = await Quote.aggregate(pipeline);
-    const data = result.data;
-    const total = result.total[0]?.count || 0;
-
-    res.json({
-      data,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit)
-    });
+    res.json(transformed);
   } catch (err) {
     res.status(500).json({
       error: err.message,
