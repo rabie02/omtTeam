@@ -60,14 +60,21 @@ function AccountTable({ setData, setOpen, searchQuery }) {
         {
             title: 'Status',
             key: 'status',
-            render: (_, record) => (
-                <span className={`px-2 py-1 capitalize rounded ${record.status === 'active'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-700'
+            render: (_, record) => {
+                const status = record.status?.toLowerCase();
+                const isEmpty = !status;
+                return (
+                    <span className={`px-2 py-1 capitalize rounded ${
+                        isEmpty
+                            ? 'bg-gray-100 text-gray-700'
+                            : status === 'active'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-700'
                     }`}>
-                    {record.status}
-                </span>
-            ),
+                        {isEmpty ? 'inactive' : status}
+                    </span>
+                );
+            },
         },
         {
             title: 'Updated At',

@@ -33,7 +33,7 @@ const contract = require('./api/contract')
 // const createAccount = require('./api/createAccount/index')
 const knowledgeBaseRoute = require('./api/ai-search/chatboot');
 const productOfferingRoute = require('./api/ai-search/productoffering');
-
+const productSpecRoutes = require('./api/ProductSpecification/productSpecRoutes');
 
 
 require('dotenv').config();
@@ -108,7 +108,8 @@ app.use('/api', [
     logoutRoutes,
     productOfferingRoute,
     knowledgeBaseRoute,
-    ProductSpecification
+    ProductSpecification,
+    productSpecRoutes
     
 
 ]);

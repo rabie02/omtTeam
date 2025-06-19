@@ -30,7 +30,7 @@ async function createContact(req, res = null) {
       email: req.body.email,
       phone: req.body.phone,
       account: accountDoc._id,
-      isPrimaryContact: req.body.isPrimaryContact || true,
+      isPrimaryContact: req.body.isPrimaryContact ?? true,
       active: req.body.active || true,
       ...(req.body.jobTitle && { jobTitle: req.body.jobTitle })
     });
