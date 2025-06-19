@@ -33,7 +33,7 @@ const syncFromServiceNow = async (req, res) => {
     if (result.upsertedId) {
       const connection = snConnection.getConnection(req.user?.sn_access_token); // Assure toi que token existe
       const mongoId = result.upsertedId.toString();
-      const path = `/now/table/sn_prd_pm_product_specification/${specData.sys_id}`;
+      const path = `/api/now/table/sn_prd_pm_product_specification/${specData.sys_id}`;
 
       await externalIdHelper(connection, path, mongoId);
       console.log(`✅ externalId (${mongoId}) patched to ServiceNow`);
