@@ -69,6 +69,19 @@ function ContactTable({ setData, setOpen, searchQuery }) {
       render: (_, record) => record.account?.name || 'N/A',
     },
     {
+        title: 'Primary',
+        dataIndex: 'isPrimaryContact',
+        key: 'isPrimaryContact',
+        render: (isPrimary) => (
+            <span className={`px-2 py-1 rounded ${isPrimary
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-gray-100 text-gray-700'
+                }`}>
+                {isPrimary ? 'Yes' : 'No'}
+            </span>
+        ),
+    },
+    {
       title: 'Updated At',
       key: 'updatedAt',
       sorter: (a, b) => new Date(a.updatedAt) - new Date(b.updatedAt),

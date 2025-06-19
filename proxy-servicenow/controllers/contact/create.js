@@ -6,7 +6,6 @@ const Account = require('../../models/account');
 
 async function createContact(req, res = null) {
   try {
-    console.log('Creating contact with payload:', req.body);
 
     if (!req.body.account) {
       throw new Error('Account reference is required');
@@ -30,7 +29,7 @@ async function createContact(req, res = null) {
       email: req.body.email,
       phone: req.body.phone,
       account: accountDoc._id,
-      isPrimaryContact: req.body.isPrimaryContact || true,
+      isPrimaryContact: req.body.isPrimaryContact ?? true,
       active: req.body.active || true,
       ...(req.body.jobTitle && { jobTitle: req.body.jobTitle })
     });
@@ -45,7 +44,7 @@ async function createContact(req, res = null) {
       phone: req.body.phone || '',
       account: accountDoc.sys_id,
       user_password: req.body.password || '',
-      is_primary_contact: req.body.isPrimaryContact || true,
+      is_primary_contact: req.body.isPrimaryContact ?? true,
       active: req.body.active || true,
       external_id: savedContact._id.toString(), // Add MongoDB ID here
       ...(req.body.jobTitle && { job_title: req.body.jobTitle }),
@@ -65,8 +64,6 @@ async function createContact(req, res = null) {
         auth
       }
     );
-
-    console.log('Contact created in ServiceNow:', snResponse.data.result);
 
     // Update MongoDB record with ServiceNow sys_id
     savedContact.sys_id = snResponse.data.result.sys_id;

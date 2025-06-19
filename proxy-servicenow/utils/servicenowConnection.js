@@ -35,6 +35,7 @@ module.exports = {
         username: process.env.SERVICE_NOW_USER,
         password: process.env.SERVICE_NOW_PASSWORD
       };
+      console.log(authData)
         const { data } = await axios.post(
           `${process.env.SERVICE_NOW_URL}/oauth_token.do`,
           authData,
