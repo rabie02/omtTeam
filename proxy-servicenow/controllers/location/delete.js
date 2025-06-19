@@ -66,7 +66,7 @@ async function deleteLocation(req, res) {
     }
     
     const status = error.response?.status || 500;
-    const message = error.response?.data?.error?.message || error.message;
+    // const message = error.response?.data?.error?.message || error.message;
     return res.status(status).json({ error: message });
   }
 }
