@@ -12,13 +12,15 @@ const getHeaders = () => {
 
 // Async Thunk for contract generation
 export const getContractModels = createAsyncThunk(
-  'contract-model/getAll',
+  'contractModel/getAll',
   async (_, { rejectWithValue }) => {
     try {
+      console.log("here")
       const response = await axios.get(
-        `${backendUrl}/api/contract-model`,
+        `${backendUrl}/api/contract-model/`,
         { headers: getHeaders() }
       );
+      console.log(response.data)
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -33,16 +35,16 @@ export const getContractModels = createAsyncThunk(
 
 
 // Slice
-const contractModelsSlice = createSlice({
+const contractModelSlice = createSlice({
   name: 'contractModel',
   initialState: {
-    contractModels: null,
+    contractModels: [],
     loading: false,        // Loading state for generation
     error: null,           // Error for generation
   },
   reducers: {
     clearContractModels: (state) => {
-      state.contractModels = null;
+      state.contractModels = [];
     },
     clearContractError: (state) => {
       state.error = null;
@@ -69,6 +71,6 @@ const contractModelsSlice = createSlice({
 export const {
   clearContractModels,
   clearContractError,
-} = contractModelsSlice.actions;
+} = contractModelSlice.actions;
 
-export default contractModelsSlice.reducer;
+export default contractModelSlice.reducer;
