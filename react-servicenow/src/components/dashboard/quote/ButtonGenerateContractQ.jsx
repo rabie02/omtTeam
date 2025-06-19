@@ -1,25 +1,24 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { generateContract } from '../../../features/servicenow/contract-q/contractQSlice';
 import { getContractModels } from '../../../features/servicenow/contract-model/contractModelSlice';
-import { notification, Tooltip, Popconfirm } from 'antd';
-import { useState } from 'react';
+import { notification, Tooltip, Modal, Select, Input } from 'antd';
+import { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Modal, Button, Select, Input, Tooltip, message } from 'antd';
-import { LoadingOutlined, FileEditOutlined } from '@ant-design/icons';
 
 const { Option } = Select;
-const { TextArea } = Input;
 
-const CreateContractQButton = ({ quoteId, disabled }) => {
+const CreateContractQButton = ({ quoteId }) => {
   const dispatch = useDispatch();
   const { generatedContract, error, loading } = useSelector((state) => state.contractQ);
-  const { contractModels, error:modelError, loading:modelLoading } = useSelector((state) => state.contractModel);
+  //const { contractModels, error:modelError, loading:modelLoading } = useSelector((state) => state.contractModel);
+  const contractModels = [{value:"test", label:"test"}]
   const [open, setOpen] = useState(false);
 
     useEffect(() => {
         dispatch(getContractModels());
     }, [dispatch]);
+
 
   const formik = useFormik({
     initialValues: {
@@ -32,6 +31,7 @@ const CreateContractQButton = ({ quoteId, disabled }) => {
     }),
     onSubmit: (values, { setSubmitting }) => {
         try {
+          console.log(quoteId);
      // dispatch(generateContract(quoteId, values));
       notification.success({
         message: 'Contract Created',
@@ -49,11 +49,11 @@ const CreateContractQButton = ({ quoteId, disabled }) => {
       });
     }
   });
-
+  
   const handleOpen = () => {
-    if (!disabled && !modelLoading && !loading) {
+      console.log(quoteId);    
       setOpen(true);
-    }
+    
   };
 
   const handleClose = () => {
@@ -63,15 +63,11 @@ const CreateContractQButton = ({ quoteId, disabled }) => {
 
 
   return (
-    <>
+    <div>
       <Tooltip title={'Create Contract'}>
-        <Button
-          type="text"
-          disabled={(modelLoading && loading) || disabled}
-          icon={<FileEditOutlined />}
-          onClick={handleOpen}
-          className="text-gray-500 hover:text-green-600 disabled:text-gray-200"
-        />
+         <button className='group' onClick={handleOpen}>
+            <i className="ri-quill-pen-line text-gray-500 text-2xl group-hover:text-green-600 group-disabled:text-gray-200"></i>
+          </button>
       </Tooltip>
 
       <Modal
@@ -79,17 +75,17 @@ const CreateContractQButton = ({ quoteId, disabled }) => {
         open={open}
         onCancel={handleClose}
         footer={[
-          <Button key="back" onClick={handleClose}>
+          <button key="back" onClick={handleClose}>
             Cancel
-          </Button>,
-          <Button
+          </button>,
+          <button
             key="submit"
             type="primary"
             loading={formik.isSubmitting}
             onClick={formik.handleSubmit}
           >
             Create
-          </Button>
+          </button>
         ]}
       >
         <form onSubmit={formik.handleSubmit}>
@@ -119,7 +115,7 @@ const CreateContractQButton = ({ quoteId, disabled }) => {
 
           <div className="mb-4">
             <label className="block text-gray-700 mb-2">Description</label>
-            <TextArea
+            <Input
               id="description"
               name="description"
               rows={4}
@@ -136,7 +132,8 @@ const CreateContractQButton = ({ quoteId, disabled }) => {
           </div>
         </form>
       </Modal>
-    </>
+
+    </div>
   );
 };
 
