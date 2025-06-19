@@ -14,6 +14,7 @@ import Opportunity from '../views/dashbord/Opportunity';
 import PriceList from '../views/dashbord/PriceList';
 import Account from '../views/dashbord/Account';
 import Contact from '../views/dashbord/Contact';
+import ProductDetails from '../views/dashbord/productdetail';  
 import Location from '../views/dashbord/Location';
 
 
@@ -37,6 +38,7 @@ const dashboardRoutes = {
     { path: 'quote', element:<Quote/>},
     { path: 'profile', element:<Profile/>},
     { path: 'account', element:<Account/>},
+    { path: 'products/:productId', element: <ProductDetails /> },
     { path: 'contact', element:<Contact/>},
     { path: 'location', element:<Location/>},
     // ... other dashboard sub-routes
