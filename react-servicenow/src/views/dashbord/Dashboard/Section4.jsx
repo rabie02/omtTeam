@@ -46,7 +46,8 @@ import {
   FilterIcon,
   RefreshCw,
   Hash,
-  Database
+  Database,
+  FileText
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { debounce } from "lodash";

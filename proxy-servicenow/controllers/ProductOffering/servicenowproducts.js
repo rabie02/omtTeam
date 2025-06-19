@@ -9,8 +9,8 @@ const SERVICE_NOW_CONFIG = {
   baseUrl: process.env.SERVICE_NOW_URL,
   clientId: process.env.CLIENT_ID,
   clientSecret: process.env.CLIENT_SECRET,
-  username: process.env.SERVICENOW_USERNAME || 'mouad.abarhane',
-  password: process.env.SERVICE_NOW_PASSWORD || '&=TrK#)1#Isguye4HQ!*qp*m&0@cSPoC5iF3=7R*G]OIm,B$<C*0.eG9RgoT&b.',
+  username: process.env.SERVICENOW_USERNAME || 'group2',
+  password: process.env.SERVICENOW_PASSWORD || 'K5F/Uj/lDbo9YAS',
   tables: {
     product_offering: 'sn_prd_pm_product_offering',
     product_spec: 'sn_prd_pm_product_specification',
