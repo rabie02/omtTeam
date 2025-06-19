@@ -13,6 +13,7 @@ import Profile from '../views/dashbord/ProfilePage'
 import Opportunity from '../views/dashbord/Opportunity';
 import PriceList from '../views/dashbord/PriceList';
 import Account from '../views/dashbord/Account';
+import ProductDetails from '../views/dashbord/productdetail';  
 import Contact from '../views/dashbord/Contact';
 import Location from '../views/dashbord/Location';
 
@@ -36,6 +37,7 @@ const dashboardRoutes = {
     { path: 'help', element:<AiSearch/>},
     { path: 'quote', element:<Quote/>},
     { path: 'profile', element:<Profile/>},
+    { path: 'products/:productId', element: <ProductDetails /> },
     { path: 'account', element:<Account/>},
     { path: 'contact', element:<Contact/>},
     { path: 'location', element:<Location/>},
