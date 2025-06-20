@@ -4,7 +4,7 @@ const contactSchema = new mongoose.Schema({
   sys_id: String, // ServiceNow sys_id
 
   firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
+  lastName: { type: String },
   email: { type: String, required: true },
   phone: String,
   password: String, // Be sure to hash this before saving

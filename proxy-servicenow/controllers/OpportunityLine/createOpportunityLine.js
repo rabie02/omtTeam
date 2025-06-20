@@ -5,7 +5,7 @@ const PriceList = require('../../models/priceList');
 const ProductOffering = require('../../models/ProductOffering');
 const Opportunity = require('../../models/opportunity'); 
 const opportunityLine = require('../../models/opportunityLine');
-
+const mongoose = require('mongoose');
 
 async function createOpportunityLine(req, res = null) {
   try {
@@ -28,18 +28,15 @@ async function createOpportunityLine(req, res = null) {
     if (!opportunityDoc) {
       throw new Error(`Opportunity with ID ${opportunity} not found`);
     }
-
-    const oppLine = new opportunityLine(req.body);
-    const mongoDocument = await oppLine.save();
+    const newId = new mongoose.Types.ObjectId();
 
     // Prepare ServiceNow payload with sys_ids
     const snPayload = {
       ...rest,
-      external_id:mongoDocument._id.toString(),
+      external_id:newId,
       price_list: priceListDoc.sys_id,
       product_offering: productOfferingDoc.id,
       opportunity: opportunityDoc.sys_id,
-      external_id:mongoDocument._id.toString()
     };
 
     // Create in ServiceNow
@@ -52,6 +49,7 @@ async function createOpportunityLine(req, res = null) {
     
     // Prepare MongoDB document 
     const mongoPayload = {
+      _id: newId,
       ...snResponse.data.result,
       priceList: price_list,
       productOffering: product_offering,
@@ -62,7 +60,8 @@ async function createOpportunityLine(req, res = null) {
     // update in MongoDB
     try {
       
-      const opportunityLine = await opportunityLine.findByIdAndUpdate(mongoDocument._id, mongoPayload , {new: true});
+      const opportunityLineDoc = new opportunityLine(mongoPayload);
+      await opportunityDoc.save();
 
       // Prepare response
       const response = {
@@ -71,7 +70,7 @@ async function createOpportunityLine(req, res = null) {
           priceList: price_list,
           productOffering: product_offering,
           opportunity: opportunity,
-          mongoId: opportunityLine._id
+          mongoId: opportunityLineDoc._id
         }
       };
 
