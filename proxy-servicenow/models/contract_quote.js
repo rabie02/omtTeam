@@ -7,6 +7,8 @@ const contractQuoteSchema = new mongoose.Schema({
   },
   short_description: String,
   description: String,
+  start_date:String,
+  end_date:String,
   quote: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Quote',
