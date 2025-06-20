@@ -102,6 +102,20 @@ classDiagram
       +Date updatedAt
       +Number __v
     }
+    class contractQuote {
+      +String sys_id
+      +String short_description
+      +String description
+      +String start_date
+      +String end_date
+      +ObjectId quote
+      +ObjectId contract_model
+      +ObjectId product_offring
+      +ObjectId _id
+      +Date createdAt
+      +Date updatedAt
+      +Number __v
+    }
     class OpportunityLine {
       +String cumulative_acv
       +String service_location
@@ -110,7 +124,7 @@ classDiagram
       +String external_id
       +String sys_updated_on
       +String number
-      +String sys_id (required, unique)
+      +String sys_id (unique)
       +ObjectId priceList
       +Embedded unit_of_measurement
       +String cumulative_tcv
@@ -168,8 +182,38 @@ classDiagram
       +ObjectId _id
       +Number __v
     }
+    class Quote {
+      +String number (unique)
+      +String sys_id (unique)
+      +String state
+      +String version
+      +String currency
+      +String assigned_to
+      +String assignment_group
+      +String subscription_start_date
+      +String subscription_end_date
+      +String short_description
+      +String expiration_date
+      +String active (default: "true")
+      +ObjectId opportunity (required)
+      +ObjectId account (required)
+      +ObjectId price_list
+      +ObjectId _id
+      +Date createdAt
+      +Date updatedAt
+      +Number __v
+    }
+    class contractModel {
+      +String sys_id
+      +String name
+      +String description
+      +ObjectId _id
+      +Date createdAt
+      +Date updatedAt
+      +Number __v
+    }
     class PriceList {
-      +String sys_id (required, unique)
+      +String sys_id (unique)
       +String name
       +String description
       +String state
@@ -183,7 +227,7 @@ classDiagram
       +Number __v
     }
     class Opportunity {
-      +String sys_id (required, unique)
+      +String sys_id (unique)
       +String short_description
       +String assignment_group
       +Date estimated_closed_date
@@ -208,27 +252,6 @@ classDiagram
       +Date updatedAt
       +Number __v
     }
-    class Quote {
-      +String number (unique)
-      +String sys_id (unique)
-      +String state
-      +String version
-      +String currency
-      +String assigned_to
-      +String assignment_group
-      +String subscription_start_date
-      +String subscription_end_date
-      +String short_description
-      +String expiration_date
-      +String active (default: "true")
-      +ObjectId opportunity (required)
-      +ObjectId account (required)
-      +ObjectId price_list
-      +ObjectId _id
-      +Date createdAt
-      +Date updatedAt
-      +Number __v
-    }
     class Contract {
       +ObjectId opportunity
       +ObjectId quote
@@ -237,6 +260,25 @@ classDiagram
       +Date created_at (default: undefined)
       +Date updated_at (default: undefined)
       +ObjectId _id
+      +Number __v
+    }
+    class Account {
+      +String name (required)
+      +String sys_id
+      +Date sys_created_on
+      +String sys_created_by
+      +String business_owners
+      +String phone
+      +String industry
+      +String email
+      +String website
+      +String customer
+      +Boolean archived (default: false)
+      +Array contacts
+      +Array locations
+      +ObjectId _id
+      +Date createdAt
+      +Date updatedAt
       +Number __v
     }
     class salesCycleType {
@@ -254,24 +296,6 @@ classDiagram
       +ObjectId _id
       +Number __v
     }
-    class Account {
-      +String name (required)
-      +String sys_id
-      +Date sys_created_on
-      +String sys_created_by
-      +String business_owners
-      +String phone
-      +String industry
-      +String email
-      +String website
-      +String customer
-      +Array contacts
-      +Array locations
-      +ObjectId _id
-      +Date createdAt
-      +Date updatedAt
-      +Number __v
-    }
     class Contact {
       +String sys_id
       +String firstName (required)
@@ -283,6 +307,8 @@ classDiagram
       +Boolean isPrimaryContact (default: true)
       +Boolean active (default: true)
       +ObjectId account (required)
+      +ObjectId location
+      +Boolean archived (default: false)
       +ObjectId _id
       +Date createdAt
       +Date updatedAt
@@ -299,6 +325,8 @@ classDiagram
       +String country
       +String zip
       +ObjectId account (required)
+      +ObjectId contact (required)
+      +Boolean archived (default: false)
       +ObjectId _id
       +Date createdAt
       +Date updatedAt
@@ -344,13 +372,18 @@ classDiagram
   CatalogCategoryRelations --> ProductOfferingCatalog : "catalog"
   CatalogCategoryRelations --> ProductOfferingCategory : "category"
   Contact --> Account : "account"
+  Contact --> Location : "location"
   ProductOffering --> ProductOfferingCategory : "category"
   ProductOffering --> ProductSpecification : "productSpecification"
   Account --> Contact : "contacts"
   Account --> Location : "locations"
   Contract --> Opportunity : "opportunity"
   Contract --> Quote : "quote"
+  contractQuote --> Quote : "quote"
+  contractQuote --> contractModel : "contract_model"
+  contractQuote --> ProductOffering : "product_offring"
   Location --> Account : "account"
+  Location --> Contact : "contact"
   Opportunity --> salesCycleType : "sales_cycle_type"
   Opportunity --> Stage : "stage"
   Opportunity --> Account : "account"
