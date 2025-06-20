@@ -9,6 +9,7 @@ import {
 import {
     generateContract,downloadContract
 } from '../../../features/servicenow/contract/contractSlice';
+import CreateContractQButton from './ButtonGenerateContractQ';
 
 function QuoteTable({ setData, setOpen, searchQuery }) {
     const dispatch = useDispatch();
@@ -262,6 +263,7 @@ const handleDownloadContract = async (contractId, quoteNumber = '') => {
                         </Tooltip>
 
                         {/* Contract Button */}
+                        <CreateContractQButton quoteId={record._id} />
 
                     </div>
                 );
