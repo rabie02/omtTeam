@@ -12,12 +12,12 @@ const getHeaders = () => {
 
 // Async Thunk for contract generation
 export const generateContract = createAsyncThunk(
-  'contract-q/generate',
-  async ({quoteId, body}, { rejectWithValue }) => {
+  'contractQ/generate',
+  async (dataBody, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${backendUrl}/api/quote-contract/${quoteId}`,
-        body,
+        `${backendUrl}/api/contract-quote/`,
+        dataBody,
         { headers: getHeaders() }
       );
       return response.data;

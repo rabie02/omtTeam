@@ -15,12 +15,10 @@ export const getContractModels = createAsyncThunk(
   'contractModel/getAll',
   async (_, { rejectWithValue }) => {
     try {
-      console.log("here")
       const response = await axios.get(
         `${backendUrl}/api/contract-model/`,
         { headers: getHeaders() }
       );
-      console.log(response.data)
       return response.data;
     } catch (error) {
       return rejectWithValue(

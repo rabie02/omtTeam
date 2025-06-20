@@ -4,13 +4,13 @@ const contract_quote = require("../../models/contract_quote");
 const ContractModel = require('../../models/contract_model');
 const Quote = require('../../models/quote');
 const ProductOffering = require('../../models/ProductOffering');
+const mongoose = require('mongoose');
 
 async function createContractQuote(req, res = null) {
 
     try {
-        const contractQ = new contract_quote(req.body);
-        const mongoDocument = await contractQ.save();
-        console.log('MongoDB document created:', mongoDocument._id);
+        const newId = new mongoose.Types.ObjectId();
+
 
         // Validate request body
         const { quote, contract_model, ...rest } = req.body;
@@ -44,12 +44,10 @@ async function createContractQuote(req, res = null) {
             }
         });
 
-        console.log(productOfferingSysIds);
-
         // Call ServiceNow API to create contract
         const contractData = {
             ...rest,
-            "external_id": mongoDocument._id.toString(),
+            "external_id": newId,
             "quote": quoteDoc.sys_id ||'',
             "start_date":  quoteDoc.subscription_start_date || '',
             "end_date": quoteDoc.subscription_end_date || '',
@@ -59,18 +57,18 @@ async function createContractQuote(req, res = null) {
             "name": req.body.name || '',
         };
         
-        console.log("req servicen:" , contractData);
 
         // Create in ServiceNow
         const connection = snConnection.getConnection(req.user.sn_access_token);
         const snResponse = await axios.post(
-            `${connection.baseURL}/api/1637945/contract_management_2`,
+            `${connection.baseURL}/api/sn_prd_pm/management_contract`,
             contractData,
             { headers: connection.headers }
         );
 
         //update in mongodb 
         const mongoPayload = {
+            _id:newId,
             sys_id: snResponse.data.result.sys_id,
             sn_quote_sys_id: quoteDoc.sys_id,
             sn_contract_model_sys_id: contractDoc.sys_id,
@@ -78,13 +76,14 @@ async function createContractQuote(req, res = null) {
         }
 
         try {
-            const contractQuote = await contract_quote.findByIdAndUpdate(mongoDocument._id, mongoPayload, { new: true });
-
+            const contractQ = new contract_quote(mongoPayload);
+            const mongoDocument = await contractQ.save();
+            console.log('MongoDB document created:', mongoDocument._id);
             const response = {
                 success: true,
                 servicenow: snResponse.data,
-                _id: contractQuote._id,
-                mongoId: contractQuote._id
+                _id: mongoDocument._id,
+                mongoId: mongoDocument._id
             };
             if (res) {
                 return res.status(201).json(response);
