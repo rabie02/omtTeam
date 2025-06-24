@@ -8,9 +8,8 @@ export const getall = createAsyncThunk(
   'productOfferingCatalog/getall',
   async ({ page = 1, limit = 6, q }, { rejectWithValue }) => {
     try {
-      const access_token = localStorage.getItem('access_token');
       const response = await axios.get(`${backendUrl}/api/product-offering-catalog`, {
-        headers: { authorization: access_token },
+        withCredentials: true,
         params: { page, limit, q }
       });
       return response.data;
@@ -26,9 +25,8 @@ export const getPublish = createAsyncThunk(
     try {
       console.log(q);
 
-      const access_token = localStorage.getItem('access_token');
       const response = await axios.get(`${backendUrl}/api/product-offering-catalog-publish`, {
-        headers: { authorization: access_token },
+        withCredentials: true,
         params: { q }
       });
       console.log(response.data);
@@ -44,9 +42,8 @@ export const getOne = createAsyncThunk(
   'productOfferingCatalog/getOne',
   async (id, { rejectWithValue }) => {
     try {
-      const access_token = localStorage.getItem('access_token');
       const response = await axios.get(`${backendUrl}/api/product-offering-catalog/${id}`, {
-        headers: { authorization: access_token },
+        withCredentials: true,
       });
       return response.data;
     } catch (error) {
@@ -59,9 +56,8 @@ export const createCatalog = createAsyncThunk(
   'productOfferingCatalog/create',
   async (productData, { rejectWithValue }) => {
     try {
-      const access_token = localStorage.getItem('access_token');
       const response = await axios.post(`${backendUrl}/api/product-offering-catalog`, productData, {
-        headers: { authorization: access_token },
+      withCredentials: true,
       });
       return response.data.result;
     } catch (error) {
@@ -74,11 +70,10 @@ export const updateCatalogStatus = createAsyncThunk(
   'productOfferingCatalog/updateStatus',
   async ({ id, status }, { rejectWithValue }) => {
     try {
-      const access_token = localStorage.getItem('access_token');
       const response = await axios.patch(
         `${backendUrl}/api/product-offering-catalog-status/${id}`,
         { status },
-        { headers: { authorization: access_token } }
+        { withCredentials: true, }
       );
       return response.data.result;
     } catch (err) {
@@ -91,11 +86,10 @@ export const updateCatalog = createAsyncThunk(
   'productOfferingCatalog/update',
   async ({ id, ...productData }, { rejectWithValue }) => {
     try {
-      const access_token = localStorage.getItem('access_token');
       const response = await axios.patch(
         `${backendUrl}/api/product-offering-catalog/${id}`,
         productData,
-        { headers: { authorization: access_token } }
+        { withCredentials: true, }
       );
       return response.data.result;
     } catch (error) {
@@ -108,9 +102,8 @@ export const deleteCatalog = createAsyncThunk(
   'productOfferingCatalog/delete',
   async (id, { rejectWithValue }) => {
     try {
-      const access_token = localStorage.getItem('access_token');
       await axios.delete(`${backendUrl}/api/product-offering-catalog/${id}`, {
-        headers: { authorization: access_token },
+        withCredentials: true,
       });
       return id;
     } catch (error) {

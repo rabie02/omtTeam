@@ -40,15 +40,10 @@ function LoginForm() {
         const result = await dispatch(userLogin(values));
 
         if (userLogin.fulfilled.match(result)) {
-          const token = result.payload?.id_token;
-          if (token) {
-            localStorage.setItem('access_token', `Bearer ${token}`);
-            await dispatch(fetchUserInfo());
-            message.success('Login successful');
-            navigate('/dashboard');
-          } else {
-            message.error('Login successful but no token received');
-          }
+          // No need to handle token - it's in HTTP-only cookie
+          await dispatch(fetchUserInfo());
+          message.success('Login successful');
+          navigate('/dashboard');
         } else {
           const errorPayload = result.payload;
           const errorMessage = typeof errorPayload === 'object'
@@ -72,7 +67,7 @@ function LoginForm() {
 
         {/* Username Field */}
         <div>
-          <div className="shadow-lg flex gap-2 items-center bg-white p-2  rounded group duration-300">
+          <div className="shadow-lg flex gap-2 items-center bg-white p-2 rounded group duration-300">
             <i className="ri-user-2-line group-hover:rotate-[360deg] duration-300"></i>
             <input
               type="text"
@@ -92,7 +87,7 @@ function LoginForm() {
 
         {/* Password Field */}
         <div>
-          <div className="shadow-lg flex gap-2 items-center bg-white p-2  rounded group duration-300">
+          <div className="shadow-lg flex gap-2 items-center bg-white p-2 rounded group duration-300">
             <i className="ri-lock-2-line group-hover:rotate-[360deg] duration-300"></i>
             <input
               type="password"
@@ -114,14 +109,13 @@ function LoginForm() {
         <button
           type="submit"
           disabled={formik.isSubmitting}
-          className={`w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition duration-300 ${formik.isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+          className={`w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition duration-300 ${
+            formik.isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
         >
           {formik.isSubmitting ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
-
-
     </div>
   );
 }
