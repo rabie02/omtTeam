@@ -1,339 +1,124 @@
-import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { Table, notification, Popconfirm, Empty, Spin, Pagination, Tooltip } from 'antd';
-import { getall, deleteCategory, updateCategoryStatus } from '../../../features/servicenow/product-offering/productOfferingCategorySlice';
+// src/components/categories/CategoryTable.jsx
+import React from 'react';
+import { Table, Badge, Tooltip, Popconfirm, Button } from 'antd';
 
-function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
-    const {
-        data: categories,
-        loading,
-        error,
-        currentPage,
-        totalItems,
-        limit
-    } = useSelector((state) => state.productOfferingCategory);
+// Integrated StatusCell component
+const StatusCell = ({ status }) => {
+  const statusColors = {
+    active: { dot: 'bg-green-500', text: 'text-green-700' },
+    draft: { dot: 'bg-blue-500', text: 'text-blue-700' },
+    inactive: { dot: 'bg-gray-400', text: 'text-gray-600' },
+    archived: { dot: 'bg-red-500', text: 'text-red-700' }
+  };
 
-    useEffect(() => {
-        dispatch(getall({ page: 1, limit: 6, q: searchQuery }));
-    }, [dispatch, searchQuery]);
+  const colors = statusColors[status] || statusColors.inactive;
+  const displayText = status ? 
+    status.charAt(0).toUpperCase() + status.slice(1) : '';
 
-    const handleDelete = async (productId) => {
-        try {
-            await dispatch(deleteCategory(productId)).unwrap();
-            notification.success({
-                message: 'Category Deleted',
-                description: 'Category has been deleted successfully'
-            });
-            dispatch(getall({ page: currentPage, limit, q: searchQuery }));
-        } catch (error) {
-            notification.error({
-                message: 'Deletion Failed',
-                description: error.message || 'Failed to delete category'
-            });
-        }
-    };
+  return (
+    <div className="flex items-center">
+      <span className={`h-2 w-2 rounded-full mr-2 ${colors.dot}`}></span>
+      <span className={`text-xs ${colors.text}`}>
+        {displayText}
+      </span>
+    </div>
+  );
+};
 
-    const handleUpdateStatus = async (categoryId, newStatus) => {
-        try {
-            await dispatch(updateCategoryStatus({
-                id: categoryId,
-                status: newStatus
-            })).unwrap();
-
-            notification.success({
-                message: 'Status Updated',
-                description: `Category has been ${newStatus} successfully`
-            });
-
-            dispatch(getall({ page: currentPage, limit, q: searchQuery }));
-        } catch (error) {
-            notification.error({
-                message: 'Update Failed',
-                description: error.message || 'Status update failed'
-            });
-        }
-    };
-
-    const handlePageChange = (page) => {
-        dispatch(getall({ page, limit, q: searchQuery }));
-    };
-
-    const changeData = (newData) => {
-        setData(newData);
-        setOpen(true);
-    };
-
-    const getStatusAction = (currentStatus) => {
-        switch (currentStatus.toLowerCase()) {
-            case 'draft': return { action: 'Publish', newStatus: 'published' };
-            case 'published': return { action: 'Retire', newStatus: 'retired' };
-            case 'retired': return { action: 'Archive', newStatus: 'archived' };
-            default: return { action: "No update possible for this", newStatus: currentStatus };
-        }
-    };
-
-
-    const productOfferingColumns = [
-        {
-            title: 'Product Offering Name',
-            dataIndex: 'name',
-            key: 'name',
-        },
-        {
-            title: 'Status',
-            dataIndex: 'status',
-            key: 'status',
-            render: (status) => (
-                <span className={`px-2 py-1 capitalize ${status === 'published'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-700'
-                    }`}>
-                    {status}
-                </span>
-            ),
-        },
-        {
-            title: 'Term',
-            dataIndex: 'productOfferingTerm',
-            key: 'term',
-            render: (text) => text ?
-                text.replace(/_/g, ' ')  // Replace underscores with spaces
-                    .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize first letters
-                : 'N/A',
-        },
-        {
-            title: 'Start Date',
-            render: (_, record) => record.validFor.startDateTime
-                ? new Date(record.validFor.startDateTime).toISOString().split("T")[0]
-                : 'N/A',
-        },
-        {
-            title: 'End Date',
-            render: (_, record) => record.validFor.endDateTime
-                ? new Date(record.validFor.endDateTime).toISOString().split("T")[0]
-                : 'N/A',
-        },
-        {
-            title: 'Price',
-            render: (_, record) => {
-                const recurringPrice = record.productOfferingPrice?.find(p => p.priceType === 'recurring');
-                return recurringPrice
-                    ? `${recurringPrice.price.taxIncludedAmount.value} ${recurringPrice.price.taxIncludedAmount.unit}`
-                    : 'N/A';
-            },
-        },
-    ];
-
-
-    const mainColumns = [
-        {
-            title: 'Number',
-            dataIndex: 'number',
-            key: 'number',
-            width: 150,
-
-        },
-        {
-            title: 'Name',
-            dataIndex: 'name',
-            key: 'name',
-
-        },
-        {
-            title: 'Status',
-            key: 'status',
-
-            render: (_, record) => (
-                <span className={`px-2 py-1 capitalize rounded ${record.status === 'published'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-700'
-                    }`}>
-                    {record.status}
-                </span>
-            ),
-
-        },
-        {
-            title: 'Start Date',
-            key: 'start_date',
-            sorter: (a, b) => new Date(a.start_date) - new Date(b.start_date),
-            render: (_, record) => record.start_date
-                ? new Date(record.start_date).toISOString().split("T")[0]
-                : 'N/A',
-
-        },
-        {
-            title: 'End Date',
-            key: 'end_date',
-            sorter: (a, b) => new Date(a.end_date) - new Date(b.end_date),
-            render: (_, record) => record.end_date
-                ? new Date(record.end_date).toISOString().split("T")[0]
-                : 'N/A',
-
-        },
-        {
-            title: 'Actions',
-            key: 'actions',
-            render: (_, record) => {
-    const { action, newStatus } = getStatusAction(record.status);
-
-    // Disable all actions if the category has any product offerings
-    const hasProductOfferings = record.productOffering && record.productOffering.length > 0;
-    const disableAll = hasProductOfferings;
-
-    // Tooltip messages
-    const disabledTooltipMsg = "Action disabled due to existing product offerings.";
-
-    return (
+// Integrated BulkActions component
+const BulkActions = ({ 
+  selectedCount, 
+  onDelete, 
+  onClear 
+}) => (
+  <div className="overflow-hidden transition-all duration-300 ease-in-out">
+    <div className="bg-gray-50 shadow-sm border-y border-gray-300">
+      <div className="flex flex-wrap items-center bg-gray-200 justify-between gap-3 p-3 mx-6">
         <div className="flex items-center">
-
-            {/* Status Change Button */}
-            <Tooltip title={disableAll ? disabledTooltipMsg : `${action} Category`}>
-                <Popconfirm
-                    title={`${action} Category`}
-                    description={`Are you sure to ${action.toLowerCase()} this category?`}
-                    onConfirm={() => handleUpdateStatus(record._id, newStatus)}
-                    disabled={record.status === "archived" || disableAll}
-                    okText="Yes"
-                    cancelText="No"
-                >
-                    <button
-                        className={`mx-1 ${record.status === "archived" || disableAll
-                            ? "text-gray-300 cursor-not-allowed"
-                            : "text-gray-500 hover:text-green-600"
-                            }`}
-                    >
-                        <i className="ri-loop-right-line text-2xl"></i>
-                    </button>
-                </Popconfirm>
-            </Tooltip>
-
-            {/* Edit Button */}
-            <Tooltip title={
-                disableAll
-                    ? disabledTooltipMsg
-                    : (record.status !== "draft" ? "Editing is only allowed in draft status" : "Edit This Category")
-            }>
-                <button
-                    disabled={disableAll || record.status !== "draft"}
-                    className={`mx-1 ${(disableAll || record.status !== "draft")
-                        ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-500 hover:text-yellow-400"
-                        }`}
-                    onClick={() => {
-                        if (!disableAll && record.status === "draft") changeData(record);
-                    }}
-                >
-                    <i className="ri-pencil-line text-2xl"></i>
-                </button>
-            </Tooltip>
-
-            {/* Delete Button */}
-            <Tooltip title={disableAll ? disabledTooltipMsg : "Delete This Category"}>
-                <Popconfirm
-                    title="Delete Category"
-                    description="Are you sure to delete this category?"
-                    onConfirm={() => handleDelete(record._id)}
-                    disabled={disableAll}
-                    okText="Yes"
-                    cancelText="No"
-                >
-                    <button
-                      
-                        className={`mx-1 ${disableAll ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-red-600"}`}
-                    >
-                        <i className="ri-delete-bin-6-line text-2xl"></i>
-                    </button>
-                </Popconfirm>
-            </Tooltip>
-
+          <Badge
+            count={selectedCount}
+            className="text-white font-medium"
+          />
+          <span className="ml-2 text-gray-700 font-medium">
+            {selectedCount} item{selectedCount > 1 ? 's' : ''} selected
+          </span>
         </div>
-    );
-}
 
-        }
-    ];
-
-    // if (loading) return (
-    //     <div className="h-full flex justify-center items-center">
-    //         <Spin size="large" tip="Loading categories..." />
-    //     </div>
-    // );
-
-    // if (error) return (
-    //     <div className="text-red-500 p-4">
-    //         Error: {error.message || 'Failed to load categories'}
-    //     </div>
-    // );
-     useEffect(() => {
-            if (error) {
-                notification.error({
-                    message: 'Error Occurred',
-                    description: error,
-                });
-            }
-        }, [error]);
-
-    return (
-        <div className='w-full justify-center flex'>
-            <div className="w-10/12 ">
-                <Table
-                    columns={mainColumns}
-                    dataSource={categories}
-                    rowKey="sys_id"
-                    loading={loading}
-                    expandable={{
-                        expandedRowRender: (record) => (
-                            <div className="ml-8 bg-gray-50 p-4 rounded">
-                                {record.productOffering?.length > 0 ? (
-                                    <Table
-                                        columns={productOfferingColumns}
-                                        dataSource={record.productOffering}
-                                        rowKey="_id"
-                                        bordered
-                                        size="small"
-                                        pagination={
-                                            record.productOffering?.length > 4
-                                                ? { pageSize: 4, showSizeChanger: false }
-                                                : false
-                                        }
-                                    />
-                                ) : (
-                                    <Empty
-                                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                                        description="No product Offering found"
-                                    />
-                                )}
-                            </div>
-                        ),
-                        rowExpandable: (record) => record.productOffering?.length > 0,
-                    }}
-                    pagination={false}
-                    locale={{
-                        emptyText: (
-                            <Empty
-                                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                                description="No categories found"
-                            />
-                        ),
-                    }}
-                    className="shadow-lg rounded-lg overflow-hidden"
-                />
-
-                <div className="mt-4 flex justify-end">
-                    <Pagination
-                        current={currentPage}
-                        total={totalItems}
-                        pageSize={limit}
-                        onChange={handlePageChange}
-                        showSizeChanger={false}
-                        disabled={loading}
-                        className="ant-pagination-custom"
-                    />
-                </div>
-            </div>
+        <div className="flex flex-wrap gap-2">
+          <Tooltip title="Delete selected">
+            <Popconfirm
+              title="Delete selected categories?"
+              description="This action cannot be undone. Are you sure?"
+              onConfirm={onDelete}
+              okText="Delete"
+              cancelText="Cancel"
+              okButtonProps={{ danger: true }}
+            >
+              <Button
+                danger
+                icon={<i className="ri-delete-bin-line"></i>}
+                className="flex items-center"
+              >
+                Delete
+              </Button>
+            </Popconfirm>
+          </Tooltip>
+                 
+          <Button
+            icon={<i className="ri-close-line"></i>}
+            className="flex items-center"
+            onClick={onClear}
+          >
+            Clear Selection
+          </Button>
         </div>
-    );
-}
+      </div>
+    </div>
+  </div>
+);
+
+// Main Table Component with integrated sub-components
+const CategoryTable = ({ 
+  data, 
+  columns, 
+  rowSelection, 
+  loading, 
+  emptyText,
+  onRowClick,
+  bulkActionsProps
+}) => {
+  const handleRow = (record) => ({
+    onClick: () => onRowClick(record._id)
+  });
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Bulk Actions */}
+      {bulkActionsProps && bulkActionsProps.selectedCount > 0 && (
+        <BulkActions {...bulkActionsProps} />
+      )}
+      
+      {/* Main Table */}
+      <div className="flex-grow overflow-auto">
+        <Table
+          rowSelection={rowSelection}
+          columns={columns}
+          dataSource={data.map(item => ({ ...item, key: item._id }))}
+          pagination={false}
+          scroll={{ x: 'max-content' }}
+          className="service-now-table"
+          rowClassName="hover:bg-gray-50 cursor-pointer"
+          loading={loading}
+          locale={{ emptyText }}
+          onRow={handleRow}
+        />
+      </div>
+    </div>
+  );
+};
+
+// Attach sub-components to main component
+CategoryTable.StatusCell = StatusCell;
+CategoryTable.BulkActions = BulkActions;
 
 export default CategoryTable;

@@ -9,6 +9,7 @@ const mongoose = require('mongoose');
 // Create Product Offering 
 module.exports = async (req, res) => {
     try {
+        
         let category;
         let prodSpec;
         try {
@@ -60,6 +61,8 @@ module.exports = async (req, res) => {
             externalId: newId
         };
 
+        
+
         console.log(JSON.stringify(snPayload,null,2))
         
 
@@ -106,6 +109,6 @@ module.exports = async (req, res) => {
         console.error('Error creating product offering:', error);
         const status = error.response?.status || 500;
         const message = error.response?.data?.error?.message || error.message;
-        res.status(status).json({ error: message });
+        res.status(status).json({ error: error });
     }
 };

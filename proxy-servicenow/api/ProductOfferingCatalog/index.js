@@ -4,7 +4,7 @@ const router = express.Router();
 // Import controllers
 const getAll = require('../../controllers/ProductOfferingCatalog/getall');
 const getPublish = require('../../controllers/ProductOfferingCatalog/getpublish');
-const getOne = require('../../controllers/ProductOfferingCatalog/getone');
+const getOne = require('../../controllers/ProductOfferingCatalog/getbydetails');
 const create = require('../../controllers/ProductOfferingCatalog/create');
 const update = require('../../controllers/ProductOfferingCatalog/update');
 const updateStatus = require('../../controllers/ProductOfferingCatalog/updateStatus')

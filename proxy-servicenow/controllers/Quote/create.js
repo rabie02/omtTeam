@@ -10,8 +10,6 @@ const createquoteline = require('../QuoteLine/create');
 
 module.exports = async (req, res) => {
   try {
-
-
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
     const id = req.params.id;  
@@ -28,7 +26,7 @@ module.exports = async (req, res) => {
     }
 
     const snResponse = await axios.post(
-      `${process.env.SERVICE_NOW_URL}/api/sn_prd_pm/quote`,
+      `${process.env.SERVICE_NOW_URL}/api/sn_quote_mgmt_core/bismilah`,
       { opty_sys_id: localOpportunity.sys_id },
       {
         headers: {

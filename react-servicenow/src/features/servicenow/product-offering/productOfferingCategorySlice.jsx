@@ -6,15 +6,29 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL;
 // Async Thunks
 export const getall = createAsyncThunk(
   'ProductOfferingCategory/getall',
-  async ({ page = 1, limit = 6, q }, { rejectWithValue }) => {
+  async ({ page = 1, limit = 6, q = '' } = {}, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
       const response = await axios.get(`${backendUrl}/api/product-offering-category`, {
         headers: { authorization: access_token },
         params: { page, limit, q }
       });
-      console.log(response.data);
-      
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+export const getPublish = createAsyncThunk(
+  'productOfferingCatalog/getPublish',
+  async ({ q }, { rejectWithValue }) => {
+    try {
+      const access_token = localStorage.getItem('access_token');
+      const response = await axios.get(`${backendUrl}/api/product-offering-category-publish`, {
+        headers: { authorization: access_token },
+        params: { q }
+      });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -27,9 +41,7 @@ export const getOne = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      const response = await axios.get(`${backendUrl}/api/product-offering-category/${id}`, {
-        headers: { authorization: access_token },
-      });
+      const response = await axios.get(`${backendUrl}/api/product-offering-category/${id}`, { headers: { authorization: access_token } });
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -43,7 +55,10 @@ export const createCategory = createAsyncThunk(
     try {
       const access_token = localStorage.getItem('access_token');
       const response = await axios.post(`${backendUrl}/api/product-offering-category`, productData, {
-        headers: { authorization: access_token },
+        headers: {
+          authorization: access_token,
+          'Content-Type': 'application/json'
+        },
       });
       return response.data.result;
     } catch (error) {
@@ -58,7 +73,7 @@ export const updateCategoryStatus = createAsyncThunk(
     try {
       const access_token = localStorage.getItem('access_token');
       const response = await axios.patch(
-        `${backendUrl}/api/product-offering-category-status/${id}`, 
+        `${backendUrl}/api/product-offering-category-status/${id}`,
         { status },
         { headers: { authorization: access_token } }
       );
@@ -72,11 +87,13 @@ export const updateCategoryStatus = createAsyncThunk(
 export const updateCategory = createAsyncThunk(
   'ProductOfferingCategory/update',
   async ({ id, ...productData }, { rejectWithValue }) => {
-    try {   
+    try {
       const access_token = localStorage.getItem('access_token');
-      const response = await axios.patch(`${backendUrl}/api/product-offering-category/${id}`, productData, {
-         headers: { authorization: access_token } 
-      });      
+      const response = await axios.patch(
+        `${backendUrl}/api/product-offering-category/${id}`,
+        productData,
+        { headers: { authorization: access_token } }
+      );
       return response.data.result;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -89,9 +106,9 @@ export const deleteCategory = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const access_token = localStorage.getItem('access_token');
-      await axios.delete(`${backendUrl}/api/product-offering-category/${id}`, {
-        headers: { authorization: access_token },
-      });
+      console.log(id);
+      await axios.delete(`${backendUrl}/api/product-offering-category/${id}`,
+        { headers: { authorization: access_token } });
       return id;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -102,14 +119,17 @@ export const deleteCategory = createAsyncThunk(
 // Slice
 const ProductOfferingCategorySlice = createSlice({
   name: 'ProductOfferingCategory',
-  initialState: { 
+  initialState: {
     data: [],
-    selectedProduct: null,
+    publishedData: [], // Add this for published categories
+    currentCategory: null,
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
     limit: 6,
-    loading: true,
+    loading: false,
+    loadingPublished: false, // Add this for published loading state
+    loadingCategory: false,
     error: null
   },
   reducers: {},
@@ -133,18 +153,36 @@ const ProductOfferingCategorySlice = createSlice({
         state.loading = false;
       })
 
-      // Get One
-      .addCase(getOne.pending, (state) => {
+      // Get Published
+      .addCase(getPublish.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(getOne.fulfilled, (state, action) => {
-        state.selectedProduct = action.payload;
+      .addCase(getPublish.fulfilled, (state, action) => {
+        state.data = action.payload.data;
+        state.currentPage = action.payload.page;
+        state.totalPages = action.payload.totalPages;
+        state.totalItems = action.payload.total;
+        state.limit = action.meta.arg?.limit || 6;
         state.loading = false;
+      })
+      .addCase(getPublish.rejected, (state, action) => {
+        state.error = action.payload;
+        state.loading = false;
+      })
+
+      // Get One
+      .addCase(getOne.pending, (state) => {
+        state.loadingCategory = true;
+        state.error = null;
+      })
+      .addCase(getOne.fulfilled, (state, action) => {
+        state.currentCategory = action.payload;
+        state.loadingCategory = false;
       })
       .addCase(getOne.rejected, (state, action) => {
         state.error = action.payload;
-        state.loading = false;
+        state.loadingCategory = false;
       })
 
       // Create

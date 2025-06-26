@@ -19,7 +19,7 @@ function Dashboard() {
 
 
     return (
-        <div className="dashboard-layout flex">
+        <div className="dashboard-layout flex w-screen h-screen relative">
             <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                 <Sidebar
                     open={open}
@@ -27,9 +27,9 @@ function Dashboard() {
                     toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                 />
             </div>
-            <div className="dashboard-content w-full">
+            <div className="dashboard-content w-full overflow-hidden">
                 <Header />
-                <div className="bg-gray-100/50">
+                <div className="bg-gray-100/50 h-[calc(100vh-104px)]">
                     <Outlet />
                 </div>
             </div>

@@ -87,4 +87,11 @@ const productOfferingCategorySchema = new mongoose.Schema({
   versionKey: false,
 });
 
+// Add virtual populate
+productOfferingCategorySchema.virtual('productOffering', {
+  ref: 'ProductOffering',
+  localField: '_id',
+  foreignField: 'category',
+});
+
 module.exports = mongoose.model('ProductOfferingCategory', productOfferingCategorySchema);

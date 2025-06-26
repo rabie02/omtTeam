@@ -1,0 +1,686 @@
+import React, { useEffect, useState } from 'react';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  notification,
+  Spin,
+  Popconfirm,
+  Tabs,
+  Table,
+  Select,
+  Tooltip
+} from 'antd';
+import { format } from 'date-fns';
+import { formatDateForInput } from '@/utils/formatDateForInput.js';
+import {
+  updateCategory,
+  createCategory,
+  getOne,
+  deleteCategory,
+  updateCategoryStatus
+} from '../../../features/servicenow/product-offering/productOfferingCategorySlice';
+import { getPublish } from '../../../features/servicenow/product-offering/productOfferingCatalogSlice';
+
+const generateCodeFromName = (name) => {
+  if (!name || typeof name !== 'string' || name.trim() === '') return '';
+  const words = name.toUpperCase().split(/[\s&\-,_]+/);
+  let codePrefix = '';
+  for (const word of words) {
+    if (word.length > 0 && codePrefix.length < 8) {
+      codePrefix += word.substring(0, Math.min(3, 8 - codePrefix.length));
+    }
+    if (codePrefix.length >= 8) break;
+  }
+  const randomNumber = Math.floor(Math.random() * 900) + 100;
+  return `${codePrefix}${randomNumber}`;
+};
+
+// Updated validation schema to include catalog
+const validationSchema = Yup.object().shape({
+  name: Yup.string().required('Name is required'),
+  start_date: Yup.string().required('Start date is required'),
+  end_date: Yup.string()
+    .test('end-date', 'End date must be after start date', function (value) {
+      if (!value) return true;
+      return new Date(value) >= new Date(this.parent.start_date);
+    }),
+  code: Yup.string().required('Code is required'),
+  catalog: Yup.string().required('Catalog is required'), // Added catalog requirement
+});
+
+// Status transition mapping
+const STATUS_TRANSITIONS = {
+  draft: { next: 'published', action: 'Publish' },
+  published: { next: 'archived', action: 'Archive' },
+  archived: { next: 'retired', action: 'Retire' },
+  retired: null // No next status
+};
+
+// StatusCell component for consistent status rendering
+const StatusCell = ({ status }) => {
+  const statusColors = {
+    published: { dot: 'bg-green-500', text: 'text-green-700' },
+    draft: { dot: 'bg-blue-500', text: 'text-blue-700' },
+    archived: { dot: 'bg-red-500', text: 'text-red-700' },
+    retired: { dot: 'bg-gray-400', text: 'text-gray-600' },
+  };
+  const colors = statusColors[status] || statusColors.inactive;
+  const displayText = status ?
+    status.charAt(0).toUpperCase() + status.slice(1) : '';
+
+  return (
+    <div className="flex items-center">
+      <span className={`h-2 w-2 rounded-full mr-2 ${colors.dot}`}></span>
+      <span className={`text-xs ${colors.text}`}>
+        {displayText}
+      </span>
+    </div>
+  );
+};
+
+function ProductOfferingCategoryFormPage() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { id } = useParams();
+  const isEditMode = Boolean(id);
+  const [activeTab, setActiveTab] = useState('1');
+
+  const { currentCategory, loading, loadingCategory } = useSelector(
+    state => state.productOfferingCategory
+  );
+
+  // Add catalog selector state and data
+  const [searchTerm, setSearchTerm] = useState('');
+  const { data: catalogs, loading: loadingCatalogs } = useSelector(
+    state => state.productOfferingCatalog
+  );
+
+  const [initialized, setInitialized] = useState(false);
+  const [nextStatusAction, setNextStatusAction] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Fetch catalogs on component mount
+  useEffect(() => {
+    dispatch(getPublish({ q: searchTerm }));
+  }, [dispatch, searchTerm]);
+
+  // Fetch Category details in edit mode
+  useEffect(() => {
+    if (isEditMode) {
+      dispatch(getOne(id)).then(() => setInitialized(true));
+    } else {
+      setInitialized(true);
+    }
+  }, [id, isEditMode, dispatch]);
+
+  // Determine next status action
+  useEffect(() => {
+    if (isEditMode && currentCategory) {
+      const transition = STATUS_TRANSITIONS[currentCategory.status];
+      setNextStatusAction(transition ? transition.action : null);
+    }
+  }, [currentCategory, isEditMode]);
+
+  // Initialize form with proper default values
+  const initialValues = {
+    name: '',
+    start_date: '',
+    end_date: '',
+    status: 'draft',
+    description: '',
+    code: '',
+    catalog: '', // Added catalog field
+    is_leaf: true // Added is_leaf field
+  };
+
+  // Merge with currentCategory if available
+  if (isEditMode && currentCategory && !loading) {
+    initialValues.name = currentCategory.name || '';
+    initialValues.start_date = formatDateForInput(currentCategory.start_date) || '';
+    initialValues.end_date = currentCategory.end_date
+      ? formatDateForInput(currentCategory.end_date)
+      : '';
+    initialValues.status = currentCategory.status || 'draft';
+    initialValues.description = currentCategory.description || '';
+    initialValues.code = currentCategory.code || '';
+    initialValues.catalog = currentCategory?.catalogs[0]?._id || ''; // Set catalog ID
+    initialValues.is_leaf = currentCategory.is_leaf || true;
+  }
+
+  const formik = useFormik({
+    initialValues,
+    validationSchema,
+    onSubmit: async (values, { resetForm }) => {
+      try {
+        const action = isEditMode
+          ? updateCategory({ id, ...values })
+          : createCategory(values);
+
+        await dispatch(action).unwrap();
+
+        notification.success({
+          message: isEditMode ? 'Category Updated' : 'Category Created',
+          description: isEditMode
+            ? 'Category has been updated successfully'
+            : 'New Category has been created successfully',
+        });
+
+        navigate('/dashboard/category');
+        resetForm();
+      } catch (error) {
+        console.error('Submission error:', error);
+        notification.error({
+          message: 'Operation Failed',
+          description: error.message || 'Something went wrong. Please try again.',
+        });
+      }
+    },
+    enableReinitialize: true,
+  });
+
+  // Generate code only in create mode when name changes
+  useEffect(() => {
+    if (!isEditMode && initialized) {
+      const generatedCode = generateCodeFromName(formik.values.name);
+      formik.setFieldValue('code', generatedCode);
+    }
+  }, [formik.values.name, isEditMode, initialized]);
+
+  const handleCancel = () => navigate('/dashboard/category');
+
+  // Handle status update
+  const handleStatusUpdate = async () => {
+    if (!currentCategory || !STATUS_TRANSITIONS[currentCategory.status]) return;
+
+    const nextStatus = STATUS_TRANSITIONS[currentCategory.status].next;
+
+    try {
+      await dispatch(updateCategoryStatus({
+        id,
+        status: nextStatus
+      })).unwrap();
+
+      // Update formik values to reflect new status
+      formik.setFieldValue('status', nextStatus);
+
+      notification.success({
+        message: 'Status Updated',
+        description: `Category has been ${nextStatusAction.toLowerCase()} successfully`,
+      });
+
+      // Update next action
+      const newTransition = STATUS_TRANSITIONS[nextStatus];
+      setNextStatusAction(newTransition ? newTransition.action : null);
+    } catch (error) {
+      notification.error({
+        message: 'Status Update Failed',
+        description: error.message || 'Failed to update Category status',
+      });
+    }
+  };
+
+  const handleNumberClick = (id) => {
+    navigate(`/dashboard/catalog/edit/${id}`);
+  };
+
+  // Handle delete with Popconfirm
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await dispatch(deleteCategory(id)).unwrap();
+      notification.success({
+        message: 'Category Deleted',
+        description: 'Category has been deleted successfully',
+      });
+      navigate('/dashboard/Category');
+    } catch (error) {
+      notification.error({
+        message: 'Deletion Failed',
+        description: error.message || 'Failed to delete Category',
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Define table columns for categories
+  const catalogTableColumns = [
+    {
+      title: (
+        <div className="flex items-center font-semibold">
+          <span>Number</span>
+        </div>
+      ),
+      dataIndex: 'number',
+      key: 'number',
+      sorter: (a, b) => a.number.localeCompare(b.number),
+      render: (text, record) => (
+        <span
+          className="text-cyan-600 font-medium hover:underline cursor-pointer"
+          onClick={() => handleNumberClick(record._id)}
+        >
+          {text}
+        </span>
+      )
+    },
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+      sorter: (a, b) => a.name.localeCompare(b.name),
+    },
+    {
+      title: 'Start Date',
+      key: 'start_date',
+      sorter: (a, b) => new Date(a.start_date) - new Date(b.start_date),
+      render: (_, record) => record.start_date
+        ? new Date(record.start_date).toISOString().split("T")[0]
+        : 'N/A',
+    },
+    {
+      title: 'End Date',
+      key: 'end_date',
+      sorter: (a, b) => new Date(a.end_date) - new Date(b.end_date),
+      render: (_, record) => record.end_date
+        ? new Date(record.end_date).toISOString().split("T")[0]
+        : 'N/A',
+    },
+  ];
+
+  // Tab items configuration
+  const tabItems = [
+    {
+      key: '1',
+      label: (
+        <span className="flex items-center">
+          <i className="ri-folder-line text-lg mr-2"></i>
+          Catalogs
+        </span>
+      ),
+      children: (
+        <div className="p-4">
+          <Table
+            columns={catalogTableColumns}
+            dataSource={currentCategory?.catalogs || []}
+            pagination={true}
+            rowKey="_id"
+            locale={{
+              emptyText: (
+                <div className="py-8 text-center">
+                  <i className="ri-information-line mx-auto text-3xl text-gray-400 mb-3"></i>
+                  <p className="text-gray-500">No catalogs associated with this category.</p>
+                </div>
+              )
+            }}
+          />
+        </div>
+      ),
+    },
+    {
+      key: '2',
+      label: (
+        <span className="flex items-center">
+          <i className="ri-price-tag-3-line text-lg mr-2"></i>
+          Product Offerings
+        </span>
+      ),
+      children: (
+        <div className="p-4">
+          <Table
+            columns={[
+              {
+                title: 'Name',
+                dataIndex: 'name',
+                key: 'name',
+                render: (text, record) => (
+                  <span
+                    className="text-cyan-600 font-medium hover:underline cursor-pointer"
+                    onClick={() => handleRowClick(record._id)}
+                  >
+                    {text}
+                  </span>
+                )
+              },
+
+              {
+                title: 'Status',
+                dataIndex: 'status',
+                key: 'status',
+                render: (status) => <StatusCell status={status} />,
+              },
+              {
+                title: 'Valid From',
+                dataIndex: 'validFor',
+                key: 'startDateTime',
+                render: (validFor) => formatDate(validFor?.startDateTime),
+              },
+              {
+                title: 'Valid To',
+                dataIndex: 'validFor',
+                key: 'endDateTime',
+                render: (validFor) => formatDate(validFor?.endDateTime),
+              },
+            ]}
+            dataSource={currentCategory?.productOffering || []}
+            pagination={{ pageSize: 5 }}
+            rowKey="_id"
+            locale={{
+              emptyText: (
+                <div className="py-8 text-center">
+                  <i className="ri-information-line mx-auto text-3xl text-gray-400 mb-3"></i>
+                  <p className="text-gray-500">No product offerings associated with this specification.</p>
+                </div>
+              )
+            }}
+          />
+        </div>
+      ),
+    },
+  ];
+
+
+  // Show spinner while initializing or loading Category data
+  if ((isEditMode && loading) || !initialized) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Spin
+          size="large"
+          tip="Loading Category details..."
+          indicator={<i className="ri-refresh-line animate-spin text-2xl"></i>}
+        />
+      </div>
+    );
+  }
+
+  const hasPublishedProductOfferings = currentCategory?.productOffering?.some(category => category.status === 'published') || false;
+
+
+  return (
+    <div className="bg-gray-50 h-full flex flex-col">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
+        <div className="flex flex-col md:flex-row px-6 py-2.5 bg-gray-200 justify-between items-start md:items-center gap-4">
+          <div className="flex items-center">
+            <button
+              onClick={handleCancel}
+              className="mr-3 text-cyan-700 hover:text-cyan-800 bg-white border border-cyan-700 hover:bg-cyan-50 w-10 h-10 flex justify-center items-center "
+            >
+              <i className="ri-arrow-left-s-line text-2xl"></i>
+            </button>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-800">Product Offering Category</h1>
+              <p className="text-gray-600 text-md flex items-center gap-2">
+                {isEditMode ? currentCategory.name : 'New record'}
+                {isEditMode && (
+                  <span className="px-2 py-0.5 bg-cyan-100 text-cyan-800 text-xs font-medium rounded-md capitalize">
+                    {currentCategory.status}
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {isEditMode && (
+              <>
+                {nextStatusAction && (
+                  <Tooltip
+                    title={hasPublishedProductOfferings ? "Action disabled due to published product offerings" : ""}
+                    placement="top"
+                  >
+                    <div>
+                      <button
+                        type="button"
+                        onClick={handleStatusUpdate}
+                        disabled={formik.isSubmitting || hasPublishedProductOfferings}
+                        className={`overflow-hidden relative w-32 h-10 ${hasPublishedProductOfferings
+                          ? 'bg-gray-400 text-white cursor-not-allowed'
+                          : 'bg-cyan-700 text-white hover:bg-cyan-800 cursor-pointer'
+                          } border-none rounded-md text-base font-medium z-10 group`}
+                      >
+                        {nextStatusAction}
+                      </button>
+                    </div>
+                  </Tooltip>
+                )}
+              </>
+            )}
+
+            <Tooltip
+              title={hasPublishedProductOfferings && isEditMode ? "Action disabled due to published product offerings" : ""}
+              placement="top"
+            >
+              <div>
+                <button
+                  type="button"
+                  onClick={formik.handleSubmit}
+                  disabled={formik.isSubmitting || (isEditMode && hasPublishedProductOfferings)}
+                  className={`overflow-hidden relative w-32 h-10 border-2 rounded-md text-base font-medium z-10 group ${(isEditMode && hasPublishedProductOfferings)
+                    ? 'bg-gray-100 border-gray-400 text-gray-400 cursor-not-allowed'
+                    : 'bg-white border-cyan-700 text-cyan-700 hover:bg-cyan-50 cursor-pointer'
+                    } ${formik.isSubmitting ? 'opacity-70' : ''}`}
+                >
+                  {formik.isSubmitting ? (
+                    <span>Processing...</span>
+                  ) : isEditMode ? (
+                    <span>Update</span>
+                  ) : (
+                    <span>Create</span>
+                  )}
+                </button>
+              </div>
+            </Tooltip>
+
+            {isEditMode && (
+              <Tooltip
+                title={hasPublishedProductOfferings ? "Action disabled due to published product offerings" : ""}
+                placement="top"
+              >
+                <div>
+                  <Popconfirm
+                    title="Delete Category"
+                    description={
+                      <div>
+                        <p className="font-medium">Are you sure you want to delete this category?</p>
+                        <p className="text-gray-600 mt-2">
+                          This action cannot be undone. All associated product offerings will be removed.
+                        </p>
+                        {hasPublishedProductOfferings && (
+                          <p className="text-red-500 mt-2 font-medium">
+                            <i className="ri-error-warning-line mr-1"></i>
+                            Action disabled due to published product offerings
+                          </p>
+                        )}
+                      </div>
+                    }
+                    icon={<i className="ri-error-warning-line text-red-500 text-xl mr-2"></i>}
+                    onConfirm={hasPublishedProductOfferings ? null : handleDelete}
+                    okText="Delete"
+                    okButtonProps={{
+                      loading: deleting,
+                      danger: true,
+                      disabled: hasPublishedProductOfferings
+                    }}
+                    cancelText="Cancel"
+                  >
+                    <button
+                      type="button"
+                      disabled={formik.isSubmitting || deleting || hasPublishedProductOfferings}
+                      className={`overflow-hidden relative w-32 h-10 border-2 rounded-md text-base font-medium z-10 group ${hasPublishedProductOfferings
+                        ? 'bg-gray-100 border-gray-400 text-gray-400 cursor-not-allowed'
+                        : 'bg-white border-cyan-700 text-cyan-700 hover:bg-cyan-50 cursor-pointer'
+                        }`}
+                    >
+                      Delete
+                    </button>
+                  </Popconfirm>
+                </div>
+              </Tooltip>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Form Content */}
+      <div className="flex-grow overflow-y-auto  ">
+        <div className="bg-white  shadow-sm  max-w-6xl mx-auto my-6">
+          <div className="p-6">
+            <form onSubmit={formik.handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Name */}
+                <div>
+                  <label className="block font-medium mb-1 text-gray-700">
+                    Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="name"
+                    value={formik.values.name}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    disabled={formik.isSubmitting}
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {formik.touched.name && formik.errors.name && (
+                    <p className="text-red-500 text-sm mt-1">{formik.errors.name}</p>
+                  )}
+                </div>
+
+                {/* Code */}
+                <div>
+                  <label className="block font-medium mb-1 text-gray-700">
+                    Code <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="code"
+                    value={formik.values.code}
+                    readOnly
+                    className="w-full border border-gray-300 rounded px-3 py-2 bg-gray-100"
+                  />
+                </div>
+
+                {/* Start Date */}
+                <div>
+                  <label className="block font-medium mb-1 text-gray-700">
+                    Start Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="start_date"
+                    value={formik.values.start_date}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    disabled={formik.isSubmitting}
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {formik.touched.start_date && formik.errors.start_date && (
+                    <p className="text-red-500 text-sm mt-1">{formik.errors.start_date}</p>
+                  )}
+                </div>
+
+                {/* End Date */}
+                <div>
+                  <label className="block font-medium mb-1 text-gray-700">End Date</label>
+                  <input
+                    type="date"
+                    name="end_date"
+                    value={formik.values.end_date}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    disabled={formik.isSubmitting}
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {formik.touched.end_date && formik.errors.end_date && (
+                    <p className="text-red-500 text-sm mt-1">{formik.errors.end_date}</p>
+                  )}
+                </div>
+
+                {/* Catalog Select Field */}
+                <div className="md:col-span-2">
+                  <label className="block font-medium mb-1 text-gray-700">
+                    Catalog <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    showSearch
+                    placeholder="Select a catalog"
+                    value={formik.values.catalog}
+                    onChange={value => formik.setFieldValue('catalog', value)}
+                    onSearch={setSearchTerm}
+                    options={catalogs?.map(catalog => ({
+                      value: catalog._id,
+                      label: catalog.name
+                    }))}
+                    className="w-full"
+                    loading={loadingCatalogs}
+                    filterOption={false}
+                  />
+                  {formik.touched.catalog && formik.errors.catalog && (
+                    <p className="text-red-500 text-sm mt-1">{formik.errors.catalog}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Status - Disabled Radio Buttons */}
+              <div className="w-full md:w-1/2">
+                <label className="block font-medium mb-1 text-gray-700">Status</label>
+                <div className="flex space-x-4">
+                  {['draft', 'published', 'archived', 'retired'].map(status => (
+                    <label
+                      key={status}
+                      className={`flex items-center px-4 py-2 border rounded-md cursor-not-allowed ${formik.values.status === status
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-300'
+                        }`}
+                    >
+                      <input
+                        type="radio"
+                        name="status"
+                        value={status}
+                        checked={formik.values.status === status}
+                        onChange={() => { }} // Disabled
+                        disabled={true}
+                        className="mr-2"
+                      />
+                      <span className="capitalize">{status}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block font-medium mb-1 text-gray-700">Description</label>
+                <textarea
+                  name="description"
+                  value={formik.values.description}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  rows="4"
+                  disabled={formik.isSubmitting}
+                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </form>
+          </div>
+        </div>
+        {isEditMode ? (
+          <div className='bg-white max-w-7xl mx-auto my-4'>
+            {/* Tabs Section */}
+            <div className="p-3">
+              <Tabs
+                activeKey={activeTab}
+                type="card"
+                onChange={setActiveTab}
+                items={tabItems}
+                className="tabs"
+              />
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+export default ProductOfferingCategoryFormPage;

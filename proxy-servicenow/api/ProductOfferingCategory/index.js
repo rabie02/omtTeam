@@ -3,7 +3,8 @@ const router = express.Router();
 
 // Import controllers
 const getAll = require('../../controllers/ProductOfferingCategory/getall');
-const getOne = require('../../controllers/ProductOfferingCategory/getone');
+const getPublish = require('../../controllers/ProductOfferingCategory/getpublish');
+const getOne = require('../../controllers/ProductOfferingCategory/getbydetails');
 const create = require('../../controllers/ProductOfferingCategory/create');
 const update = require('../../controllers/ProductOfferingCategory/update');
 const updateStatus = require('../../controllers/ProductOfferingCategory/updateStatus')
@@ -12,6 +13,7 @@ const deleteHandler = require('../../controllers/ProductOfferingCategory/delete'
 // const createRelation = require('../../controllers/CatalogCategroyRelationship/create');
 // Define routes
 router.get('/product-offering-category', getAll);
+router.get('/product-offering-category-publish', getPublish);
 router.get('/product-offering-category/:id', getOne);
 router.post('/product-offering-category', create);
 router.patch('/product-offering-category/:id', update);

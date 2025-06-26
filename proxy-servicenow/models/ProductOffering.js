@@ -78,7 +78,7 @@ const prodSpecCharValueUseSchema = new Schema({
 });
 
 const productOfferingSchema = new Schema({
-  //number: { type: String, required: false }, 
+  number: { type: String }, 
   category: { type: Array({
   type: mongoose.Schema.Types.ObjectId,
   ref: 'ProductOfferingCategory'
