@@ -33,12 +33,18 @@ import {
   CreditCard,
   Zap,
 } from "lucide-react";
-import axios from 'axios';
 import { Tooltip, Table, Input, Select, DatePicker, Button, Card, Divider, Badge, Progress, Radio, Tabs, Dropdown, Menu } from 'antd';
 import { Bar, Pie, Line, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip as ChartTooltip, Legend, ArcElement, PointElement, LineElement } from 'chart.js';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { useDispatch, useSelector } from 'react-redux';
+import { getOpportunities } from '../../../features/servicenow/opportunity/opportunitySlice';
+import { getPublished as getSpecs } from '../../../features/servicenow/product-specification/productSpecificationSlice';
+import { getall as getProducts } from '../../../features/servicenow/product-offering/productOfferingSlice';
+import { getall as getCategories } from '../../../features/servicenow/product-offering/productOfferingCategorySlice';
+import { getall as getCatalogs } from '../../../features/servicenow/product-offering/productOfferingCatalogSlice';
+import { getQuotes } from '../../../features/servicenow/quote/quotaSlice';
 
 ChartJS.register(
   CategoryScale,
@@ -56,207 +62,74 @@ const { Search: AntSearch } = Input;
 const { Option } = Select;
 const { TabPane } = Tabs;
 
-import Section1 from "./Dashboard/Section1";
-import Section2 from "./Dashboard/Section2";
-import Section3 from "./Dashboard/Section3";
-import Section4 from "./Dashboard/Section4";
-import Section5 from "./Dashboard/Section5";
-import Section6 from "./Dashboard/Section6";
-import AIML from "./Dashboard/AI-ML";
+const OpportunityDashboard = () => {
+  const dispatch = useDispatch();
+  const opportunitiesState = useSelector(state => state.opportunity) || {};
+  const specsState = useSelector(state => state.productSpecification) || {};
+  const productsState = useSelector(state => state.productOffering) || {};
+  const categoriesState = useSelector(state => state.productOfferingCategory) || {};
+  const catalogsState = useSelector(state => state.productOfferingCatalog) || {};
+  const quotesState = useSelector(state => state.quotes) || {};
 
-const Home = () => {
+  const opportunities = opportunitiesState?.opportunities || [];
+  const specs = specsState?.data || [];
+  const products = productsState?.data || [];
+  const categories = categoriesState?.data || [];
+  const catalogs = catalogsState?.data || [];
+  const quotes = quotesState?.data || [];
+
   const [activeTab, setActiveTab] = useState("dashboard");
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
   const [dateRange, setDateRange] = useState([]);
-  const [stats, setStats] = useState({
-    products: [],
-    specs: [],
-    categories: [],
-    catalogs: [],
-    quote: [],
-    opportunities: []
-  });
   const [visualizationType, setVisualizationType] = useState('bar');
   const [visualizationMetric, setVisualizationMetric] = useState('count');
-  const [filteredData, setFilteredData] = useState([]);
-
-  const tabs = [
-    {
-      id: "dashboard",
-      title: "Dashboard",
-      icon: <Package className="w-4 h-4" />,
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-50",
-    },
-    {
-      id: "offerings",
-      title: "Product Offerings",
-      icon: <Package className="w-4 h-4" />,
-      component: <Section3 />,
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-50",
-    },
-    {
-      id: "specifications",
-      title: "Specifications",
-      icon: <ListTree className="w-4 h-4" />,
-      component: <Section4 />,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50",
-    },
-    {
-      id: "catalogs",
-      title: "Catalogs",
-      icon: <Layers className="w-4 h-4" />,
-      component: <Section2 />,
-      color: "text-amber-600",
-      bgColor: "bg-amber-50",
-    },
-    {
-      id: "categories",
-      title: "Categories",
-      icon: <Boxes className="w-4 h-4" />,
-      component: <Section1 />,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-    },
-    {
-      id: "quote",
-      title: "Quotes",
-      icon: <FileText className="w-4 h-4" />,
-      component: <Section5 />,
-      color: "text-pink-600",
-      bgColor: "bg-pink-50",
-    },
-    {
-      id: "opportunities",
-      title: "Opportunities",
-      icon: <Briefcase className="w-4 h-4" />,
-      component: <Section6 />,
-      color: "text-cyan-600",
-      bgColor: "bg-cyan-50",
-    }
-  ];
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem('authToken');
-        const headers = { Authorization: `Bearer ${token}` };
-        
-        const endpoints = [
-          { name: 'products', url: 'http://localhost:3000/api/products' },
-          { name: 'product-specs', url: 'http://localhost:3000/api/product-specs' },
-          { name: 'categories', url: 'http://localhost:3000/api/categories' },
-          { name: 'catalogs', url: 'http://localhost:3000/api/catalogs' },
-          { name: 'quote', url: 'http://localhost:3000/api/quotes' },
-          { name: 'opportunities', url: 'http://localhost:3000/api/opportunities' }
-        ];
-
-        const responses = await Promise.all(
-          endpoints.map(endpoint => axios.get(endpoint.url, { headers }))
-        );
-
-        const [
-          productsRes, 
-          specsRes, 
-          categoriesRes, 
-          catalogsRes, 
-          quoteRes,
-          opportunitiesRes
-        ] = responses;
-
-        const newStats = {
-          products: productsRes.data.data || [],
-          specs: specsRes.data.data || [],
-          categories: categoriesRes.data.data || [],
-          catalogs: catalogsRes.data.data || [],
-          quote: quoteRes.data.data || [],
-          opportunities: opportunitiesRes.data.data || []
-        };
-
-        setStats(newStats);
-
-        // Initialize filteredData with all data
-        const allData = [
-          ...(newStats.products || []).map(item => ({ ...item, type: 'Product' })),
-          ...(newStats.specs || []).map(item => ({ ...item, type: 'Specification' })),
-          ...(newStats.categories || []).map(item => ({ ...item, type: 'Category' })),
-          ...(newStats.catalogs || []).map(item => ({ ...item, type: 'Catalog' })),
-          ...(newStats.quote || []).map(item => ({ ...item, type: 'Quote', amount: parseFloat(item.total_amount?.replace('$', '').replace(',', '') || 0) })),
-          ...(newStats.opportunities || []).map(item => ({ ...item, type: 'Opportunity' }))
-        ];
-
-        setFilteredData(allData);
-
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+    dispatch(getOpportunities({ page: 1, limit: 20 }));
+    dispatch(getSpecs({ page: 1, limit: 20 }));
+    dispatch(getProducts({ page: 1, limit: 20 }));
+    dispatch(getCategories({ page: 1, limit: 20 }));
+    dispatch(getCatalogs({ page: 1, limit: 20 }));
+    dispatch(getQuotes({ page: 1, limit: 20 }));
+  }, [dispatch]);
 
   useEffect(() => {
-    if (stats) {
-      const allData = [
-        ...(stats.products || []).map(item => ({ ...item, type: 'Product' })),
-        ...(stats.specs || []).map(item => ({ ...item, type: 'Specification' })),
-        ...(stats.categories || []).map(item => ({ ...item, type: 'Category' })),
-        ...(stats.catalogs || []).map(item => ({ ...item, type: 'Catalog' })),
-        ...(stats.quote || []).map(item => ({ ...item, type: 'Quote', amount: parseFloat(item.total_amount?.replace('$', '').replace(',', '') || 0) })),
-        ...(stats.opportunities || []).map(item => ({ ...item, type: 'Opportunity' }))
-      ];
-
-      const filtered = allData.filter(item => {
-        const matchesSearch = searchText === '' || 
-          (item.name && item.name.toLowerCase().includes(searchText.toLowerCase())) ||
-          (item.number && item.number.toLowerCase().includes(searchText.toLowerCase())) ||
-          (item.description && item.description.toLowerCase().includes(searchText.toLowerCase()));
-        
-        const matchesType = !selectedType || item.type === selectedType;
-        
-        const matchesStatus = !selectedStatus || 
-          (selectedStatus === 'active' && 
-            (item.status === 'Published' || item.state === 'Approved' || item.stage?.display_value === 'Closed - Won')) ||
-          (selectedStatus === 'draft' && 
-            (item.status === 'In Draft' || item.state === 'Draft')) ||
-          (selectedStatus === 'retired' && 
-            (item.status === 'Retired' || item.stage?.display_value === 'Closed - Lost'));
-        
-        // Updated date range handling
-        const matchesDate = !dateRange || dateRange.length === 0 || 
-          (item.sys_updated_on && 
-           dateRange[0] && 
-           dateRange[1] &&
-           new Date(item.sys_updated_on) >= dateRange[0] && 
-           new Date(item.sys_updated_on) <= dateRange[1]);
-        
-        return matchesSearch && matchesType && matchesStatus && matchesDate;
-      });
-
-      setFilteredData(filtered || []);
+    if (
+      opportunities.length > 0 ||
+      specs.length > 0 ||
+      products.length > 0 ||
+      categories.length > 0 ||
+      catalogs.length > 0 ||
+      quotes.length > 0
+    ) {
+      setLoading(false);
     }
-  }, [stats, searchText, selectedType, selectedStatus, dateRange]);
+  }, [opportunities, specs, products, categories, catalogs, quotes]);
+
+  // Compute stats from Redux data
+  const stats = {
+    opportunities,
+    specs,
+    products,
+    categories,
+    catalogs,
+    quotes
+  };
+
+  // Helper to ensure always array
+  const safeArray = arr => Array.isArray(arr) ? arr : [];
 
   const exportData = (format) => {
-    if (!filteredData || filteredData.length === 0) {
-      console.warn('No data to export');
-      return;
-    }
-
-    const dataToExport = filteredData.map(item => ({
+    const dataToExport = safeArray(filteredData).map(item => ({
       Type: item.type,
-      Name: item.display_name || item.name || item.number || 'N/A',
+      Name: item.short_description || item.name || item.number || 'N/A',
       Description: item.description || 'N/A',
-      Status: item.status || item.state || item.stage?.display_value || 'N/A',
-      'Last Updated': item.sys_updated_on ? new Date(item.sys_updated_on).toLocaleDateString() : 'N/A',
-      Amount: item.amount ? `$${item.amount.toLocaleString()}` : 'N/A'
+      Status: item.status || item.state || item.stage?.name || 'N/A',
+      'Last Updated': item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : 'N/A',
+      Amount: item.amount || item.cumulative_acv ? `$${(item.amount || item.cumulative_acv).toLocaleString()}` : 'N/A'
     }));
 
     if (format === 'csv') {
@@ -296,44 +169,40 @@ const Home = () => {
   }
 
   const getTopProducts = () => {
-    if (!stats.quote || !stats.products) return [];
-
     const productCounts = {};
-    stats.quote.forEach(quote => {
+    safeArray(stats.quotes).forEach(quote => {
       quote.quote_lines?.forEach(line => {
-        const productId = line.product_offering?.sys_id || line.product_offering?.id;
+        const productId = line.product_offering?._id || line.product_offering?.id;
         if (productId) {
           productCounts[productId] = (productCounts[productId] || 0) + parseInt(line.quantity || 1);
         }
       });
     });
 
-    return [...stats.products]
+    return [...safeArray(stats.products)]
       .sort((a, b) => {
-        const countA = productCounts[a.sys_id] || 0;
-        const countB = productCounts[b.sys_id] || 0;
+        const countA = productCounts[a._id] || 0;
+        const countB = productCounts[b._id] || 0;
         return countB - countA;
       })
       .slice(0, 3)
       .map((product, index) => ({
         ...product,
-        sales: productCounts[product.sys_id] || 0,
+        sales: productCounts[product._id] || 0,
         growth: index === 2 ? -3 : Math.floor(Math.random() * 15) + 5
       }));
   };
 
   const getRecentActivities = () => {
-    if (!stats.products || !stats.quote || !stats.opportunities) return [];
-
-    const productActivities = (stats.products || [])
+    const opportunityActivities = safeArray(stats.opportunities)
       .slice(0, 2)
-      .map(p => ({
-        description: `Product ${p.name || p.display_name} was ${p.status === 'published' ? 'published' : 'updated'}`,
-        timestamp: p.sys_updated_on || p.updatedAt || p.createdAt,
-        initials: p.name ? p.name.charAt(0) : 'P'
+      .map(o => ({
+        description: `Opportunity ${o.number} was ${o.stage?.name.toLowerCase()}`,
+        timestamp: o.updatedAt || o.createdAt,
+        initials: 'O'
       }));
 
-    const quoteActivities = (stats.quote || [])
+    const quoteActivities = safeArray(stats.quotes)
       .slice(0, 2)
       .map(q => ({
         description: `Quote ${q.number} was ${q.state.toLowerCase()}`,
@@ -341,114 +210,62 @@ const Home = () => {
         initials: 'Q'
       }));
 
-    const opportunityActivities = (stats.opportunities || [])
+    const productActivities = safeArray(stats.products)
       .slice(0, 2)
-      .map(o => ({
-        description: `Opportunity ${o.number} was ${o.stage?.display_value.toLowerCase()}`,
-        timestamp: o.sys_updated_on || o.sys_created_on,
-        initials: 'O'
+      .map(p => ({
+        description: `Product ${p.name} was updated`,
+        timestamp: p.updatedAt || p.createdAt,
+        initials: 'P'
       }));
 
-    return [...productActivities, ...quoteActivities, ...opportunityActivities]
+    return [...opportunityActivities, ...quoteActivities, ...productActivities]
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
       .slice(0, 4);
   };
 
   const getTopCategories = () => {
-    if (!stats.products || !stats.categories) return [];
-
     const categoryCounts = {};
-    stats.products.forEach(product => {
-      const categoryId = product.category?.sys_id;
+    safeArray(stats.products).forEach(product => {
+      const categoryId = product.category?.[0]?._id;
       if (categoryId) {
         categoryCounts[categoryId] = (categoryCounts[categoryId] || 0) + 1;
       }
     });
 
-    return [...stats.categories]
-      .sort((a, b) => (categoryCounts[b.sys_id] || 0) - (categoryCounts[a.sys_id] || 0))
+    return [...safeArray(stats.categories)]
+      .sort((a, b) => (categoryCounts[b._id] || 0) - (categoryCounts[a._id] || 0))
       .slice(0, 5)
       .map(category => ({
         ...category,
-        productCount: categoryCounts[category.sys_id] || 0
+        productCount: categoryCounts[category._id] || 0
       }));
   };
 
   const getQuoteConversionRate = () => {
-    if (!stats.quote || !stats.opportunities) return 0;
-    
-    const totalQuotes = stats.quote.length;
-    const wonOpportunities = stats.opportunities.filter(o => o.stage?.display_value === 'Closed - Won').length;
+    const totalQuotes = safeArray(stats.quotes).length;
+    const wonOpportunities = safeArray(stats.opportunities).filter(o => o.stage?.name === 'Closed - Won').length;
     return totalQuotes > 0 ? (wonOpportunities / totalQuotes * 100).toFixed(1) : 0;
   };
 
   const getRecentQuotes = () => {
-    if (!stats.quote) return [];
-    
-    return [...stats.quote]
+    return [...safeArray(stats.quotes)]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 3)
       .map(quote => ({
         ...quote,
-        amount: parseFloat(quote.total_amount?.replace('$', '').replace(',', '') || 0)
+        amount: quote.quote_lines?.reduce((sum, line) => sum + (parseFloat(line.unit_price) * parseInt(line.quantity || 1)), 0) || 0
       }));
   };
 
   const prepareChartData = () => {
-    // Initialize empty chart data structure
-    const emptyData = {
-      productStatusData: {
-        labels: [],
-        datasets: [{
-          data: [],
-          backgroundColor: [],
-          borderColor: [],
-          borderWidth: 1
-        }]
-      },
-      quoteStatusData: {
-        labels: [],
-        datasets: [{
-          data: [],
-          backgroundColor: [],
-          borderColor: [],
-          borderWidth: 1
-        }]
-      },
-      revenueData: {
-        labels: [],
-        datasets: [{
-          label: 'Revenue ($)',
-          data: [],
-          backgroundColor: 'rgba(153, 102, 255, 0.6)',
-          borderColor: 'rgba(153, 102, 255, 1)',
-          borderWidth: 2,
-          tension: 0.4,
-          fill: true
-        }]
-      },
-      topProductsData: {
-        labels: [],
-        datasets: [{
-          label: 'Units Sold',
-          data: [],
-          backgroundColor: 'rgba(54, 162, 235, 0.6)',
-          borderColor: 'rgba(54, 162, 235, 1)',
-          borderWidth: 1
-        }]
-      }
-    };
-
-    if (!stats.products || !stats.quote) return emptyData;
-
-    // Product status distribution
-    const productStatusData = {
-      labels: ['Published', 'Draft', 'Retired'],
+    // Opportunity stage distribution
+    const opportunityStageData = {
+      labels: ['Closed - Won', 'In Progress', 'Closed - Lost'],
       datasets: [{
         data: [
-          stats.products.filter(p => p.status === 'Published').length,
-          stats.products.filter(p => p.status === 'In Draft').length,
-          stats.products.filter(p => p.status === 'Retired').length
+          safeArray(stats.opportunities).filter(o => o.stage?.name === 'Closed - Won').length,
+          safeArray(stats.opportunities).filter(o => o.stage?.name !== 'Closed - Won' && o.stage?.name !== 'Closed - Lost').length,
+          safeArray(stats.opportunities).filter(o => o.stage?.name === 'Closed - Lost').length
         ],
         backgroundColor: [
           'rgba(75, 192, 192, 0.6)',
@@ -469,9 +286,9 @@ const Home = () => {
       labels: ['Approved', 'Draft', 'Rejected'],
       datasets: [{
         data: [
-          stats.quote.filter(q => q.state === 'Approved').length,
-          stats.quote.filter(q => q.state === 'Draft').length,
-          stats.quote.filter(q => q.state === 'Rejected').length
+          safeArray(stats.quotes).filter(q => q.state === 'Approved').length,
+          safeArray(stats.quotes).filter(q => q.state === 'Draft').length,
+          safeArray(stats.quotes).filter(q => q.state === 'Rejected').length
         ],
         backgroundColor: [
           'rgba(54, 162, 235, 0.6)',
@@ -487,12 +304,14 @@ const Home = () => {
       }]
     };
 
-    // Monthly revenue data
+    // Monthly revenue data from opportunities
     const monthlyRevenue = {};
-    stats.quote.forEach(quote => {
-      const month = new Date(quote.createdAt).toLocaleString('default', { month: 'short' });
-      const amount = parseFloat(quote.total_amount?.replace('$', '').replace(',', '') || 0);
-      monthlyRevenue[month] = (monthlyRevenue[month] || 0) + amount;
+    safeArray(stats.opportunities).forEach(opp => {
+      if (opp.stage?.name === 'Closed - Won') {
+        const month = new Date(opp.updatedAt || opp.createdAt).toLocaleString('default', { month: 'short' });
+        const amount = opp.line_items?.reduce((sum, item) => sum + parseFloat(item.cumulative_acv || 0), 0) || 0;
+        monthlyRevenue[month] = (monthlyRevenue[month] || 0) + amount;
+      }
     });
 
     const revenueData = {
@@ -508,13 +327,28 @@ const Home = () => {
       }]
     };
 
-    // Top products sales data
-    const topProducts = getTopProducts();
+    // Top products in opportunities
+    const productOpportunityCount = {};
+    safeArray(stats.opportunities).forEach(opp => {
+      opp.line_items?.forEach(item => {
+        const productId = item.productOffering?._id;
+        if (productId) {
+          productOpportunityCount[productId] = (productOpportunityCount[productId] || 0) + 1;
+        }
+      });
+    });
+
     const topProductsData = {
-      labels: topProducts.map(p => p.display_name || p.name),
+      labels: [...safeArray(stats.products)]
+        .sort((a, b) => (productOpportunityCount[b._id] || 0) - (productOpportunityCount[a._id] || 0))
+        .slice(0, 5)
+        .map(p => p.name),
       datasets: [{
-        label: 'Units Sold',
-        data: topProducts.map(p => p.sales),
+        label: 'Opportunity Count',
+        data: [...safeArray(stats.products)]
+          .sort((a, b) => (productOpportunityCount[b._id] || 0) - (productOpportunityCount[a._id] || 0))
+          .slice(0, 5)
+          .map(p => productOpportunityCount[p._id] || 0),
         backgroundColor: 'rgba(54, 162, 235, 0.6)',
         borderColor: 'rgba(54, 162, 235, 1)',
         borderWidth: 1
@@ -522,57 +356,77 @@ const Home = () => {
     };
 
     return {
-      productStatusData,
+      opportunityStageData,
       quoteStatusData,
       revenueData,
       topProductsData
     };
   };
 
+  // Combine all data for the master table
+  const allData = [
+    ...safeArray(stats.opportunities).map(item => ({ 
+      ...item, 
+      type: 'Opportunity',
+      amount: item.line_items?.reduce((sum, line) => sum + parseFloat(line.cumulative_acv || 0), 0) || 0
+    })),
+    ...safeArray(stats.quotes).map(item => ({ 
+      ...item, 
+      type: 'Quote',
+      amount: item.quote_lines?.reduce((sum, line) => sum + (parseFloat(line.unit_price) * parseInt(line.quantity || 1)), 0) || 0
+    })),
+    ...safeArray(stats.products).map(item => ({ ...item, type: 'Product' })),
+    ...safeArray(stats.specs).map(item => ({ ...item, type: 'Specification' })),
+    ...safeArray(stats.categories).map(item => ({ ...item, type: 'Category' })),
+    ...safeArray(stats.catalogs).map(item => ({ ...item, type: 'Catalog' }))
+  ];
+
+  // Before filtering, ensure dateRange is always an array
+  const safeDateRange = Array.isArray(dateRange) ? dateRange : [];
+
+  // Filter data based on user selections
+  const filteredData = safeArray(allData).filter(item => {
+    const name = item.short_description || item.name || '';
+    const number = item.number || '';
+    const description = item.description || '';
+
+    const matchesSearch = searchText === '' ||
+      (typeof name === 'string' && name.toLowerCase().includes(searchText.toLowerCase())) ||
+      (typeof number === 'string' && number.toLowerCase().includes(searchText.toLowerCase())) ||
+      (typeof description === 'string' && description.toLowerCase().includes(searchText.toLowerCase()));
+
+    const matchesType = !selectedType || item.type === selectedType;
+
+    const matchesStatus = !selectedStatus || 
+      (selectedStatus === 'active' && 
+        (item.status === 'published' || item.state === 'Approved' || item.stage?.name === 'Closed - Won')) ||
+      (selectedStatus === 'draft' && 
+        (item.status === 'draft' || item.state === 'Draft')) ||
+      (selectedStatus === 'inactive' && 
+        (item.status === 'archived' || item.stage?.name === 'Closed - Lost'));
+
+    const matchesDate = safeDateRange.length === 0 || 
+      (item.updatedAt && 
+        new Date(item.updatedAt) >= safeDateRange[0] && 
+        new Date(item.updatedAt) <= safeDateRange[1]);
+
+    return matchesSearch && matchesType && matchesStatus && matchesDate;
+  });
+
   // Prepare visualization data based on filtered data
   const prepareFilteredVisualizations = () => {
-    const emptyData = {
-      typeDistribution: {
-        labels: [],
-        datasets: [{
-          label: 'Records by Type',
-          data: [],
-          backgroundColor: [],
-          borderColor: [],
-          borderWidth: 1
-        }]
-      },
-      statusDistribution: {
-        labels: [],
-        datasets: [{
-          label: 'Records by Status',
-          data: [],
-          backgroundColor: [],
-          borderColor: [],
-          borderWidth: 1
-        }]
-      },
-      monthlyTrend: {
-        labels: [],
-        datasets: [{
-          label: 'Records by Month',
-          data: [],
-          backgroundColor: 'rgba(153, 102, 255, 0.6)',
-          borderColor: 'rgba(153, 102, 255, 1)',
-          borderWidth: 2,
-          tension: 0.4,
-          fill: true
-        }]
-      }
-    };
-
-    if (!filteredData || filteredData.length === 0) {
-      return emptyData;
+    const safeFilteredData = Array.isArray(filteredData) ? filteredData : [];
+    if (safeFilteredData.length === 0) {
+      return {
+        typeDistribution: null,
+        statusDistribution: null,
+        monthlyTrend: null
+      };
     }
 
     // Type distribution
     const typeCounts = {};
-    filteredData.forEach(item => {
+    safeFilteredData.forEach(item => {
       typeCounts[item.type] = (typeCounts[item.type] || 0) + 1;
     });
 
@@ -609,12 +463,12 @@ const Home = () => {
       'Other': 0
     };
 
-    filteredData.forEach(item => {
-      if (item.status === 'Published' || item.state === 'Approved' || item.stage?.display_value === 'Closed - Won') {
+    safeFilteredData.forEach(item => {
+      if (item.status === 'published' || item.state === 'Approved' || item.stage?.name === 'Closed - Won') {
         statusCounts['Active']++;
-      } else if (item.status === 'In Draft' || item.state === 'Draft') {
+      } else if (item.status === 'draft' || item.state === 'Draft') {
         statusCounts['Draft']++;
-      } else if (item.status === 'Retired' || item.stage?.display_value === 'Closed - Lost') {
+      } else if (item.status === 'archived' || item.stage?.name === 'Closed - Lost') {
         statusCounts['Inactive']++;
       } else {
         statusCounts['Other']++;
@@ -644,8 +498,8 @@ const Home = () => {
 
     // Monthly trend
     const monthlyCounts = {};
-    filteredData.forEach(item => {
-      const date = item.sys_updated_on || item.updatedAt || item.createdAt;
+    safeFilteredData.forEach(item => {
+      const date = item.updatedAt || item.createdAt;
       if (date) {
         const month = new Date(date).toLocaleString('default', { month: 'short' });
         monthlyCounts[month] = (monthlyCounts[month] || 0) + 1;
@@ -691,12 +545,12 @@ const Home = () => {
       dataIndex: 'type',
       key: 'type',
       filters: [
+        { text: 'Opportunity', value: 'Opportunity' },
+        { text: 'Quote', value: 'Quote' },
         { text: 'Product', value: 'Product' },
         { text: 'Specification', value: 'Specification' },
         { text: 'Category', value: 'Category' },
         { text: 'Catalog', value: 'Catalog' },
-        { text: 'Quote', value: 'Quote' },
-        { text: 'Opportunity', value: 'Opportunity' },
       ],
       onFilter: (value, record) => record.type === value,
     },
@@ -706,7 +560,7 @@ const Home = () => {
       key: 'name',
       render: (text, record) => (
         <span>
-          {record.display_name || record.name || record.number || 'N/A'}
+          {record.short_description || record.name || record.number || 'N/A'}
         </span>
       ),
     },
@@ -726,41 +580,41 @@ const Home = () => {
       key: 'status',
       render: (text, record) => (
         <span className={`px-2 py-1 rounded-full text-xs ${
-          text === 'Published' || record.state === 'Approved' || record.stage?.display_value === 'Closed - Won' ? 
+          text === 'published' || record.state === 'Approved' || record.stage?.name === 'Closed - Won' ? 
             'bg-green-100 text-green-800' :
-          text === 'In Draft' || record.state === 'Draft' ? 
+          text === 'draft' || record.state === 'Draft' ? 
             'bg-yellow-100 text-yellow-800' :
-          text === 'Retired' || record.stage?.display_value === 'Closed - Lost' ? 
+          text === 'archived' || record.stage?.name === 'Closed - Lost' ? 
             'bg-red-100 text-red-800' :
             'bg-gray-100 text-gray-800'
         }`}>
-          {text || record.state || record.stage?.display_value || 'N/A'}
+          {text || record.state || record.stage?.name || 'N/A'}
         </span>
       ),
       filters: [
         { text: 'Published/Approved/Won', value: 'active' },
-        { text: 'In Draft', value: 'draft' },
-        { text: 'Retired/Lost', value: 'retired' },
+        { text: 'Draft', value: 'draft' },
+        { text: 'Archived/Lost', value: 'inactive' },
       ],
       onFilter: (value, record) => {
         if (value === 'active') {
-          return record.status === 'Published' || record.state === 'Approved' || record.stage?.display_value === 'Closed - Won';
+          return record.status === 'published' || record.state === 'Approved' || record.stage?.name === 'Closed - Won';
         } else if (value === 'draft') {
-          return record.status === 'In Draft' || record.state === 'Draft';
-        } else if (value === 'retired') {
-          return record.status === 'Retired' || record.stage?.display_value === 'Closed - Lost';
+          return record.status === 'draft' || record.state === 'Draft';
+        } else if (value === 'inactive') {
+          return record.status === 'archived' || record.stage?.name === 'Closed - Lost';
         }
         return true;
       },
     },
     {
       title: 'Last Updated',
-      dataIndex: 'sys_updated_on',
-      key: 'sys_updated_on',
+      dataIndex: 'updatedAt',
+      key: 'updatedAt',
       render: (text) => (
         <span>{text ? new Date(text).toLocaleDateString() : 'N/A'}</span>
       ),
-      sorter: (a, b) => new Date(a.sys_updated_on || 0) - new Date(b.sys_updated_on || 0),
+      sorter: (a, b) => new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0),
     },
     {
       title: 'Amount',
@@ -906,50 +760,30 @@ const Home = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 text-gray-800">
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-        
-        <div className="mb-2"> 
-          <div className="flex flex-wrap gap-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? `${tab.bgColor} ${tab.color} shadow-sm`
-                    : "text-gray-500 hover:bg-gray-100"
-                }`}
-              >
-                {tab.icon}
-                {tab.title}
-              </button>
-            ))}
-          </div>
-        </div>
-
+    <div>
+      <main>
         {activeTab === 'dashboard' ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">  
               <Card className="shadow-sm border border-gray-200 hover:shadow-md transition-all">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Total Products</p>
-                    <p className="text-2xl font-bold text-indigo-600">{stats.products?.length || 0}</p>
+                    <p className="text-sm font-medium text-gray-500">Total Opportunities</p>
+                    <p className="text-2xl font-bold text-indigo-600">{safeArray(stats.opportunities).length}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-indigo-50 text-indigo-600">
-                    <Package className="w-5 h-5" />
+                    <Briefcase className="w-5 h-5" />
                   </div>
                 </div>
                 <Divider className="my-2" />  
                 <div className="flex justify-between text-xs">  
                   <span className="text-green-600">
                     <CheckCircle2 className="inline w-3 h-3 mr-1" />  
-                    {stats.products?.filter(p => p.status === 'Published').length || 0} Published
+                    {safeArray(stats.opportunities).filter(o => o.stage?.name === 'Closed - Won').length} Won
                   </span>
                   <span className="text-yellow-600">
-                    <Edit className="inline w-3 h-3 mr-1" />  
-                    {stats.products?.filter(p => p.status === 'In Draft').length || 0} Draft
+                    <Activity className="inline w-3 h-3 mr-1" />  
+                    {safeArray(stats.opportunities).filter(o => o.stage?.name !== 'Closed - Won' && o.stage?.name !== 'Closed - Lost').length} In Progress
                   </span>
                 </div>
               </Card>
@@ -958,7 +792,7 @@ const Home = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-500">Total Quotes</p>
-                    <p className="text-2xl font-bold text-pink-600">{stats.quote?.length || 0}</p>
+                    <p className="text-2xl font-bold text-pink-600">{safeArray(stats.quotes).length}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-pink-50 text-pink-600">
                     <FileText className="w-5 h-5" />
@@ -968,11 +802,11 @@ const Home = () => {
                 <div className="flex justify-between text-xs">
                   <span className="text-green-600">
                     <CheckCircle2 className="inline w-3 h-3 mr-1" />
-                    {stats.quote?.filter(q => q.state === 'Approved').length || 0} Approved
+                    {safeArray(stats.quotes).filter(q => q.state === 'Approved').length} Approved
                   </span>
                   <span className="text-yellow-600">
                     <Edit className="inline w-3 h-3 mr-1" />
-                    {stats.quote?.filter(q => q.state === 'Draft').length || 0} Draft
+                    {safeArray(stats.quotes).filter(q => q.state === 'Draft').length} Draft
                   </span>
                 </div>
               </Card>
@@ -980,22 +814,22 @@ const Home = () => {
               <Card className="shadow-sm border border-gray-200 hover:shadow-md transition-all">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">Total Opportunities</p>
-                    <p className="text-2xl font-bold text-cyan-600">{stats.opportunities?.length || 0}</p>
+                    <p className="text-sm font-medium text-gray-500">Total Products</p>
+                    <p className="text-2xl font-bold text-cyan-600">{safeArray(stats.products).length}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-cyan-50 text-cyan-600">
-                    <Briefcase className="w-5 h-5" />
+                    <Package className="w-5 h-5" />
                   </div>
                 </div>
                 <Divider className="my-2" />
                 <div className="flex justify-between text-xs">
                   <span className="text-green-600">
-                    <TrendingUp className="inline w-3 h-3 mr-1" />
-                    {stats.opportunities?.filter(o => o.stage?.display_value === 'Closed - Won').length || 0} Won
+                    <CheckCircle2 className="inline w-3 h-3 mr-1" />
+                    {safeArray(stats.products).filter(p => p.status === 'published').length} Published
                   </span>
-                  <span className="text-red-600">
-                    <TrendingUp className="inline w-3 h-3 mr-1 transform rotate-180" />
-                    {stats.opportunities?.filter(o => o.stage?.display_value === 'Closed - Lost').length || 0} Lost
+                  <span className="text-yellow-600">
+                    <Edit className="inline w-3 h-3 mr-1" />
+                    {safeArray(stats.products).filter(p => p.status === 'draft').length} Draft
                   </span>
                 </div>
               </Card>
@@ -1005,10 +839,12 @@ const Home = () => {
                   <div>
                     <p className="text-sm font-medium text-gray-500">Total Revenue</p>
                     <p className="text-2xl font-bold text-emerald-600">
-                      ${(stats.quote?.reduce((acc, quote) => {
-                        const amount = parseFloat(quote.total_amount?.replace('$', '').replace(',', '') || 0);
-                        return acc + amount;
-                      }, 0) || 0).toLocaleString()}
+                      ${safeArray(stats.opportunities)
+                        .filter(o => o.stage?.name === 'Closed - Won')
+                        .reduce((acc, opp) => {
+                          const amount = opp.line_items?.reduce((sum, line) => sum + parseFloat(line.cumulative_acv || 0), 0) || 0;
+                          return acc + amount;
+                        }, 0).toLocaleString()}
                     </p>
                   </div>
                   <div className="p-3 rounded-lg bg-emerald-50 text-emerald-600">
@@ -1019,10 +855,12 @@ const Home = () => {
                 <div className="text-xs text-gray-600">
                   <span>
                     <DollarSign className="inline w-3 h-3 mr-1" />
-                    Avg. Quote: ${((stats.quote?.reduce((acc, quote) => {
-                      const amount = parseFloat(quote.total_amount?.replace('$', '').replace(',', '') || 0);
-                      return acc + amount;
-                    }, 0) / (stats.quote?.length || 1) || 0).toFixed(2))}
+                    Avg. Opportunity: ${(safeArray(stats.opportunities)
+                      .filter(o => o.stage?.name === 'Closed - Won')
+                      .reduce((acc, opp) => {
+                        const amount = opp.line_items?.reduce((sum, line) => sum + parseFloat(line.cumulative_acv || 0), 0) || 0;
+                        return acc + amount;
+                      }, 0) / (safeArray(stats.opportunities).filter(o => o.stage?.name === 'Closed - Won').length || 1).toFixed(2))}
                   </span>
                 </div>
               </Card>
@@ -1090,7 +928,7 @@ const Home = () => {
                 title={
                   <div className="flex items-center">
                     <PieChart className="w-4 h-4 text-green-600 mr-2" />  
-                    <span className="text-sm font-medium">Product Status</span>  
+                    <span className="text-sm font-medium">Opportunity Stages</span>  
                   </div>
                 }
                 className="shadow-sm border border-gray-200"
@@ -1098,7 +936,7 @@ const Home = () => {
               >
                 <div className="h-48"> 
                   <Doughnut 
-                    data={chartData.productStatusData}
+                    data={chartData.opportunityStageData}
                     options={{
                       responsive: true,
                       maintainAspectRatio: false,
@@ -1132,150 +970,6 @@ const Home = () => {
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8"> 
-              <Card className="shadow-sm border border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center">
-                    <Zap className="w-4 h-4 text-yellow-500 mr-2" />
-                    <span className="text-sm font-medium">Quote Conversion</span>
-                  </div>
-                  <Badge count={`${conversionRate}%`} style={{ backgroundColor: '#52c41a' }} />
-                </div>
-                <Progress 
-                  percent={parseFloat(conversionRate)} 
-                  strokeColor={{
-                    '0%': '#108ee9',
-                    '100%': '#87d068',
-                  }}
-                  showInfo={false}
-                />
-                <div className="flex justify-between text-xs text-gray-500 mt-2">
-                  <span>0%</span>
-                  <span>100%</span>
-                </div>
-                <Divider className="my-3" />
-                <div className="text-xs text-gray-600">
-                  <span>{stats.opportunities?.filter(o => o.stage?.display_value === 'Closed - Won').length || 0} won opportunities</span>
-                </div>
-              </Card>
-
-              <Card 
-                title={
-                  <div className="flex items-center">
-                    <Tag className="w-4 h-4 text-blue-500 mr-2" />
-                    <span className="text-sm font-medium">Top Categories</span>
-                  </div>
-                }
-                className="shadow-sm border border-gray-200"
-              >
-                <div className="space-y-3">
-                  {topCategories.map((category, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm">{category.name || 'Unnamed Category'}</span>
-                      <span className="text-xs font-medium px-2 py-1 bg-blue-50 text-blue-600 rounded-full">
-                        {category.productCount} products
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              <Card 
-                title={
-                  <div className="flex items-center">
-                    <FileText className="w-4 h-4 text-pink-500 mr-2" />
-                    <span className="text-sm font-medium">Recent Quotes</span>
-                  </div>
-                }
-                className="shadow-sm border border-gray-200"
-              >
-                <div className="space-y-3">
-                  {recentQuotes.map((quote, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium">{quote.number}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(quote.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <span className="text-sm font-bold">${quote.amount.toLocaleString()}</span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6"> 
-              <Card 
-                title={
-                  <div className="flex items-center">
-                    <ShoppingCart className="w-4 h-4 text-amber-500 mr-2" />
-                    <span className="text-sm font-medium">Top Products</span>
-                  </div>
-                }
-                className="shadow-sm border border-gray-200"
-                bodyStyle={{ padding: '12px' }}
-              >
-                <div className="space-y-3"> 
-                  {getTopProducts().map((product, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className={`w-8 h-8 rounded-md ${
-                          index === 0 ? 'bg-amber-100' : 
-                          index === 1 ? 'bg-blue-100' : 'bg-purple-100'
-                        } flex items-center justify-center mr-2`}>
-                          <span className={`text-xs ${
-                            index === 0 ? 'text-amber-800' : 
-                            index === 1 ? 'text-blue-800' : 'text-purple-800'
-                          } font-medium`}>{product.code?.charAt(0) || 'P'}</span>
-                        </div>
-                        <span className="text-sm truncate max-w-[120px]">{product.display_name || product.name}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs font-medium">{product.sales} sold</span>
-                        <span className={`block text-xs ${product.growth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {product.growth >= 0 ? '+' : ''}{product.growth}%
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              <Card 
-                title={
-                  <div className="flex items-center">
-                    <Activity className="w-4 h-4 text-blue-500 mr-2" />
-                    <span className="text-sm font-medium">Recent Activities</span>
-                  </div>
-                }
-                className="shadow-sm border border-gray-200"
-                bodyStyle={{ padding: '12px' }}
-              >
-                <ul className="space-y-3"> 
-                  {recentActivities.map((activity, index) => (
-                    <li key={index} className="flex items-center">
-                      <div className={`w-6 h-6 rounded-full ${
-                        index === 0 ? 'bg-blue-100' : 
-                        index === 1 ? 'bg-green-100' : 'bg-purple-100'
-                      } flex items-center justify-center mr-2`}>
-                        <span className={`text-xs ${
-                          index === 0 ? 'text-blue-600' : 
-                          index === 1 ? 'text-green-600' : 'text-purple-600'
-                        } font-medium`}>{activity.initials}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm truncate">{activity.description}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(activity.timestamp).toLocaleString()}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            </div>
-
             <div className="mt-10"> 
               <Card 
                 title="All Data Records"
@@ -1288,12 +982,12 @@ const Home = () => {
                       onChange={setSelectedType}
                       className="w-full sm:w-40"
                     >
+                      <Option value="Opportunity">Opportunity</Option>
+                      <Option value="Quote">Quote</Option>
                       <Option value="Product">Product</Option>
                       <Option value="Specification">Specification</Option>
                       <Option value="Category">Category</Option>
                       <Option value="Catalog">Catalog</Option>
-                      <Option value="Quote">Quote</Option>
-                      <Option value="Opportunity">Opportunity</Option>
                     </Select>
                     <Select
                       placeholder="Filter by status"
@@ -1303,13 +997,12 @@ const Home = () => {
                     >
                       <Option value="active">Active</Option>
                       <Option value="draft">Draft</Option>
-                      <Option value="retired">Retired</Option>
+                      <Option value="inactive">Inactive</Option>
                     </Select>
                     <DatePicker.RangePicker 
-        onChange={(dates) => setDateRange(dates || [])}
-        className="w-full sm:w-64"
-        value={dateRange?.length ? dateRange : null}
-      />
+                      onChange={setDateRange}
+                      className="w-full sm:w-64"
+                    />
                     <Dropdown overlay={exportMenu} trigger={['click']}>
                       <Button icon={<Download className="w-4 h-4" />}>
                         Export
@@ -1339,7 +1032,7 @@ const Home = () => {
                 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                   <div className="text-sm text-gray-700 font-medium">
-                    Showing <span className="font-semibold text-cyan-700">{filteredData?.length || 0}</span> records
+                    Showing <span className="font-semibold text-cyan-700">{safeArray(filteredData).length}</span> records
                   </div>
 
                   <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -1372,7 +1065,7 @@ const Home = () => {
                 <Table
                   columns={columns}
                   dataSource={filteredData}
-                  rowKey="sys_id"
+                  rowKey="_id"
                   pagination={{ 
                     pageSize: 10,
                     showSizeChanger: true,
@@ -1383,31 +1076,11 @@ const Home = () => {
                 />
               </Card>
             </div>
-
-            <AIML />
           </>
-        ) : (
-          <>
-            {tabs.find((tab) => tab.id === activeTab)?.component}
-            <AIML />
-          </>
-        )}
+        ) : null}
       </main>
-
-      <footer className="bg-white border-t border-gray-200 py-4 px-6 mt-8"> 
-        <div className="flex items-center justify-between text-sm text-gray-500">
-          <div>
-            © {new Date().getFullYear()} ProductHub. All rights reserved.
-          </div>
-          <div className="flex items-center space-x-4">
-            <a href="#" className="hover:text-gray-700">Privacy</a>
-            <a href="#" className="hover:text-gray-700">Terms</a>
-            <a href="#" className="hover:text-gray-700">Help Center</a>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
 
-export default Home;
+export default OpportunityDashboard;
