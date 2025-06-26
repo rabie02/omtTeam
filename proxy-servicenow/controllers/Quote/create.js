@@ -7,7 +7,7 @@ const Opportunity = require('../../models/opportunity');
 const PriceList = require('../../models/priceList');
 const handleMongoError = require('../../utils/handleMongoError');
 const createquoteline = require('../QuoteLine/create');
-const getOpportuntityWithdetails = require('../Opportunity/getOpportuntityWithdetails');
+const getOpportunityWithDetails = require('../Opportunity/getOpportuntityWithdetails');
 
 module.exports = async (req, res) => {
   try {

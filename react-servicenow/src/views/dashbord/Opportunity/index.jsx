@@ -230,53 +230,53 @@ const OpportunityIndex = () => {
       ),
       sorter: (a, b) => new Date(a.estimated_closed_date) - new Date(b.estimated_closed_date),
     },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_, record) => (
-        <Space size="middle">
-          <Popconfirm
-            title="Close Opportunity"
-            description="Won or Lost the opportunity?"
-            onConfirm={() => handleWin(record._id)}
-            onCancel={() => handleLose(record._id)}
-            okText="Win"
-            cancelText="Lose"
-          >
-            <Tooltip title="Close Opportunity">
-              <Button 
-                icon={<i className="ri-door-closed-line"></i>} 
-                className="text-gray-500 hover:text-cyan-600"
-              />
-            </Tooltip>
-          </Popconfirm>
+    // {
+    //   title: 'Actions',
+    //   key: 'actions',
+    //   render: (_, record) => (
+    //     <Space size="middle">
+    //       <Popconfirm
+    //         title="Close Opportunity"
+    //         description="Won or Lost the opportunity?"
+    //         onConfirm={() => handleWin(record._id)}
+    //         onCancel={() => handleLose(record._id)}
+    //         okText="Win"
+    //         cancelText="Lose"
+    //       >
+    //         <Tooltip title="Close Opportunity">
+    //           <Button 
+    //             icon={<i className="ri-door-closed-line"></i>} 
+    //             className="text-gray-500 hover:text-cyan-600"
+    //           />
+    //         </Tooltip>
+    //       </Popconfirm>
 
-          <Tooltip title="Edit Opportunity">
-            <Button
-              icon={<i className="ri-pencil-line"></i>}
-              className="text-gray-500 hover:text-blue-600"
-              onClick={() => handleNumberClick(record._id)}
-            />
-          </Tooltip>
+    //       <Tooltip title="Edit Opportunity">
+    //         <Button
+    //           icon={<i className="ri-pencil-line"></i>}
+    //           className="text-gray-500 hover:text-blue-600"
+    //           onClick={() => handleNumberClick(record._id)}
+    //         />
+    //       </Tooltip>
 
-          <Popconfirm
-            title="Delete Opportunity"
-            description="Are you sure to delete this opportunity?"
-            onConfirm={() => {
-              dispatch(deleteOpportunity(record._id));
-              fetchData(current, pageSize, searchTerm);
-            }}
-          >
-            <Tooltip title="Delete Opportunity">
-              <Button 
-                icon={<i className="ri-delete-bin-line"></i>} 
-                className="text-gray-500 hover:text-red-600"
-              />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
-      )
-    }
+    //       <Popconfirm
+    //         title="Delete Opportunity"
+    //         description="Are you sure to delete this opportunity?"
+    //         onConfirm={() => {
+    //           dispatch(deleteOpportunity(record._id));
+    //           fetchData(current, pageSize, searchTerm);
+    //         }}
+    //       >
+    //         <Tooltip title="Delete Opportunity">
+    //           <Button 
+    //             icon={<i className="ri-delete-bin-line"></i>} 
+    //             className="text-gray-500 hover:text-red-600"
+    //           />
+    //         </Tooltip>
+    //       </Popconfirm>
+    //     </Space>
+    //   )
+    // }
   ];
 
   return (

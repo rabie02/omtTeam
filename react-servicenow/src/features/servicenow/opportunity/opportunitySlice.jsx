@@ -76,6 +76,7 @@ export const getOpportunity = createAsyncThunk(
           headers: getHeaders()
          },
       );
+      console.log("here")
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -294,6 +295,7 @@ const opportunitySlice = createSlice({
       })
       .addCase(getOpportunity.fulfilled, (state, action) => {
         state.loading = false;
+        console.log(action.payload)
         state.currentOpportunity = action.payload.data;
       })
       .addCase(getOpportunity.rejected, (state, action) => {

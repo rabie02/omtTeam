@@ -23,6 +23,7 @@ import {
   getUnitOfMeasures,
   getOpportunity
 } from '../../../features/servicenow/opportunity/opportunitySlice';
+import { createQuote } from '../../../features/servicenow/quote/quotaSlice';
 import { getAccount } from '../../../features/servicenow/account/accountSlice';
 import { getPriceList } from '../../../features/servicenow/price-list/priceListSlice';
 import { getByPriceList } from '../../../features/servicenow/product-offering-price/productOfferingPriceSlice';
@@ -39,10 +40,11 @@ const { Step } = Steps;
 const FORM_STORAGE_KEY = 'opportunityFormData';
 
 const OpportunityFormPage = () => {
-  const navigate = useNavigate();
+  try{
+    const navigate = useNavigate();
   const dispatch = useDispatch();
   const { id } = useParams();
-
+  const [activeTab, setActiveTab] = useState('1');
   const isEditMode = Boolean(id);
   const [currentStep, setCurrentStep] = useState(0);
   const [offSearchTerm, setOffSearchTerm] = useState('');
@@ -62,35 +64,30 @@ const OpportunityFormPage = () => {
   const priceLists = useSelector(state => state.priceList.priceLists);
   const { productOfferingPrices } = useSelector(state => state.productOfferingPrice);
 
-
-  useEffect(() => {
-          if (isEditMode) {
-              dispatch(getOpportunity({id})).then(() => setInitialized(true));
-          } else {
-              setInitialized(true);
-          }
-      }, [id, isEditMode, dispatch]);
   // Fetch required data
   useEffect(() => {
     const fetchData = async () => {
+      console.log("here")
       await dispatch(getSalesCycleTypes());
       await dispatch(getStages());
       await dispatch(getAccount({ page: 1, limit: 99, q: accSearchTerm }));
       await dispatch(getUnitOfMeasures());
       await dispatch(getProductOfferings({ page: 1, limit: 99, q: offSearchTerm }));
       await dispatch(getPriceList({ page: 1, limit: 99, q: pLSearchTerm }));
-
-      if (isEditMode && initialData?.price_list?._id) {
-        await dispatch(getByPriceList(initialData.price_list._id));
-      }
-
+      if (isEditMode) {
+            console.log("here")
+              await dispatch(getOpportunity({id})).then(() => {dispatch(getByPriceList(initialData.price_list._id));})
+              .catch(error => {
+              console.error("Failed to load opportunity:", error);
+              setInitialized(true); // You might want to handle this differently
+      });
+    }
       setInitialized(true);
     };
 
     fetchData();
-  }, [dispatch, isEditMode, initialData?.price_list?._id, accSearchTerm, offSearchTerm, pLSearchTerm]);
+  }, [dispatch, id, isEditMode, accSearchTerm, offSearchTerm, pLSearchTerm]);
 
-  
   // Get initial values
   const getInitialValues = () => {
     const savedForm = localStorage.getItem(FORM_STORAGE_KEY);
@@ -386,6 +383,21 @@ const OpportunityFormPage = () => {
     setCurrentStep(0);
   };
 
+  const handleQuoteGeneration = async () => {
+      try {
+        await dispatch(createQuote(id)).unwrap();
+        notification.success({
+          message: 'Quote Created',
+          description: 'The quote and its line items have been created successfully.',
+        });
+      } catch (error) {
+        notification.error({
+          message: 'Creation Failed',
+          description: error.message || 'Failed to create quote.',
+        });
+      }
+    };
+
   const nextStep = () => {
     // Validate current step before proceeding
     let currentStepValid = true;
@@ -476,12 +488,13 @@ const OpportunityFormPage = () => {
     );
   };
 
+
   // Define table columns for line items
   const lineItemColumns = [
     {
-      title: 'Name',
-      dataIndex: 'name',
-      key: 'name',
+      title: 'Number',
+      dataIndex: 'number',
+      key: 'number',
       render: (text) => <span className="font-medium">{text}</span>
     },
     {
@@ -492,11 +505,11 @@ const OpportunityFormPage = () => {
     },
     {
       title: 'Price',
-      dataIndex: 'price',
+      dataIndex: 'cumulative_mrr',
       key: 'price',
       render: (price) => (
         <span className="font-medium">
-          {price.unit} {price.value}
+          {price}
         </span>
       )
     },
@@ -507,22 +520,43 @@ const OpportunityFormPage = () => {
       render: (text) => <span className="text-gray-700">{text}</span>
     },
     {
-      title: 'Valid From',
-      dataIndex: ['validFor', 'startDateTime'],
-      key: 'startDateTime',
-      render: (date) => (
-        <span className="text-gray-600">
-          {date ? new Date(date).toLocaleDateString() : 'N/A'}
+      title: 'Term',
+      dataIndex: 'term_month',
+      key: 'term_month',
+      render: (text) => <span className="text-gray-700">{text}</span>
+    }
+  ];
+
+  const quoteColumns = [
+    {
+      title: 'Number',
+      dataIndex: 'number',
+      key: 'number',
+      render: (text) => <span className="font-medium">{text}</span>
+    },
+    {
+      title: 'State',
+      dataIndex: 'state',
+      key: 'state',
+      render: (text) => <span className="text-gray-700">{text}</span>
+    },
+    {
+      title: 'Start date',
+      dataIndex: 'subscription_start_date',
+      key: 'text',
+      render: (text) => (
+        <span className="font-medium">
+          {formatDateForInput(new Date(text))}
         </span>
       )
     },
     {
-      title: 'Valid To',
-      dataIndex: ['validFor', 'endDateTime'],
-      key: 'endDateTime',
-      render: (date) => (
-        <span className="text-gray-600">
-          {date ? new Date(date).toLocaleDateString() : 'N/A'}
+      title: 'End date',
+      dataIndex: 'subscription_end_date',
+      key: 'text',
+      render: (text) => (
+        <span className="font-medium">
+          {formatDateForInput(new Date(text))}
         </span>
       )
     }
@@ -542,7 +576,7 @@ const OpportunityFormPage = () => {
         <div className="p-4">
           <Table
             columns={lineItemColumns}
-            dataSource={formik.values.productOfferings}
+            dataSource={initialData.line_items}
             pagination={false}
             rowKey={(record, index) => index}
             scroll={{ x: true }}
@@ -551,6 +585,34 @@ const OpportunityFormPage = () => {
                 <div className="py-8 text-center">
                   <i className="ri-information-line mx-auto text-3xl text-gray-400 mb-3"></i>
                   <p className="text-gray-500">No line items added yet</p>
+                </div>
+              )
+            }}
+          />
+        </div>
+      ),
+    },
+    {
+      key: '2',
+      label: (
+        <span className="flex items-center">
+          <i className="ri-file-list-line text-lg mr-2"></i>
+          Quotes
+        </span>
+      ),
+      children: (
+        <div className="p-4">
+          <Table
+            columns={quoteColumns}
+            dataSource={initialData.quote}
+            pagination={false}
+            rowKey={(record, index) => index}
+            scroll={{ x: true }}
+            locale={{
+              emptyText: (
+                <div className="py-8 text-center">
+                  <i className="ri-information-line mx-auto text-3xl text-gray-400 mb-3"></i>
+                  <p className="text-gray-500">No quotes have been generated yet</p>
                 </div>
               )
             }}
@@ -606,8 +668,19 @@ const OpportunityFormPage = () => {
               onClick={handleReset}
               disabled={formik.isSubmitting}
               className="overflow-hidden relative w-32 h-10 border-2 border-gray-300 rounded-md text-gray-700 text-base font-medium hover:bg-gray-50"
+              hidden={isEditMode}
             >
               Cancel
+            </button>
+
+            <button
+              type="button"
+              onClick={handleQuoteGeneration}
+              disabled={formik.isSubmitting}
+              className="overflow-hidden relative w-38 h-10 text-base font-medium bg-cyan-700 text-white hover:bg-cyan-800 cursor-pointer border-none rounded-md z-10 group transition-colors"
+              hidden={!isEditMode}
+            >
+              Generate Quote
             </button>
 
             <button
@@ -693,18 +766,19 @@ const OpportunityFormPage = () => {
                       Next
                     </button>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={formik.handleSubmit}
-                      disabled={formik.isSubmitting || !formik.isValid}
-                      className={`px-4 py-2 rounded-md ${
-                        formik.isSubmitting || !formik.isValid
-                          ? 'bg-gray-400 text-white cursor-not-allowed'
-                          : 'bg-cyan-600 text-white hover:bg-cyan-700'
-                      }`}
-                    >
-                      {formik.isSubmitting ? 'Submitting...' : 'Submit'}
-                    </button>
+                    <></>
+                    // <button
+                    //   type="button"
+                    //   onClick={formik.handleSubmit}
+                    //   disabled={formik.isSubmitting || !formik.isValid}
+                    //   className={`px-4 py-2 rounded-md ${
+                    //     formik.isSubmitting || !formik.isValid
+                    //       ? 'bg-gray-400 text-white cursor-not-allowed'
+                    //       : 'bg-cyan-600 text-white hover:bg-cyan-700'
+                    //   }`}
+                    // >
+                    //   {formik.isSubmitting ? 'Submitting...' : 'Submit'}
+                    // </button>
                   )}
                 </div>
               </div>
@@ -717,10 +791,11 @@ const OpportunityFormPage = () => {
             {/* Tabs Section */}
             <div className="p-3">
               <Tabs
-                activeKey="1"
                 type="card"
                 items={tabItems}
                 className="tabs"
+                activeKey={activeTab}
+                onChange={setActiveTab}
               />
             </div>
           </div>
@@ -728,6 +803,9 @@ const OpportunityFormPage = () => {
       </div>
     </div>
   );
+  }catch(error){
+    console.log(error);
+  }
 };
 
 export default OpportunityFormPage;
