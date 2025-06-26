@@ -1,5 +1,6 @@
 // components/dashboard/PageLayout.jsx
 import React from 'react';
+import PageHeader from './headerTable';
 
 const PageLayout = ({
   title,
@@ -19,7 +20,7 @@ const PageLayout = ({
 }) => {
   return (
     <div className='h-svh'>
-      <div className='h-24 bg-gradient-to-b from-cyan-700  from-10% to-cyan-700/40  to-90%  flex items-end py-3 px-20'>
+      {/* <div className='h-24 bg-gradient-to-b from-cyan-700  from-10% to-cyan-700/40  to-90%  flex items-end py-3 px-20'>
         <div className='flex w-full justify-between'>
           <div className="relative w-48 transition-all focus-within:w-56">
             <input
@@ -48,6 +49,17 @@ const PageLayout = ({
             </span>
           </button>
         </div>
+      </div> */}
+
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
+          <PageHeader
+              title={title}
+              searchPlaceholder="Search by name or number..."
+              createButtonText="New"
+              onSearchChange={(e) => setSearchQuery(e.target.value)}
+              onSearch={(value) => setSearchQuery(value)}
+              onCreate={() => { setOpen(true); setData(null) }}
+          />
       </div>
 
       <div className='flex justify-center items-center py-5'>

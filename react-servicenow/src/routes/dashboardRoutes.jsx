@@ -14,7 +14,8 @@ import ProductSpecificationFormPage from '../views/dashbord/ProductSpec/form'
 import AiSearch from '../views/dashbord/ai-search';
 import Quote from '../views/dashbord/quote';
 import Profile from '../views/dashbord/ProfilePage'
-import Opportunity from '../views/dashbord/Opportunity';
+import Opportunity from '../views/dashbord/Opportunity/index';
+import OpportunityFormPage from '../views/dashbord/Opportunity/form';
 import PriceList from '../views/dashbord/PriceList';
 import Account from '../views/dashbord/Account';
 import Contact from '../views/dashbord/Contact';
@@ -63,6 +64,14 @@ const dashboardRoutes = {
     {
       path: 'product-specification/view/:id',
       element: <ProductSpecificationFormPage />
+    },
+    {
+      path: 'opportunity/edit/:id',
+      element: <OpportunityFormPage />
+    },
+    {
+      path: 'opportunity/create',
+      element: <OpportunityFormPage />
     },
     { path: 'opportunity', element: <Opportunity /> },
     { path: 'price-list', element: <PriceList /> },
