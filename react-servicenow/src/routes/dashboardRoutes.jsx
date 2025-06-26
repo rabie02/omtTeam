@@ -18,6 +18,7 @@ import Opportunity from '../views/dashbord/Opportunity/index';
 import OpportunityFormPage from '../views/dashbord/Opportunity/form';
 import PriceList from '../views/dashbord/PriceList';
 import Account from '../views/dashbord/Account';
+import ProductDetails from '../views/dashbord/productdetail';  
 import Contact from '../views/dashbord/Contact';
 import Location from '../views/dashbord/Location';
 

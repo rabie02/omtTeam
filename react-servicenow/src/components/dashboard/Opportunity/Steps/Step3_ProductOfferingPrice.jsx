@@ -1,11 +1,11 @@
 import React, {useEffect} from 'react';
 import { Button, Space, Divider } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
-import  FormInput  from './shared/FormInput';
-import  FormSelect  from './shared/FormSelect';
+import  FormInput  from '../../../shared/FormInput';
+import  FormSelect  from '../../../shared/FormSelect';
 import {useSelector, shallowEqual } from 'react-redux';
 import { formatDateForInput } from '@/utils/formatDateForInput.js';
-import  FormSelectSearch  from './shared/FormSelectSearch';
+import  FormSelectSearch  from '../../../shared/FormSelectSearch';
 
 const OpportunityStep3 = ({ formik, lineItems, editMode=false, setOffSearchTerm }) => {
   

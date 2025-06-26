@@ -168,6 +168,8 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
       title: 'Short Description',
       dataIndex: 'short_description',
       key: 'short_description',
+      width:"20%",
+      ellipsis: true,
     },
     {
       title: 'Account',
@@ -284,24 +286,27 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
         {
             title: 'Number',
             key: 'number',
-            render: (_, record) => record.number || 'N/A',
+            render: (_, record) => record?.number || 'N/A',
         },
         {
-            title: 'Short Description',
-            key: 'short_description',
-            render: (_, record) => (record.short_description) || 'N/A',
+            title: 'State',
+            key: 'state',
+            render: (_, record) => (<span className={`px-2 py-1 text-xs capitalize rounded w-5xl ${record.state.toLowerCase() === 'approved' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {record?.state}
+                </span>),
         },
         {
             title: 'Expiration Date',
             key: 'expiration_date',
-            render: (_, record) => record.expiration_date || 'N/A',
+            render: (_, record) => record?.expiration_date || 'N/A',
         }
     ];
 
   return (
-    <div className="">
+    <div className="w-10/12">
       
       <Table
+        
         headerColor="rgba(0, 117, 149, 1)"
         columns={columns}
         dataSource={opportunities}

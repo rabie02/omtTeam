@@ -11,6 +11,7 @@ const update = require('../../controllers/account/update');
 const requestCreation = require('../../controllers/account/service/requestCreation');
 const confirmCreation = require('../../controllers/account/service/confirmCreation');
 const authjwt = require('../../middleware/auth');
+const verifyAccountToken = require('../../controllers/account/verifyAccountToken');
 
 //routes
 router.post('/account', create)
@@ -22,6 +23,8 @@ router.patch('/account/:id',update);
 
 router.post('/request-creation', requestCreation);
 router.get('/confirm-creation', confirmCreation);
+
+router.get('/verify-account-token/:token', verifyAccountToken);
 
 
 module.exports = router;

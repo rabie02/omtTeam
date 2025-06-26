@@ -1,7 +1,7 @@
 import React from 'react';
-import FormInput from './shared/FormInput';
-import FormSelect from './shared/FormSelect';
-import FormSelectSearch from './shared/FormSelectSearch';
+import FormInput from '../../../shared/FormInput';
+import FormSelect from '../../../shared/FormSelect';
+import FormSelectSearch from '../../../shared/FormSelectSearch';
 import {useSelector} from 'react-redux';
 import { useRef, useEffect } from 'react';
 const OpportunityStep1 = ({ formik, editMode=false, setAccSearchTerm}) => {

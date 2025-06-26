@@ -9,7 +9,6 @@ async function createLocation(req, res = null) {
   let savedLocation;
 
   try {
-    console.log('Creating location with payload:', req.body);
 
     // Validate account reference
     if (!req.body.account) {
@@ -63,7 +62,6 @@ async function createLocation(req, res = null) {
     );
 
     locationSysId = locationResponse.data.result.sys_id;
-    console.log('Location created in ServiceNow:', locationSysId);
 
     // 4. Update MongoDB record with ServiceNow sys_id
     savedLocation.sys_id = locationSysId;

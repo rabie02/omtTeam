@@ -111,6 +111,18 @@ const confirmCreation = async (req, res) => {
           },
           authConfig
         );
+        if (index === 0) {
+          primaryContactSysId = contactResponse.data.servicenow.sys_id;
+          
+          // Update ServiceNow account with primary contact
+          await axios.patch(
+            `${config.serviceNow.url}/api/now/table/customer_account/${accountSysId}`,
+            {
+              primary_contact: primaryContactSysId
+            },
+            authConfig
+          );
+        }
 
         // Create location for this contact
         const locationResponse = await axios.post(

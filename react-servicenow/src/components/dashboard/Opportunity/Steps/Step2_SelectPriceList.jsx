@@ -1,8 +1,8 @@
 
-import  FormInput  from './shared/FormInput';
-import  FormSelect  from './shared/FormSelect';
-import  FormSelectSearch  from './shared/FormSelectSearch';
-import  FormRadioGroup  from './shared/FormRadioGroup';
+import  FormInput  from '../../../shared/FormInput';
+import  FormSelect  from '../../../shared/FormSelect';
+import  FormSelectSearch  from '../../../shared/FormSelectSearch';
+import  FormRadioGroup  from '../../../shared/FormRadioGroup';
 import {useSelector} from 'react-redux';
 
 
