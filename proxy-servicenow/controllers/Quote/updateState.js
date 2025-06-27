@@ -64,7 +64,7 @@ module.exports = async (req, res) => {
 
         // ServiceNow update - using table API endpoint
         const snResponse = await axios.patch(
-            `${process.env.SERVICE_NOW_URL}/api/sn_prd_pm/update_status/quote`,
+            `${process.env.SERVICE_NOW_URL}/api/sn_quote_mgmt_core/bismilah`,
             updateBody,
             {
                 headers: {
