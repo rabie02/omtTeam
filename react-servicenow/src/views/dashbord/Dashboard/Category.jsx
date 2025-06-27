@@ -62,7 +62,7 @@ const CategoryDetailModal = ({ category, onClose }) => {
     const DetailItem = ({ label, value, icon: Icon, valueClass = "font-medium text-gray-800", linkHref = null }) => (
         <div className="flex items-start space-x-3 py-2 border-b border-gray-100 last:border-b-0">
             {Icon && <Icon className="text-cyan-700 flex-shrink-0 mt-1" size={18} />}
-            <span className="font-semibold text-gray-600 w-36 flex-shrink-0">{label}:</span>
+            <span className="font-semibold text-cyan-700 w-36 flex-shrink-0">{label}:</span>
             {linkHref ? (
                 <a href={linkHref} target="_blank" rel="noopener noreferrer" className={`flex-1 ${valueClass} text-cyan-700 hover:underline flex items-center`}>
                     {value} <ExternalLink className="inline ml-1 text-xs" size={14} />
@@ -466,7 +466,7 @@ const CategoriesDashboard = () => {
             <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
                 <div className="text-center space-y-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-600 mx-auto"></div>
-                    <h3 className="text-lg font-medium text-gray-900">Loading Categories</h3>
+                    <h3 className="text-lg font-medium text-cyan-700">Loading Categories</h3>
                     <p className="text-gray-500">Fetching the latest category data...</p>
                 </div>
             </div>
@@ -480,7 +480,7 @@ const CategoriesDashboard = () => {
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 mb-4">
                         <X className="h-6 w-6 text-red-600" />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading data</h3>
+                    <h3 className="text-lg font-medium text-cyan-700 mb-2">Error loading data</h3>
                     <p className="text-gray-600 mb-6">{error.message || error || "An unknown error occurred."}</p>
                     <button
                         onClick={() => dispatch(getall({ page: 1, limit: 1000 }))}
@@ -499,13 +499,10 @@ const CategoriesDashboard = () => {
             {/* Header and Actions */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <h1 className="text-3xl font-bold text-cyan-700 flex items-center">
                         <Box className="mr-3 text-cyan-700" size={28} />
                         Product Categories Dashboard
                     </h1>
-                    <p className="text-gray-600 mt-1 text-base">
-                        Comprehensive overview and management of your product categories.
-                    </p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button
@@ -531,7 +528,7 @@ const CategoriesDashboard = () => {
                 <div className="bg-white rounded-xl shadow-md p-6 flex items-center justify-between border border-gray-200">
                     <div>
                         <p className="text-sm font-medium text-gray-500">Total Categories</p>
-                        <p className="mt-1 text-3xl font-bold text-gray-900">{categoryMetrics.total}</p>
+                        <p className="mt-1 text-3xl font-bold text-cyan-700">{categoryMetrics.total}</p>
                     </div>
                     <Box className="text-cyan-600" size={32} />
                 </div>
@@ -791,7 +788,7 @@ const CategoriesDashboard = () => {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                                                 {category.is_leaf ? 'Yes' : 'No'}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-cyan-700 font-semibold">
                                                 {category.productOffering?.length || 0}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">

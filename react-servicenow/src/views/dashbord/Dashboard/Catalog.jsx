@@ -444,7 +444,7 @@ const ProductCatalogDashboard = () => {
             <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
                 <div className="text-center space-y-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-600 mx-auto"></div>
-                    <h3 className="text-lg font-medium text-gray-900">Loading Product Catalog</h3>
+                    <h3 className="text-lg font-medium text-cyan-700">Loading Product Catalog</h3>
                     <p className="text-gray-500">Fetching the latest product data...</p>
                 </div>
             </div>
@@ -458,7 +458,7 @@ const ProductCatalogDashboard = () => {
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 mb-4">
                         <X className="h-6 w-6 text-red-600" />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading data</h3>
+                    <h3 className="text-lg font-medium text-cyan-700 mb-2">Error loading data</h3>
                     <p className="text-gray-600 mb-6">{error.message || error || "An unknown error occurred."}</p>
                     <button
                         onClick={() => dispatch(getall({ page: 1, limit: 1000 }))} // Retry fetch
@@ -477,13 +477,11 @@ const ProductCatalogDashboard = () => {
             {/* Header and Actions */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <h1 className="text-3xl font-bold text-cyan-700 flex items-center">
                         <BookOpen className="mr-3 text-cyan-700" size={28} />
                         Product Catalog Dashboard
                     </h1>
-                    <p className="text-gray-600 mt-1 text-base">
-                        Comprehensive overview and management of your product offerings.
-                    </p>
+                   
                 </div>
                 <div className="flex items-center gap-3">
                     <button
@@ -509,7 +507,7 @@ const ProductCatalogDashboard = () => {
                 <div className="bg-white rounded-xl shadow-md p-6 flex items-center justify-between border border-gray-200">
                     <div>
                         <p className="text-sm font-medium text-gray-500">Total Products</p>
-                        <p className="mt-1 text-3xl font-bold text-gray-900">{productMetrics.total}</p>
+                        <p className="mt-1 text-3xl font-bold text-cyan-700">{productMetrics.total}</p>
                     </div>
                     <BookOpen className="text-cyan-600" size={32} />
                 </div>

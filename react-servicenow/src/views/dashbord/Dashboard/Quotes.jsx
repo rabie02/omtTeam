@@ -82,7 +82,7 @@ const QuoteDetailModal = ({ quote, onClose }) => {
     const DetailItem = ({ label, value, icon: Icon, valueClass = "font-medium text-gray-800", linkHref = null }) => (
         <div className="flex items-start space-x-3 py-2 border-b border-gray-100 last:border-b-0">
             {Icon && <Icon className="text-cyan-700 flex-shrink-0 mt-1" size={18} />}
-            <span className="font-semibold text-gray-600 w-36 flex-shrink-0">{label}:</span>
+            <span className="font-semibold text-cyan-700 w-36 flex-shrink-0">{label}:</span>
             {linkHref ? (
                 <a href={linkHref} target="_blank" rel="noopener noreferrer" className={`flex-1 ${valueClass} text-cyan-700 hover:underline flex items-center`}>
                     {value} <ExternalLink className="inline ml-1 text-xs" size={14} />
@@ -147,7 +147,7 @@ const QuoteDetailModal = ({ quote, onClose }) => {
                                 label="State"
                                 value={quote.state?.toUpperCase() || 'N/A'}
                                 icon={getStatusIcon(quote.state)}
-                                valueClass={`font-bold ${STATUS_COLORS[quote.state?.toLowerCase()] ? `text-[${STATUS_COLORS[quote.state?.toLowerCase()]}]` : 'text-gray-600'}`}
+                                valueClass={`font-bold ${STATUS_COLORS[quote.state?.toLowerCase()] ? `text-[${STATUS_COLORS[quote.state?.toLowerCase()]}]` : 'text-cyan-700'}`}
                             />
                             <DetailItem label="Currency" value={quote.currency || 'N/A'} icon={DollarSign} />
                             <DetailItem label="Short Description" value={quote.short_description || 'N/A'} icon={Info} />
@@ -182,7 +182,7 @@ const QuoteDetailModal = ({ quote, onClose }) => {
                             <DetailItem label="Account Phone" value={quote.account?.phone || 'N/A'} icon={Info} />
                             {quote.account?.contacts && quote.account.contacts.length > 0 && (
                                 <div className="py-2 border-b border-gray-100">
-                                    <h4 className="font-semibold text-gray-600 mb-2 flex items-center"><Users size={16} className="mr-2" /> Contacts:</h4>
+                                    <h4 className="font-semibold text-cyan-700 mb-2 flex items-center"><Users size={16} className="mr-2" /> Contacts:</h4>
                                     <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
                                         {quote.account.contacts.map((contact, index) => (
                                             <li key={index}>
@@ -194,7 +194,7 @@ const QuoteDetailModal = ({ quote, onClose }) => {
                             )}
                             {quote.account?.locations && quote.account.locations.length > 0 && (
                                 <div className="py-2 last:border-b-0">
-                                    <h4 className="font-semibold text-gray-600 mb-2 flex items-center"><Building2 size={16} className="mr-2" /> Locations:</h4>
+                                    <h4 className="font-semibold text-cyan-700 mb-2 flex items-center"><Building2 size={16} className="mr-2" /> Locations:</h4>
                                     <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
                                         {quote.account.locations.map((loc, index) => (
                                             <li key={index}>
@@ -216,14 +216,14 @@ const QuoteDetailModal = ({ quote, onClose }) => {
                                     <table className="min-w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-100">
                                             <tr>
-                                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">#</th>
-                                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Product Offering</th>
-                                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Quantity</th>
-                                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Unit Price</th>
-                                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Line Total</th>
-                                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Term</th>
-                                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">State</th>
-                                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Action</th>
+                                                <th className="px-4 py-2 text-left text-xs font-semibold text-cyan-700 uppercase tracking-wider">#</th>
+                                                <th className="px-4 py-2 text-left text-xs font-semibold text-cyan-700 uppercase tracking-wider">Product Offering</th>
+                                                <th className="px-4 py-2 text-left text-xs font-semibold text-cyan-700 uppercase tracking-wider">Quantity</th>
+                                                <th className="px-4 py-2 text-left text-xs font-semibold text-cyan-700 uppercase tracking-wider">Unit Price</th>
+                                                <th className="px-4 py-2 text-left text-xs font-semibold text-cyan-700 uppercase tracking-wider">Line Total</th>
+                                                <th className="px-4 py-2 text-left text-xs font-semibold text-cyan-700 uppercase tracking-wider">Term</th>
+                                                <th className="px-4 py-2 text-left text-xs font-semibold text-cyan-700 uppercase tracking-wider">State</th>
+                                                <th className="px-4 py-2 text-left text-xs font-semibold text-cyan-700 uppercase tracking-wider">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-100">
@@ -233,7 +233,7 @@ const QuoteDetailModal = ({ quote, onClose }) => {
                                                     <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-cyan-700">{line.product_offering?.name || 'N/A'}</td>
                                                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{line.quantity || 'N/A'}</td>
                                                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{line.unit_price || 'N/A'} {quote.currency}</td>
-                                                    <td className="px-4 py-2 whitespace-nowrap text-sm font-semibold text-gray-900">{getQuoteLinePrice(line)} {quote.currency}</td>
+                                                    <td className="px-4 py-2 whitespace-nowrap text-sm font-semibold text-cyan-700">{getQuoteLinePrice(line)} {quote.currency}</td>
                                                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{line.term_month || 'N/A'} Months</td>
                                                     <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{line.state || 'N/A'}</td>
                                                    
@@ -599,7 +599,7 @@ const QuotesDashboard = () => {
             <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
                 <div className="text-center space-y-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-600 mx-auto"></div>
-                    <h3 className="text-lg font-medium text-gray-900">Loading Quotes</h3>
+                    <h3 className="text-lg font-medium text-cyan-700">Loading Quotes</h3>
                     <p className="text-gray-500">Fetching the latest quote data...</p>
                 </div>
             </div>
@@ -613,8 +613,8 @@ const QuotesDashboard = () => {
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 mb-4">
                         <X className="h-6 w-6 text-red-600" />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading data</h3>
-                    <p className="text-gray-600 mb-6">{error.message || error || "An unknown error occurred."}</p>
+                    <h3 className="text-lg font-medium text-cyan-700 mb-2">Error loading data</h3>
+                    <p className="text-cyan-700 mb-6">{error.message || error || "An unknown error occurred."}</p>
                     <button
                         onClick={() => dispatch(getQuotes({ page: 1, limit: 1000 }))} // Retry fetch
                         className="inline-flex items-center rounded-lg bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-cyan-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 transition-colors"
@@ -632,13 +632,11 @@ const QuotesDashboard = () => {
             {/* Header and Actions */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <h1 className="text-3xl font-bold text-cyan-700 flex items-center">
                         <FileText className="mr-3 text-cyan-700" size={28} />
                         Quotes Dashboard
                     </h1>
-                    <p className="text-gray-600 mt-1 text-base">
-                        Comprehensive overview and management of your sales quotes.
-                    </p>
+                  
                 </div>
                 <div className="flex items-center gap-3">
                     <button
@@ -664,7 +662,7 @@ const QuotesDashboard = () => {
                 <div className="bg-white rounded-xl shadow-md p-6 flex items-center justify-between border border-gray-200">
                     <div>
                         <p className="text-sm font-medium text-gray-500">Total Quotes</p>
-                        <p className="mt-1 text-3xl font-bold text-gray-900">{quoteMetrics.total}</p>
+                        <p className="mt-1 text-3xl font-bold text-cyan-700">{quoteMetrics.total}</p>
                     </div>
                     <FileText className="text-cyan-600" size={32} />
                 </div>
@@ -698,7 +696,7 @@ const QuotesDashboard = () => {
                         <FilterIcon className="mr-2 text-cyan-700" size={22} />
                         Filters
                     </h2>
-                    {expandedFilters ? <ChevronUp size={20} className="text-gray-600" /> : <ChevronDown size={20} className="text-gray-600" />}
+                    {expandedFilters ? <ChevronUp size={20} className="text-cyan-700" /> : <ChevronDown size={20} className="text-cyan-700" />}
                 </div>
 
                 {expandedFilters && (
@@ -921,7 +919,7 @@ const QuotesDashboard = () => {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-cyan-500">{quote.state}</td>
 
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{quote.currency || 'N/A'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-cyan-700 font-semibold">
                                                 {quote.currency || ''} {(quote.quote_lines || []).reduce((sum, line) => {
                                                     const unitPrice = parseFloat(line.unit_price || 0);
                                                     const quantity = parseInt(line.quantity || 1);
@@ -991,7 +989,7 @@ const QuotesDashboard = () => {
                             <PieChartIcon className="mr-2 text-cyan-700" size={22} />
                             Quote Analytics
                         </h2>
-                        {expandedCharts ? <ChevronUp size={20} className="text-gray-600" /> : <ChevronDown size={20} className="text-gray-600" />}
+                        {expandedCharts ? <ChevronUp size={20} className="text-cyan-700" /> : <ChevronDown size={20} className="text-cyan-700" />}
                     </div>
 
                     {expandedCharts && (
