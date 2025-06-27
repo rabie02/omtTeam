@@ -970,112 +970,118 @@ const OpportunityDashboard = () => {
               </Card>
             </div>
 
-            <div className="mt-10"> 
-              <Card 
-                title="All Data Records"
-                className="shadow-sm border border-gray-200"
-                extra={
-                  <div className="flex flex-wrap gap-2 items-center">
-                    <Select
-                      placeholder="Filter by type"
-                      allowClear
-                      onChange={setSelectedType}
-                      className="w-full sm:w-40"
-                    >
-                      <Option value="Opportunity">Opportunity</Option>
-                      <Option value="Quote">Quote</Option>
-                      <Option value="Product">Product</Option>
-                      <Option value="Specification">Specification</Option>
-                      <Option value="Category">Category</Option>
-                      <Option value="Catalog">Catalog</Option>
-                    </Select>
-                    <Select
-                      placeholder="Filter by status"
-                      allowClear
-                      onChange={setSelectedStatus}
-                      className="w-full sm:w-40"
-                    >
-                      <Option value="active">Active</Option>
-                      <Option value="draft">Draft</Option>
-                      <Option value="inactive">Inactive</Option>
-                    </Select>
-                    <DatePicker.RangePicker 
-                      onChange={setDateRange}
-                      className="w-full sm:w-64"
-                    />
-                    <Dropdown overlay={exportMenu} trigger={['click']}>
-                      <Button icon={<Download className="w-4 h-4" />}>
-                        Export
-                      </Button>
-                    </Dropdown>
-                    <Radio.Group 
-                      value={visualizationType}
-                      onChange={e => setVisualizationType(e.target.value)}
-                      size="small"
-                      buttonStyle="solid"
-                      className="mr-2"
-                    >
-                      <Radio.Button value="bar">
-                        <BarChart2 className="w-3 h-3" />
-                      </Radio.Button>
-                      <Radio.Button value="pie">
-                        <PieChart className="w-3 h-3" />
-                      </Radio.Button>
-                      <Radio.Button value="line">
-                        <LineChart className="w-3 h-3" />
-                      </Radio.Button>
-                    </Radio.Group>
-                  </div>
-                }
-              >
-                {renderVisualizations()}
-                
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                  <div className="text-sm text-gray-700 font-medium">
-                    Showing <span className="font-semibold text-cyan-700">{safeArray(filteredData).length}</span> records
-                  </div>
+           <div className="mt-10">
+  {/* All Data Records Card - just the filters */}
+  <Card 
+    title="All Data Records"
+    className="shadow-sm border border-gray-200 "
+    extra={
+      <div className="flex flex-wrap gap-2 items-center">
+        <Select
+          placeholder="Filter by type"
+          allowClear
+          onChange={setSelectedType}
+          className="w-full sm:w-40"
+        >
+          <Option value="Opportunity">Opportunity</Option>
+          <Option value="Quote">Quote</Option>
+          <Option value="Product">Product</Option>
+          <Option value="Specification">Specification</Option>
+          <Option value="Category">Category</Option>
+          <Option value="Catalog">Catalog</Option>
+        </Select>
+        <Select
+          placeholder="Filter by status"
+          allowClear
+          onChange={setSelectedStatus}
+          className="w-full sm:w-40"
+        >
+          <Option value="active">Active</Option>
+          <Option value="draft">Draft</Option>
+          <Option value="inactive">Inactive</Option>
+        </Select>
+        <DatePicker.RangePicker 
+          onChange={setDateRange}
+          className="w-full sm:w-64"
+        />
+        <Dropdown overlay={exportMenu} trigger={['click']}>
+          <Button icon={<Download className="w-4 h-4" />}>
+            Export
+          </Button>
+        </Dropdown>
+        <Radio.Group 
+          value={visualizationType}
+          onChange={e => setVisualizationType(e.target.value)}
+          size="small"
+          buttonStyle="solid"
+          className="mr-2"
+        >
+          <Radio.Button value="bar">
+            <BarChart2 className="w-3 h-3" />
+          </Radio.Button>
+          <Radio.Button value="pie">
+            <PieChart className="w-3 h-3" />
+          </Radio.Button>
+          <Radio.Button value="line">
+            <LineChart className="w-3 h-3" />
+          </Radio.Button>
+        </Radio.Group>
+      </div>
+    }
+  >
+    {/* Search and record count inside the card */}
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+      <div className="text-sm text-gray-700 font-medium">
+        Showing <span className="font-semibold text-cyan-700">{safeArray(filteredData).length}</span> records
+      </div>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <AntSearch
-                      placeholder="Search records..."
-                      allowClear
-                      enterButton={<Search className="w-4 h-4" />}
-                      size="middle"
-                      onSearch={value => setSearchText(value)}
-                      className="w-full sm:w-44 md:w-52"
-                    />
+      <div className="flex items-center gap-2 w-full sm:w-auto">
+        <AntSearch
+          placeholder="Search records..."
+          allowClear
+          enterButton={<Search className="w-4 h-4" />}
+          size="middle"
+          onSearch={value => setSearchText(value)}
+          className="w-full sm:w-44 md:w-52"
+        />
 
-                    <Button
-                      type="default"
-                      icon={<RefreshCw className="w-4 h-4" />}
-                      onClick={() => {
-                        setSearchText('');
-                        setSelectedType(null);
-                        setSelectedStatus(null);
-                        setDateRange([]);
-                      }}
-                      className="text-gray-700 border-gray-300 hover:border-cyan-700 hover:text-cyan-700 transition"
-                      size="middle"
-                    >
-                      Reset Filters
-                    </Button>
-                  </div>
-                </div>
-                
-                <Table
-                  columns={columns}
-                  dataSource={filteredData}
-                  rowKey="_id"
-                  pagination={{ 
-                    pageSize: 10,
-                    showSizeChanger: true,
-                    pageSizeOptions: ['10', '20', '50', '100']
-                  }}
-                  scroll={{ x: true }}
-                  loading={loading}
-                />
-              </Card>
-            </div>
+        <Button
+          type="default"
+          icon={<RefreshCw className="w-4 h-4" />}
+          onClick={() => {
+            setSearchText('');
+            setSelectedType(null);
+            setSelectedStatus(null);
+            setDateRange([]);
+          }}
+          className="text-gray-700 border-gray-300 hover:border-cyan-700 hover:text-cyan-700 transition"
+          size="middle"
+        >
+          Reset Filters
+        </Button>
+      </div>
+    </div>
+  </Card>
+
+   <div className="mt-6">
+  {renderVisualizations()} </div>
+
+  {/* Data Table - full width below visualizations */}
+  <div className="mt-6">
+    <Table
+      columns={columns}
+      dataSource={filteredData}
+      rowKey="_id"
+      pagination={{ 
+        pageSize: 10,
+        showSizeChanger: true,
+        pageSizeOptions: ['10', '20', '50', '100']
+      }}
+      scroll={{ x: true }}
+      loading={loading}
+    />
+  </div>
+</div>
           </>
         ) : null}
       </main>

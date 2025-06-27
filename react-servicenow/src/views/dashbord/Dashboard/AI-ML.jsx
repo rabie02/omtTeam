@@ -3,7 +3,7 @@ import axios from 'axios';
 import {
   Button, Spin, Alert, Progress, Card, Tag, Divider, Typography, Space,
   Row, Col, Tabs, Badge, Tooltip, Collapse, Statistic, Result,
-  Descriptions, List, Timeline, Modal, notification
+  Descriptions, List, Timeline, Modal, notification 
 } from 'antd';
 import {
   Cpu, Zap, Package, TrendingUp, CheckCircle, Activity, FileText,
@@ -184,7 +184,7 @@ const AIModelTraining = () => {
       }
     } catch (err) {
       clearInterval(interval);
-      setProgress(prev => ({ ...prev, [modelType]: Math.max(prog[modelType], 0) })); // Stop progress, keep current % or 0
+      setProgress(prev => ({ ...prev, [modelType]: Math.max(progress[modelType], 0) })); // Fixed: Changed prog to progress
       errorMessage = err.response?.data?.message || `Unexpected ${modelType} training error: ${err.message}`;
       setError(errorMessage);
       setResults(prev => ({ ...prev, [modelType]: { success: false, errorMessage: errorMessage } }));
@@ -207,7 +207,7 @@ const AIModelTraining = () => {
         ...prev
       ].slice(0, 10)); // Keep last 10 entries
     }
-  }, [progress, results]); // Added results to dependency array for clarity, though not strictly needed here.
+  }, [progress, results]);
 
   const reset = useCallback((modelType) => {
     Modal.confirm({
@@ -234,7 +234,7 @@ const AIModelTraining = () => {
   const renderModelCard = (modelType, icon, title, description) => {
     const isTraining = training[modelType];
     const result = results[modelType];
-    const prog = progress[modelType];
+    const currentProgress = progress[modelType];
     const hasError = result && result.success === false;
 
     return (
@@ -259,7 +259,7 @@ const AIModelTraining = () => {
                   onClick={() => reset(modelType)}
                   icon={<Zap size={16} />}
                   danger
-                  type="primary" // Changed to primary for better visibility
+                  type="primary"
                   className="rounded-lg shadow-sm"
                 >
                   Retrain Model
@@ -273,7 +273,7 @@ const AIModelTraining = () => {
                 disabled={isTraining}
                 icon={<Zap size={16} />}
                 loading={isTraining}
-                size="large" // Make train button larger
+                size="large"
                 className="rounded-lg shadow-md bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 border-none"
               >
                 {isTraining ? 'Initiating Training...' : 'Start Training'}
@@ -286,7 +286,7 @@ const AIModelTraining = () => {
           <div className="text-center py-8 bg-blue-50 rounded-lg flex flex-col items-center justify-center space-y-4">
             <Progress
               type="circle"
-              percent={prog}
+              percent={currentProgress}
               strokeColor={{
                 '0%': '#108ee9',
                 '100%': '#87d068',
@@ -348,7 +348,7 @@ const AIModelTraining = () => {
               </Descriptions.Item>
               <Descriptions.Item label={<Text strong><Clock size={16} className="inline mr-2 text-orange-500" />Training Duration</Text>}>
                 <Text className="text-lg text-gray-800">
-                  {`${(Math.random() * 5 + 1).toFixed(1)} minutes`} {/* Simulate duration */}
+                  {`${(Math.random() * 5 + 1).toFixed(1)} minutes`}
                 </Text>
               </Descriptions.Item>
             </Descriptions>
@@ -409,7 +409,7 @@ const AIModelTraining = () => {
                     <div key={key} className="flex items-center gap-4">
                       <Text className="w-56 text-base font-medium text-gray-700">{desc}:</Text>
                       <Progress
-                        percent={Math.floor(Math.random() * 30) + 60} // Placeholder for actual importance
+                        percent={Math.floor(Math.random() * 30) + 60}
                         status="active"
                         showInfo={false}
                         strokeColor={
@@ -497,9 +497,7 @@ const AIModelTraining = () => {
 
   return (
     <div className="grid grid-cols-12">
-     <div className="col-span-12">
-       
-
+      <div className="col-span-12">
         {globalLoading && (
           <div className="text-center py-20 flex flex-col items-center justify-center">
             <Spin size="large" />
@@ -566,7 +564,7 @@ const AIModelTraining = () => {
                     <Card className="rounded-2xl shadow-xl border border-indigo-100 bg-indigo-50" hoverable>
                       <Statistic
                         title={<Text strong className="text-indigo-700 text-lg">Last System Activity</Text>}
-                        value="Just now" // Dynamic placeholder
+                        value="Just now"
                         valueStyle={{ color: '#1890ff' }}
                         prefix={<Activity size={24} className="text-indigo-500" />}
                       />
@@ -918,8 +916,8 @@ const AIModelTraining = () => {
                               <Text strong>Trained Samples:</Text> {item.trainedSamples?.toLocaleString() || 'N/A'}
                             </Paragraph>
                             <Paragraph className="mb-0">
-  <Text strong>Final Loss:</Text> {typeof item.finalLoss === 'number' ? item.finalLoss.toFixed(4) : item.finalLoss || 'N/A'}
-</Paragraph>
+                              <Text strong>Final Loss:</Text> {typeof item.finalLoss === 'number' ? item.finalLoss.toFixed(4) : item.finalLoss || 'N/A'}
+                            </Paragraph>
                             <Paragraph className="mb-0">
                               <Text strong>Duration:</Text> {item.duration}
                             </Paragraph>
@@ -966,4 +964,3 @@ const AIModelTraining = () => {
 };
 
 export default AIModelTraining;
-
