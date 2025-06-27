@@ -373,6 +373,8 @@ const OpportunityFormPage = () => {
   }, [isEditMode, formik.values, formik.dirty]);
 
   const handleCancel = () => {
+    localStorage.removeItem(FORM_STORAGE_KEY);
+    formik.resetForm({ values: getInitialValues() });
     navigate('/dashboard/opportunity');
   };
 
@@ -576,7 +578,7 @@ const OpportunityFormPage = () => {
         <div className="p-4">
           <Table
             columns={lineItemColumns}
-            dataSource={initialData.line_items}
+            dataSource={initialData?.line_items || []}
             pagination={false}
             rowKey={(record, index) => index}
             scroll={{ x: true }}
@@ -604,7 +606,7 @@ const OpportunityFormPage = () => {
         <div className="p-4">
           <Table
             columns={quoteColumns}
-            dataSource={initialData.quote}
+            dataSource={initialData?.quote || []}
             pagination={false}
             rowKey={(record, index) => index}
             scroll={{ x: true }}
@@ -761,7 +763,7 @@ const OpportunityFormPage = () => {
                     <button
                       type="button"
                       onClick={nextStep}
-                      className="px-4 py-2 bg-cyan-600 text-white rounded-md hover:bg-cyan-700"
+                      className="px-4 py-2 bg-cyan-600 w-30 mr-10 text-white rounded-md hover:bg-cyan-700"
                     >
                       Next
                     </button>
