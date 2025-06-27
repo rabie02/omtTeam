@@ -168,6 +168,8 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
       title: 'Short Description',
       dataIndex: 'short_description',
       key: 'short_description',
+      width:"20%",
+      ellipsis: true,
     },
     {
       title: 'Account',
@@ -301,9 +303,10 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
     ];
 
   return (
-    <div className="">
+    <div className="w-10/12">
       
       <Table
+        
         headerColor="rgba(0, 117, 149, 1)"
         columns={columns}
         dataSource={opportunities}

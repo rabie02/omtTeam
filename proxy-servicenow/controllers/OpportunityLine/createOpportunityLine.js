@@ -61,7 +61,7 @@ async function createOpportunityLine(req, res = null) {
     try {
       
       const opportunityLineDoc = new opportunityLine(mongoPayload);
-      await opportunityDoc.save();
+      await opportunityLineDoc.save();
 
       // Prepare response
       const response = {
