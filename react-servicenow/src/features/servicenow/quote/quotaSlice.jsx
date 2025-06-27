@@ -46,7 +46,7 @@ export const createQuote = createAsyncThunk(
         `${backendUrl}/api/quote/${opportunityId}`, {},
         { headers: { authorization: access_token } }
       );
-      return response.data;
+      return response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
