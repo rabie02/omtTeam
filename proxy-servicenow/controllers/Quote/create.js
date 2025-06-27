@@ -29,7 +29,7 @@ module.exports = async (req, res) => {
     }
 
     const snResponse = await axios.post(
-      `${process.env.SERVICE_NOW_URL}/api/sn_prd_pm/quote`,
+      `${process.env.SERVICE_NOW_URL}/api/sn_quote_mgmt_core/bismilah`,
       { opty_sys_id: localOpportunity.sys_id },
       {
         headers: {
