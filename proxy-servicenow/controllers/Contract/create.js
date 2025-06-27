@@ -28,7 +28,7 @@ async function generateContract(req, res) {
 
     // Fetch ServiceNow data
     const snResponse = await axios.get(
-      `${process.env.SERVICE_NOW_URL}/api/sn_prd_pm/quote?sys_id=${quote.sys_id}`,
+      `${process.env.SERVICE_NOW_URL}/api/sn_quote_mgmt_core/bismilah?sys_id=${quote.sys_id}`,
       {
         headers: {
           'Authorization': `Bearer ${decodedToken.sn_access_token}`,
