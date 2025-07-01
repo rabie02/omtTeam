@@ -24,15 +24,11 @@ export const getPublish = createAsyncThunk(
   'productOfferingCatalog/getPublish',
   async ({ q }, { rejectWithValue }) => {
     try {
-      console.log(q);
-
       const access_token = localStorage.getItem('access_token');
       const response = await axios.get(`${backendUrl}/api/product-offering-catalog-publish`, {
         headers: { authorization: access_token },
         params: { q }
       });
-      console.log(response.data);
-
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -59,8 +55,10 @@ export const createCatalog = createAsyncThunk(
   'productOfferingCatalog/create',
   async (productData, { rejectWithValue }) => {
     try {
+      // Ensure status is set to draft for new catalogs
+      const catalogData = { ...productData, status: 'draft' };
       const access_token = localStorage.getItem('access_token');
-      const response = await axios.post(`${backendUrl}/api/product-offering-catalog`, productData, {
+      const response = await axios.post(`${backendUrl}/api/product-offering-catalog`, catalogData, {
         headers: { authorization: access_token },
       });
       return response.data.result;
@@ -124,15 +122,21 @@ const productOfferingCatalogSlice = createSlice({
   name: 'productOfferingCatalog',
   initialState: {
     data: [],
-    selectedProduct: null,
+    currentCatalog: null, // Changed from selectedProduct
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
     limit: 6,
     loading: false,
+    loadingCatalog: false, // New loading state for single catalog
     error: null
   },
-  reducers: {},
+  reducers: {
+    // Add a reset action to clear currentCatalog
+    resetCurrentCatalog: (state) => {
+      state.currentCatalog = null;
+    }
+  },
   extraReducers: (builder) => {
     builder
       // Get All
@@ -171,18 +175,18 @@ const productOfferingCatalogSlice = createSlice({
         state.loading = false;
       })
 
-      // Get One
+      // Get One - use separate loading state
       .addCase(getOne.pending, (state) => {
-        state.loading = true;
+        state.loadingCatalog = true;
         state.error = null;
       })
       .addCase(getOne.fulfilled, (state, action) => {
-        state.selectedProduct = action.payload;
-        state.loading = false;
+        state.currentCatalog = action.payload;
+        state.loadingCatalog = false;
       })
       .addCase(getOne.rejected, (state, action) => {
         state.error = action.payload;
-        state.loading = false;
+        state.loadingCatalog = false;
       })
 
       // Create
@@ -210,8 +214,8 @@ const productOfferingCatalogSlice = createSlice({
         state.data = state.data.map(product =>
           product._id === updatedProduct._id ? updatedProduct : product
         );
-        if (state.selectedProduct?._id === updatedProduct._id) {
-          state.selectedProduct = updatedProduct;
+        if (state.currentCatalog?._id === updatedProduct._id) {
+          state.currentCatalog = updatedProduct;
         }
         state.loading = false;
       })
@@ -230,8 +234,8 @@ const productOfferingCatalogSlice = createSlice({
         state.data = state.data.map(product =>
           product._id === updatedProduct._id ? updatedProduct : product
         );
-        if (state.selectedProduct?._id === updatedProduct._id) {
-          state.selectedProduct = updatedProduct;
+        if (state.currentCatalog?._id === updatedProduct._id) {
+          state.currentCatalog = updatedProduct;
         }
         state.loading = false;
       })
@@ -257,4 +261,5 @@ const productOfferingCatalogSlice = createSlice({
   }
 });
 
+export const { resetCurrentCatalog } = productOfferingCatalogSlice.actions;
 export default productOfferingCatalogSlice.reducer;

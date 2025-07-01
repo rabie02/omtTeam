@@ -27,6 +27,13 @@ const productSpecificationSchema = new mongoose.Schema({
   }
 });
 
+productSpecificationSchema.virtual('productOffering', {
+  ref: 'ProductOffering',
+  localField: '_id',
+  foreignField: 'productSpecification',
+});
+
+
 const ProductSpecification = mongoose.model('ProductSpecification', productSpecificationSchema, 'product_specifications');
 
 module.exports = ProductSpecification;

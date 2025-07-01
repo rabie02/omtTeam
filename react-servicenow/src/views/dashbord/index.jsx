@@ -24,7 +24,7 @@ const Home = () => {
     categories: state.productOfferingCategory.totalItems || 0,
     catalogs: state.productOfferingCatalog.totalItems || 0,
     specs: state.productSpecification.totalItems || 0,
-    quotes: state.quotes.total || 0
+    quotes: state.quote.total || 0
   }));
 
   useEffect(() => {

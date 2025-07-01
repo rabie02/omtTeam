@@ -1,15 +1,17 @@
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   getall,
-  updateCategoryStatus,
-  deleteCategory
-} from '../../../features/servicenow/product-offering/productOfferingCategorySlice';
+  updateCatalogStatus,
+  deleteCatalog
+} from '../../../features/servicenow/product-offering/productOfferingCatalogSlice';
 import {
   Table,
   Input,
   Button,
+  Space,
   Popconfirm,
+  Tag,
   Pagination,
   Spin,
   Tooltip,
@@ -20,7 +22,7 @@ import { useNavigate } from 'react-router-dom';
 
 const { Search } = Input;
 
-const ProductOfferingCategory = () => {
+const ProductOfferingCatalog = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const {
@@ -30,7 +32,7 @@ const ProductOfferingCategory = () => {
     totalItems,
     loading,
     error
-  } = useSelector(state => state.productOfferingCategory);
+  } = useSelector(state => state.productOfferingCatalog);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [pageSize, setPageSize] = useState(10);
@@ -57,7 +59,7 @@ const ProductOfferingCategory = () => {
     }),
   };
 
-  // Measure header height
+  // Measure header height for sticky offset
   useEffect(() => {
     if (headerRef.current) {
       setHeaderHeight(headerRef.current.offsetHeight);
@@ -84,21 +86,51 @@ const ProductOfferingCategory = () => {
     if (currentPage) setCurrent(currentPage);
   }, [currentPage]);
 
-  // Navigation handlers
-  const navigateToCreate = () => navigate('/dashboard/category/create');
-  const handleNumberClick = (id) => navigate(`/dashboard/category/edit/${id}`);
+  // Navigate to create form
+  const navigateToCreate = () => {
+    navigate('/dashboard/catalog/create');
+  };
 
-  // Bulk actions
+
+  // Custom sort indicator using remixicon classes
+  const renderSortIndicator = (field) => {
+    if (sortConfig.field !== field) {
+      return <i className="ri-arrow-up-line text-gray-400"></i>;
+    }
+
+    return sortConfig.direction === 'asc' ? (
+      <i className="ri-arrow-up-line text-blue-600"></i>
+    ) : (
+      <i className="ri-arrow-down-line text-blue-600"></i>
+    );
+  };
+
+  // Handle number click to navigate to edit page
+  const handleNumberClick = (id) => {
+    navigate(`/dashboard/catalog/edit/${id}`);
+  };
+
+  // Handle bulk actions
   const handleBulkDelete = () => {
-    selectedRowKeys.forEach(id => dispatch(deleteCategory(id)));
+    selectedRowKeys.forEach(id => dispatch(deleteCatalog(id)));
     setSelectedRowKeys([]);
+     fetchData();
   };
 
   const handleBulkStatusChange = (status) => {
     selectedRowKeys.forEach(id =>
-      dispatch(updateCategoryStatus({ id, status }))
+      dispatch(updateCatalogStatus({ id, status }))
     );
     setSelectedRowKeys([]);
+  };
+
+  // ServiceNow-inspired category colors
+  const categoryColorMap = {
+    hardware: { color: '#0b5fff', bg: '#e6f0ff' },
+    software: { color: '#6f42c1', bg: '#f0e6ff' },
+    service: { color: '#28a745', bg: '#e6f7ec' },
+    bundle: { color: '#fd7e14', bg: '#fef5e7' },
+    default: { color: '#6c757d', bg: '#f0f0f0' },
   };
 
   // Table columns configuration
@@ -121,12 +153,12 @@ const ProductOfferingCategory = () => {
         </span>
       )
     },
-    {
-      title: 'Name',
-      dataIndex: 'name',
-      key: 'name',
-      sorter: (a, b) => a.name.localeCompare(b.name),
-    },
+      {
+            title: 'Name',
+            dataIndex: 'name',
+            key: 'name',
+            sorter: (a, b) => a.name.localeCompare(b.name),
+        },
     {
       title: <span className="font-semibold">Status</span>,
       dataIndex: 'status',
@@ -202,16 +234,20 @@ const ProductOfferingCategory = () => {
       >
         <div className="flex flex-col md:flex-row px-6 py-4 bg-gray-200 justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-lg font-semibold text-gray-800">Product Offering Categories</h1>
+            <h1 className="text-lg font-semibold text-gray-800">Product Offering Catalog</h1>
           </div>
 
           <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
             <Search
-              placeholder="Search by name..."
+              placeholder="Search by name or number..."
               prefix={<i className="ri-search-line text-gray-400"></i>}
               allowClear
               enterButton={
-                <Button type="primary">Search</Button>
+                <Button
+                  type="primary"
+                >
+                  Search
+                </Button>
               }
               size="large"
               className="w-full md:w-80"
@@ -226,22 +262,22 @@ const ProductOfferingCategory = () => {
               onClick={navigateToCreate}
               className="flex items-center"
             >
-              New 
+              New
             </Button>
           </div>
         </div>
 
-        {/* Bulk Actions Toolbar */}
+        {/* Bulk Actions Toolbar with Animation */}
         <div
-          className="overflow-hidden transition-all duration-300 ease-in-out"
+          className="overflow-hidden transition-all duration-300 ease-in-out "
           style={{
             maxHeight: selectedRowKeys.length > 0 ? '100px' : '0',
             opacity: selectedRowKeys.length > 0 ? 1 : 0
           }}
         >
-          <div className="bg-gray-50 shadow-sm border-y border-gray-300">
+          <div className="bg-gray-50 shadow-sm  border-y border-gray-300">
             <div className="flex flex-wrap items-center bg-gray-200 justify-between gap-3 p-3 mx-6">
-              <div className="flex items-center">
+              <div className="flex items-center tableX">
                 <Badge
                   count={selectedRowKeys.length}
                   className="text-white font-medium"
@@ -254,7 +290,7 @@ const ProductOfferingCategory = () => {
               <div className="flex flex-wrap gap-2">
                 <Tooltip title="Delete selected">
                   <Popconfirm
-                    title="Delete selected categories?"
+                    title="Delete selected catalogs?"
                     description="This action cannot be undone. Are you sure?"
                     onConfirm={handleBulkDelete}
                     okText="Delete"
@@ -270,7 +306,6 @@ const ProductOfferingCategory = () => {
                     </Button>
                   </Popconfirm>
                 </Tooltip>
-
                 <Button
                   icon={<i className="ri-close-line"></i>}
                   className="flex items-center"
@@ -302,7 +337,7 @@ const ProductOfferingCategory = () => {
           <div className="flex justify-center items-center h-64">
             <Spin
               size="large"
-              tip="Loading categories..."
+              tip="Loading catalog items..."
               indicator={<i className="ri-refresh-line animate-spin text-2xl"></i>}
             />
           </div>
@@ -313,21 +348,24 @@ const ProductOfferingCategory = () => {
             dataSource={data.map(item => ({ ...item, key: item._id }))}
             pagination={false}
             scroll={{ x: 'max-content' }}
-            sticky={{ offsetScroll: 0 }}
+            sticky={{
+              // offsetHeader: headerHeight,
+              offsetScroll: 0,
+            }}
             className="service-now-table relative"
             rowClassName="hover:bg-gray-50"
             locale={{
               emptyText: (
                 <div className="py-12 text-center">
                   <i className="ri-information-line mx-auto text-3xl text-gray-400 mb-3"></i>
-                  <p className="text-gray-500">No categories found</p>
+                  <p className="text-gray-500">No catalog items found</p>
                   <Button
                     type="primary"
                     className="mt-4 flex items-center mx-auto bg-blue-600 hover:bg-blue-700 border-blue-600"
                     icon={<i className="ri-add-line"></i>}
                     onClick={navigateToCreate}
                   >
-                    Create New Category
+                    Create New Item
                   </Button>
                 </div>
               )
@@ -336,22 +374,30 @@ const ProductOfferingCategory = () => {
         )}
       </div>
 
-      {/* Sticky Pagination */}
+      {/* Sticky Pagination at Bottom */}
       <div className="sticky bottom-0 z-10 bg-white border-t border-gray-200 p-4">
         <div className="flex flex-col md:flex-row justify-center items-center gap-4">
+
           <Pagination
             current={current}
             total={totalItems}
             pageSize={pageSize}
+            // onChange={(page, size) => {
+            //   setCurrent(page);
+            //   setPageSize(size);
+            // }}
+            // showSizeChanger
+            // pageSizeOptions={[10, 20, 50, 100]}
             className="mt-2 md:mt-0"
           />
           <div className="text-gray-600 text-sm">
             to  {Math.min(current * pageSize, totalItems)} of {totalItems}
           </div>
         </div>
+
       </div>
     </div>
   );
 };
 
-export default ProductOfferingCategory;
+export default ProductOfferingCatalog;
