@@ -25,7 +25,7 @@ const store = configureStore({
     aiSearch: aiSearchReducer,
     opportunity: opportunityReducer,
     priceList: priceListReducer,
-    quotes: quoteReducer,
+    quote: quoteReducer,
     account: accountReducer,
     contact: contactReducer,
     location: locationReducer,

@@ -32,7 +32,6 @@ export const getOne = createAsyncThunk(
         `${backendUrl}/api/product-offering/${id}`,
         getAuthHeaders()
       );
-      console.log(response.data.data);
       
       return response.data.data || null;
     } catch (error) {
@@ -132,9 +131,7 @@ const ProductOfferingSlice = createSlice({
         state.error = null;
       })
       .addCase(getall.fulfilled, (state, action) => {
-        state.data = action.payload.data || [];
-        console.log(state.data);
-        
+        state.data = action.payload.data || [];        
         state.currentPage = action.payload.page || 1;
         state.totalPages = action.payload.totalPages || 1;
         state.totalItems = action.payload.total || 0;
