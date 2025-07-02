@@ -30,7 +30,8 @@ const chatbotCases = require('./api/ai-search/getCases');
 const Quote = require('./api/quote/index');
 const productsRouter = require('./controllers/ProductOffering/servicenowproducts');
 const emailroutes = require('./email/router');
-const contract = require('./api/contract')
+const contract = require('./api/contract');
+const contractQuote = require('./api/contractQuote')
     // const createAccount = require('./api/createAccount/index')
 const knowledgeBaseRoute = require('./api/ai-search/chatboot');
 const productOfferingRoute = require('./api/ai-search/productoffering');
@@ -134,7 +135,8 @@ app.use('/api', authjwt, [
     nlpRoutes,
     chatbotCases,
     contract,
-    Quote
+    Quote,
+    contractQuote
 
 ]);
 

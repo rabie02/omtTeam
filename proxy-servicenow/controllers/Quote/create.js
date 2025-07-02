@@ -7,6 +7,7 @@ const Opportunity = require('../../models/opportunity');
 const PriceList = require('../../models/priceList');
 const handleMongoError = require('../../utils/handleMongoError');
 const createquoteline = require('../QuoteLine/create');
+const getOpportunityWithDetails = require('../Opportunity/getOpportuntityWithdetails');
 
 module.exports = async (req, res) => {
   try {
@@ -28,7 +29,7 @@ module.exports = async (req, res) => {
     }
 
     const snResponse = await axios.post(
-      `${process.env.SERVICE_NOW_URL}/api/sn_prd_pm/quote`,
+      `${process.env.SERVICE_NOW_URL}/api/sn_quote_mgmt_core/bismilah`,
       { opty_sys_id: localOpportunity.sys_id },
       {
         headers: {
@@ -80,9 +81,10 @@ module.exports = async (req, res) => {
         details: error.message
       });
     }
-
+    const opp = getOpportunityWithDetails(opportunity._id);
     res.status(201).json({
-      message: `Quote ${serviceNowData.number} and its line items have been created successfully.`
+      message: `Quote ${serviceNowData.number} and its line items have been created successfully.`,
+      data: opp
     });
 
   } catch (error) {

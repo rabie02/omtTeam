@@ -1,339 +1,127 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Package,
-  Layers,
-  ListTree,
-  Boxes,
-  MoreHorizontal,
-  TrendingUp,
-  Activity,
-  Cpu,
-  CheckCircle2,
+  LayoutDashboard,
+  FolderKanban,
+  Layers3,
+  PackageOpen,
   FileText,
-  ChevronDown,
-  ChevronUp,
-  Users,
-  Briefcase,
-  Search,
-  Filter,
-  Edit,
-  Download,
-  RefreshCw,
-  BarChart2,
-  PieChart,
-  LineChart,
-  Database,
-  DollarSign,
-  ArrowUpRight,
-  Clock,
-  Tag,
-  ShoppingCart,
-  Award,
-  Globe,
-  CreditCard,
+  Repeat,
+  TrendingUp,
+  BarChart3,
+  Lightbulb, // Icon for AI/ML
   Zap,
-} from "lucide-react";
-import axios from 'axios';
-import { Tooltip, Table, Input, Select, DatePicker, Button, Card, Divider, Badge, Progress, Radio, Tabs, Dropdown, Menu } from 'antd';
-import { Bar, Pie, Line, Doughnut } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip as ChartTooltip, Legend, ArcElement, PointElement, LineElement } from 'chart.js';
-import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
+  Activity,
+  ShoppingCart,
+  Tag,
+  Award,
+  ChevronDown,
+  TrendingUp as TrendingUpIcon,
+  PieChart,
+  Users,
+  User,
+  MapPin,
+  Briefcase,
+  Phone,
+  Globe
+} from 'lucide-react';
+import { Progress, Badge, Divider } from 'antd';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  ChartTooltip,
-  Legend,
-  ArcElement,
-  PointElement,
-  LineElement
-);
+// Dashboard components
+import Dashboard from "./Dashboard/Dashboard";
+import Category from "./Dashboard/Category";
+import Catalog from "./Dashboard/Catalog";
+import ProductOffering from "./Dashboard/ProductOffering";
+import ProductSpecification from "./Dashboard/ProductSpecification";
+import Quotes from "./Dashboard/Quotes";
+import Opportunity from "./Dashboard/Opportunity";
+// Client components
+import Client from "./Dashboard/Client";
+import Account from "./Dashboard/Account";
+import Contact from "./Dashboard/Contact";
+import Location from "./Dashboard/Location";
+import AIML from "./Dashboard/AI-ML"; // Import the AIML component
+import { useDispatch, useSelector } from 'react-redux';
+import { getOpportunities } from '../../features/servicenow/opportunity/opportunitySlice';
+import { getall as getProducts } from '../../features/servicenow/product-offering/productOfferingSlice';
+import { getQuotes } from '../../features/servicenow/quote/quotaSlice';
+import { getall as getCategories } from '../../features/servicenow/product-offering/productOfferingCategorySlice';
+import { getAccount } from '../../features/servicenow/account/accountSlice';
+import { getContacts } from '../../features/servicenow/contact/contactSlice';
+import { getLocations } from '../../features/servicenow/location/locationSlice';
 
-const { Search: AntSearch } = Input;
-const { Option } = Select;
-const { TabPane } = Tabs;
-
-import Section1 from "./Dashboard/Section1";
-import Section2 from "./Dashboard/Section2";
-import Section3 from "./Dashboard/Section3";
-import Section4 from "./Dashboard/Section4";
-import Section5 from "./Dashboard/Section5";
-import Section6 from "./Dashboard/Section6";
-import AIML from "./Dashboard/AI-ML";
+const TAB_DATA = [
+  { 
+    key: 'Dashboard', 
+    label: 'Dashboard', 
+    icon: <LayoutDashboard className="w-4 h-4 mr-1" />,
+    subTabs: [
+      { key: 'Dashboard', label: 'Overview', icon: <BarChart3 className="w-4 h-4 mr-1" /> },
+      { key: 'Category', label: 'Category', icon: <FolderKanban className="w-4 h-4 mr-1" /> },
+      { key: 'Catalog', label: 'Catalog', icon: <Layers3 className="w-4 h-4 mr-1" /> },
+      { key: 'ProductOffering', label: 'Products', icon: <PackageOpen className="w-4 h-4 mr-1" /> },
+      { key: 'ProductSpecification', label: 'Specifications', icon: <FileText className="w-4 h-4 mr-1" /> },
+      { key: 'Quotes', label: 'Quotes', icon: <Repeat className="w-4 h-4 mr-1" /> },
+      { key: 'Opportunity', label: 'Opportunities', icon: <TrendingUp className="w-4 h-4 mr-1" /> }
+    ]
+  },
+  { 
+    key: 'Client', 
+    label: 'Client', 
+    icon: <Users className="w-4 h-4 mr-1" />,
+    subTabs: [
+      { key: 'Client', label: 'Overview', icon: <Users className="w-4 h-4 mr-1" /> },
+      { key: 'Account', label: 'Accounts', icon: <User className="w-4 h-4 mr-1" /> },
+      { key: 'Contact', label: 'Contacts', icon: <User className="w-4 h-4 mr-1" /> },
+      { key: 'Location', label: 'Locations', icon: <MapPin className="w-4 h-4 mr-1" /> }
+    ]
+  }
+];
 
 const Home = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [loading, setLoading] = useState(true);
-  const [searchText, setSearchText] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState(null);
-  const [selectedType, setSelectedType] = useState(null);
-  const [dateRange, setDateRange] = useState([]);
-  const [stats, setStats] = useState({
-    products: [],
-    specs: [],
-    categories: [],
-    catalogs: [],
-    quote: [],
-    opportunities: []
-  });
-  const [visualizationType, setVisualizationType] = useState('bar');
-  const [visualizationMetric, setVisualizationMetric] = useState('count');
-  const [filteredData, setFilteredData] = useState([]);
+  const [activeTab, setActiveTab] = useState('Dashboard');
+  const [activeSubTab, setActiveSubTab] = useState('Dashboard');
+  const [openCard, setOpenCard] = useState(null);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  
+  // Redux state selectors
+  const opportunitiesState = useSelector(state => state.opportunity) || {};
+  const productsState = useSelector(state => state.productOffering) || {};
+  const quotesState = useSelector(state => state.quotes) || {};
+  const categoriesState = useSelector(state => state.productOfferingCategory) || {};
+  const accountsState = useSelector(state => state.account) || {};
+  const contactsState = useSelector(state => state.contact) || {};
+  const locationsState = useSelector(state => state.location) || {};
 
-  const tabs = [
-    {
-      id: "dashboard",
-      title: "Dashboard",
-      icon: <Package className="w-4 h-4" />,
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-50",
-    },
-    {
-      id: "offerings",
-      title: "Product Offerings",
-      icon: <Package className="w-4 h-4" />,
-      component: <Section3 />,
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-50",
-    },
-    {
-      id: "specifications",
-      title: "Specifications",
-      icon: <ListTree className="w-4 h-4" />,
-      component: <Section4 />,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50",
-    },
-    {
-      id: "catalogs",
-      title: "Catalogs",
-      icon: <Layers className="w-4 h-4" />,
-      component: <Section2 />,
-      color: "text-amber-600",
-      bgColor: "bg-amber-50",
-    },
-    {
-      id: "categories",
-      title: "Categories",
-      icon: <Boxes className="w-4 h-4" />,
-      component: <Section1 />,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-    },
-    {
-      id: "quote",
-      title: "Quotes",
-      icon: <FileText className="w-4 h-4" />,
-      component: <Section5 />,
-      color: "text-pink-600",
-      bgColor: "bg-pink-50",
-    },
-    {
-      id: "opportunities",
-      title: "Opportunities",
-      icon: <Briefcase className="w-4 h-4" />,
-      component: <Section6 />,
-      color: "text-cyan-600",
-      bgColor: "bg-cyan-50",
-    }
-  ];
+  const opportunities = opportunitiesState?.opportunities || [];
+  const products = productsState?.data || [];
+  const quotes = quotesState?.data || [];
+  const categories = categoriesState?.data || [];
+  const accounts = accountsState?.data || [];
+  const contacts = contactsState?.data || [];
+  const locations = locationsState?.data || [];
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem('authToken');
-        const headers = { Authorization: `Bearer ${token}` };
-        
-        const endpoints = [
-          { name: 'products', url: 'http://localhost:3000/api/products' },
-          { name: 'product-specs', url: 'http://localhost:3000/api/product-specs' },
-          { name: 'categories', url: 'http://localhost:3000/api/categories' },
-          { name: 'catalogs', url: 'http://localhost:3000/api/catalogs' },
-          { name: 'quote', url: 'http://localhost:3000/api/quotes' },
-          { name: 'opportunities', url: 'http://localhost:3000/api/opportunities' }
-        ];
-
-        const responses = await Promise.all(
-          endpoints.map(endpoint => axios.get(endpoint.url, { headers }))
-        );
-
-        const [
-          productsRes, 
-          specsRes, 
-          categoriesRes, 
-          catalogsRes, 
-          quoteRes,
-          opportunitiesRes
-        ] = responses;
-
-        const newStats = {
-          products: productsRes.data.data || [],
-          specs: specsRes.data.data || [],
-          categories: categoriesRes.data.data || [],
-          catalogs: catalogsRes.data.data || [],
-          quote: quoteRes.data.data || [],
-          opportunities: opportunitiesRes.data.data || []
-        };
-
-        setStats(newStats);
-
-        // Initialize filteredData with all data
-        const allData = [
-          ...(newStats.products || []).map(item => ({ ...item, type: 'Product' })),
-          ...(newStats.specs || []).map(item => ({ ...item, type: 'Specification' })),
-          ...(newStats.categories || []).map(item => ({ ...item, type: 'Category' })),
-          ...(newStats.catalogs || []).map(item => ({ ...item, type: 'Catalog' })),
-          ...(newStats.quote || []).map(item => ({ ...item, type: 'Quote', amount: parseFloat(item.total_amount?.replace('$', '').replace(',', '') || 0) })),
-          ...(newStats.opportunities || []).map(item => ({ ...item, type: 'Opportunity' }))
-        ];
-
-        setFilteredData(allData);
-
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    if (stats) {
-      const allData = [
-        ...(stats.products || []).map(item => ({ ...item, type: 'Product' })),
-        ...(stats.specs || []).map(item => ({ ...item, type: 'Specification' })),
-        ...(stats.categories || []).map(item => ({ ...item, type: 'Category' })),
-        ...(stats.catalogs || []).map(item => ({ ...item, type: 'Catalog' })),
-        ...(stats.quote || []).map(item => ({ ...item, type: 'Quote', amount: parseFloat(item.total_amount?.replace('$', '').replace(',', '') || 0) })),
-        ...(stats.opportunities || []).map(item => ({ ...item, type: 'Opportunity' }))
-      ];
-
-      const filtered = allData.filter(item => {
-        const matchesSearch = searchText === '' || 
-          (item.name && item.name.toLowerCase().includes(searchText.toLowerCase())) ||
-          (item.number && item.number.toLowerCase().includes(searchText.toLowerCase())) ||
-          (item.description && item.description.toLowerCase().includes(searchText.toLowerCase()));
-        
-        const matchesType = !selectedType || item.type === selectedType;
-        
-        const matchesStatus = !selectedStatus || 
-          (selectedStatus === 'active' && 
-            (item.status === 'Published' || item.state === 'Approved' || item.stage?.display_value === 'Closed - Won')) ||
-          (selectedStatus === 'draft' && 
-            (item.status === 'In Draft' || item.state === 'Draft')) ||
-          (selectedStatus === 'retired' && 
-            (item.status === 'Retired' || item.stage?.display_value === 'Closed - Lost'));
-        
-        // Updated date range handling
-        const matchesDate = !dateRange || dateRange.length === 0 || 
-          (item.sys_updated_on && 
-           dateRange[0] && 
-           dateRange[1] &&
-           new Date(item.sys_updated_on) >= dateRange[0] && 
-           new Date(item.sys_updated_on) <= dateRange[1]);
-        
-        return matchesSearch && matchesType && matchesStatus && matchesDate;
-      });
-
-      setFilteredData(filtered || []);
-    }
-  }, [stats, searchText, selectedType, selectedStatus, dateRange]);
-
-  const exportData = (format) => {
-    if (!filteredData || filteredData.length === 0) {
-      console.warn('No data to export');
-      return;
-    }
-
-    const dataToExport = filteredData.map(item => ({
-      Type: item.type,
-      Name: item.display_name || item.name || item.number || 'N/A',
-      Description: item.description || 'N/A',
-      Status: item.status || item.state || item.stage?.display_value || 'N/A',
-      'Last Updated': item.sys_updated_on ? new Date(item.sys_updated_on).toLocaleDateString() : 'N/A',
-      Amount: item.amount ? `$${item.amount.toLocaleString()}` : 'N/A'
-    }));
-
-    if (format === 'csv') {
-      const csvContent = [
-        Object.keys(dataToExport[0]).join(','),
-        ...dataToExport.map(item => Object.values(item).join(','))
-      ].join('\n');
-      
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      saveAs(blob, `export-${new Date().toISOString().slice(0,10)}.csv`);
-    } else if (format === 'excel') {
-      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
-      XLSX.writeFile(workbook, `export-${new Date().toISOString().slice(0,10)}.xlsx`);
-    } else if (format === 'json') {
-      const jsonContent = JSON.stringify(dataToExport, null, 2);
-      const blob = new Blob([jsonContent], { type: 'application/json' });
-      saveAs(blob, `export-${new Date().toISOString().slice(0,10)}.json`);
-    }
-  };
-
-  const exportMenu = (
-    <Menu onClick={({ key }) => exportData(key)}>
-      <Menu.Item key="csv">CSV</Menu.Item>
-      <Menu.Item key="excel">Excel</Menu.Item>
-      <Menu.Item key="json">JSON</Menu.Item>
-    </Menu>
-  );
-
-  if (loading) {
-    return (
-      <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-600"></div>
-      </div>
-    );
-  }
-
-  const getTopProducts = () => {
-    if (!stats.quote || !stats.products) return [];
-
-    const productCounts = {};
-    stats.quote.forEach(quote => {
-      quote.quote_lines?.forEach(line => {
-        const productId = line.product_offering?.sys_id || line.product_offering?.id;
-        if (productId) {
-          productCounts[productId] = (productCounts[productId] || 0) + parseInt(line.quantity || 1);
-        }
-      });
-    });
-
-    return [...stats.products]
-      .sort((a, b) => {
-        const countA = productCounts[a.sys_id] || 0;
-        const countB = productCounts[b.sys_id] || 0;
-        return countB - countA;
-      })
-      .slice(0, 3)
-      .map((product, index) => ({
-        ...product,
-        sales: productCounts[product.sys_id] || 0,
-        growth: index === 2 ? -3 : Math.floor(Math.random() * 15) + 5
-      }));
-  };
+    dispatch(getOpportunities({ page: 1, limit: 20 }));
+    dispatch(getProducts({ page: 1, limit: 20 }));
+    dispatch(getQuotes({ page: 1, limit: 20 }));
+    dispatch(getCategories({ page: 1, limit: 20 }));
+    dispatch(getAccount({ page: 1, limit: 5 }));
+    dispatch(getContacts({ page: 1, limit: 5 }));
+    dispatch(getLocations({ page: 1, limit: 5 }));
+  }, [dispatch]);
 
   const getRecentActivities = () => {
-    if (!stats.products || !stats.quote || !stats.opportunities) return [];
-
-    const productActivities = (stats.products || [])
+    const opportunityActivities = [...opportunities]
       .slice(0, 2)
-      .map(p => ({
-        description: `Product ${p.name || p.display_name} was ${p.status === 'published' ? 'published' : 'updated'}`,
-        timestamp: p.sys_updated_on || p.updatedAt || p.createdAt,
-        initials: p.name ? p.name.charAt(0) : 'P'
+      .map(o => ({
+        description: `Opportunity ${o.number} was ${o.stage?.name.toLowerCase()}`,
+        timestamp: o.updatedAt || o.createdAt,
+        initials: 'O'
       }));
 
-    const quoteActivities = (stats.quote || [])
+    const quoteActivities = [...quotes]
       .slice(0, 2)
       .map(q => ({
         description: `Quote ${q.number} was ${q.state.toLowerCase()}`,
@@ -341,1062 +129,550 @@ const Home = () => {
         initials: 'Q'
       }));
 
-    const opportunityActivities = (stats.opportunities || [])
+    const productActivities = [...products]
       .slice(0, 2)
-      .map(o => ({
-        description: `Opportunity ${o.number} was ${o.stage?.display_value.toLowerCase()}`,
-        timestamp: o.sys_updated_on || o.sys_created_on,
-        initials: 'O'
+      .map(p => ({
+        description: `Product ${p.name} was updated`,
+        timestamp: p.updatedAt || p.createdAt,
+        initials: 'P'
       }));
 
-    return [...productActivities, ...quoteActivities, ...opportunityActivities]
+    return [...opportunityActivities, ...quoteActivities, ...productActivities]
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
       .slice(0, 4);
   };
 
-  const getTopCategories = () => {
-    if (!stats.products || !stats.categories) return [];
+  const getTopProductsInOpportunities = () => {
+    const productCounts = {};
+    [...opportunities].forEach(opp => {
+      opp.line_items?.forEach(item => {
+        const productId = item.productOffering?._id;
+        if (productId) {
+          productCounts[productId] = (productCounts[productId] || 0) + 1;
+        }
+      });
+    });
 
+    return [...products]
+      .sort((a, b) => {
+        const countA = productCounts[a._id] || 0;
+        const countB = productCounts[b._id] || 0;
+        return countB - countA;
+      })
+      .slice(0, 3)
+      .map((product, index) => ({
+        ...product,
+        oppCount: productCounts[product._id] || 0,
+        growth: index === 2 ? -3 : Math.floor(Math.random() * 15) + 5
+      }));
+  };
+
+  const getQuoteConversionRate = () => {
+    const totalQuotes = [...quotes].length;
+    const wonOpportunities = [...opportunities].filter(o => o.stage?.name === 'Closed - Won').length;
+    return totalQuotes > 0 ? (wonOpportunities / totalQuotes * 100).toFixed(1) : 0;
+  };
+
+  const getTopCategories = () => {
     const categoryCounts = {};
-    stats.products.forEach(product => {
-      const categoryId = product.category?.sys_id;
+    [...products].forEach(product => {
+      const categoryId = product.category?.[0]?._id;
       if (categoryId) {
         categoryCounts[categoryId] = (categoryCounts[categoryId] || 0) + 1;
       }
     });
 
-    return [...stats.categories]
-      .sort((a, b) => (categoryCounts[b.sys_id] || 0) - (categoryCounts[a.sys_id] || 0))
+    return [...categories]
+      .sort((a, b) => (categoryCounts[b._id] || 0) - (categoryCounts[a._id] || 0))
       .slice(0, 5)
       .map(category => ({
         ...category,
-        productCount: categoryCounts[category.sys_id] || 0
+        productCount: categoryCounts[category._id] || 0
       }));
   };
 
-  const getQuoteConversionRate = () => {
-    if (!stats.quote || !stats.opportunities) return 0;
-    
-    const totalQuotes = stats.quote.length;
-    const wonOpportunities = stats.opportunities.filter(o => o.stage?.display_value === 'Closed - Won').length;
-    return totalQuotes > 0 ? (wonOpportunities / totalQuotes * 100).toFixed(1) : 0;
-  };
-
   const getRecentQuotes = () => {
-    if (!stats.quote) return [];
-    
-    return [...stats.quote]
+    return [...quotes]
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 3)
       .map(quote => ({
         ...quote,
-        amount: parseFloat(quote.total_amount?.replace('$', '').replace(',', '') || 0)
+        amount: quote.quote_lines?.reduce((sum, line) => sum + (parseFloat(line.unit_price) * parseInt(line.quantity || 1)), 0) || 0
       }));
   };
 
-  const prepareChartData = () => {
-    // Initialize empty chart data structure
-    const emptyData = {
-      productStatusData: {
-        labels: [],
-        datasets: [{
-          data: [],
-          backgroundColor: [],
-          borderColor: [],
-          borderWidth: 1
-        }]
-      },
-      quoteStatusData: {
-        labels: [],
-        datasets: [{
-          data: [],
-          backgroundColor: [],
-          borderColor: [],
-          borderWidth: 1
-        }]
-      },
-      revenueData: {
-        labels: [],
-        datasets: [{
-          label: 'Revenue ($)',
-          data: [],
-          backgroundColor: 'rgba(153, 102, 255, 0.6)',
-          borderColor: 'rgba(153, 102, 255, 1)',
-          borderWidth: 2,
-          tension: 0.4,
-          fill: true
-        }]
-      },
-      topProductsData: {
-        labels: [],
-        datasets: [{
-          label: 'Units Sold',
-          data: [],
-          backgroundColor: 'rgba(54, 162, 235, 0.6)',
-          borderColor: 'rgba(54, 162, 235, 1)',
-          borderWidth: 1
-        }]
-      }
-    };
-
-    if (!stats.products || !stats.quote) return emptyData;
-
-    // Product status distribution
-    const productStatusData = {
-      labels: ['Published', 'Draft', 'Retired'],
-      datasets: [{
-        data: [
-          stats.products.filter(p => p.status === 'Published').length,
-          stats.products.filter(p => p.status === 'In Draft').length,
-          stats.products.filter(p => p.status === 'Retired').length
-        ],
-        backgroundColor: [
-          'rgba(75, 192, 192, 0.6)',
-          'rgba(255, 206, 86, 0.6)',
-          'rgba(255, 99, 132, 0.6)'
-        ],
-        borderColor: [
-          'rgba(75, 192, 192, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(255, 99, 132, 1)'
-        ],
-        borderWidth: 1
-      }]
-    };
-
-    // Quote status distribution
-    const quoteStatusData = {
-      labels: ['Approved', 'Draft', 'Rejected'],
-      datasets: [{
-        data: [
-          stats.quote.filter(q => q.state === 'Approved').length,
-          stats.quote.filter(q => q.state === 'Draft').length,
-          stats.quote.filter(q => q.state === 'Rejected').length
-        ],
-        backgroundColor: [
-          'rgba(54, 162, 235, 0.6)',
-          'rgba(255, 206, 86, 0.6)',
-          'rgba(255, 99, 132, 0.6)'
-        ],
-        borderColor: [
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(255, 99, 132, 1)'
-        ],
-        borderWidth: 1
-      }]
-    };
-
-    // Monthly revenue data
-    const monthlyRevenue = {};
-    stats.quote.forEach(quote => {
-      const month = new Date(quote.createdAt).toLocaleString('default', { month: 'short' });
-      const amount = parseFloat(quote.total_amount?.replace('$', '').replace(',', '') || 0);
-      monthlyRevenue[month] = (monthlyRevenue[month] || 0) + amount;
-    });
-
-    const revenueData = {
-      labels: Object.keys(monthlyRevenue),
-      datasets: [{
-        label: 'Revenue ($)',
-        data: Object.values(monthlyRevenue),
-        backgroundColor: 'rgba(153, 102, 255, 0.6)',
-        borderColor: 'rgba(153, 102, 255, 1)',
-        borderWidth: 2,
-        tension: 0.4,
-        fill: true
-      }]
-    };
-
-    // Top products sales data
-    const topProducts = getTopProducts();
-    const topProductsData = {
-      labels: topProducts.map(p => p.display_name || p.name),
-      datasets: [{
-        label: 'Units Sold',
-        data: topProducts.map(p => p.sales),
-        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 1
-      }]
-    };
-
-    return {
-      productStatusData,
-      quoteStatusData,
-      revenueData,
-      topProductsData
-    };
+  const getRecentAccounts = () => {
+    return [...accounts]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 3)
+      .map(account => ({
+        ...account,
+        contactCount: account.contacts?.length || 0
+      }));
   };
 
-  // Prepare visualization data based on filtered data
-  const prepareFilteredVisualizations = () => {
-    const emptyData = {
-      typeDistribution: {
-        labels: [],
-        datasets: [{
-          label: 'Records by Type',
-          data: [],
-          backgroundColor: [],
-          borderColor: [],
-          borderWidth: 1
-        }]
-      },
-      statusDistribution: {
-        labels: [],
-        datasets: [{
-          label: 'Records by Status',
-          data: [],
-          backgroundColor: [],
-          borderColor: [],
-          borderWidth: 1
-        }]
-      },
-      monthlyTrend: {
-        labels: [],
-        datasets: [{
-          label: 'Records by Month',
-          data: [],
-          backgroundColor: 'rgba(153, 102, 255, 0.6)',
-          borderColor: 'rgba(153, 102, 255, 1)',
-          borderWidth: 2,
-          tension: 0.4,
-          fill: true
-        }]
-      }
-    };
-
-    if (!filteredData || filteredData.length === 0) {
-      return emptyData;
-    }
-
-    // Type distribution
-    const typeCounts = {};
-    filteredData.forEach(item => {
-      typeCounts[item.type] = (typeCounts[item.type] || 0) + 1;
-    });
-
-    const typeDistribution = {
-      labels: Object.keys(typeCounts),
-      datasets: [{
-        label: 'Records by Type',
-        data: Object.values(typeCounts),
-        backgroundColor: [
-          'rgba(54, 162, 235, 0.6)',
-          'rgba(255, 99, 132, 0.6)',
-          'rgba(75, 192, 192, 0.6)',
-          'rgba(255, 206, 86, 0.6)',
-          'rgba(153, 102, 255, 0.6)',
-          'rgba(255, 159, 64, 0.6)'
-        ],
-        borderColor: [
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 99, 132, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(153, 102, 255, 1)',
-          'rgba(255, 159, 64, 1)'
-        ],
-        borderWidth: 1
-      }]
-    };
-
-    // Status distribution
-    const statusCounts = {
-      'Active': 0,
-      'Draft': 0,
-      'Inactive': 0,
-      'Other': 0
-    };
-
-    filteredData.forEach(item => {
-      if (item.status === 'Published' || item.state === 'Approved' || item.stage?.display_value === 'Closed - Won') {
-        statusCounts['Active']++;
-      } else if (item.status === 'In Draft' || item.state === 'Draft') {
-        statusCounts['Draft']++;
-      } else if (item.status === 'Retired' || item.stage?.display_value === 'Closed - Lost') {
-        statusCounts['Inactive']++;
-      } else {
-        statusCounts['Other']++;
-      }
-    });
-
-    const statusDistribution = {
-      labels: Object.keys(statusCounts).filter(k => statusCounts[k] > 0),
-      datasets: [{
-        label: 'Records by Status',
-        data: Object.values(statusCounts).filter((v, i) => Object.keys(statusCounts)[i] !== 'Other' || v > 0),
-        backgroundColor: [
-          'rgba(75, 192, 192, 0.6)',
-          'rgba(255, 206, 86, 0.6)',
-          'rgba(255, 99, 132, 0.6)',
-          'rgba(201, 203, 207, 0.6)'
-        ],
-        borderColor: [
-          'rgba(75, 192, 192, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(255, 99, 132, 1)',
-          'rgba(201, 203, 207, 1)'
-        ],
-        borderWidth: 1
-      }]
-    };
-
-    // Monthly trend
-    const monthlyCounts = {};
-    filteredData.forEach(item => {
-      const date = item.sys_updated_on || item.updatedAt || item.createdAt;
-      if (date) {
-        const month = new Date(date).toLocaleString('default', { month: 'short' });
-        monthlyCounts[month] = (monthlyCounts[month] || 0) + 1;
-      }
-    });
-
-    const monthlyTrend = {
-      labels: Object.keys(monthlyCounts).sort((a, b) => {
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return months.indexOf(a) - months.indexOf(b);
-      }),
-      datasets: [{
-        label: 'Records by Month',
-        data: Object.keys(monthlyCounts).sort((a, b) => {
-          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          return months.indexOf(a) - months.indexOf(b);
-        }).map(month => monthlyCounts[month]),
-        backgroundColor: 'rgba(153, 102, 255, 0.6)',
-        borderColor: 'rgba(153, 102, 255, 1)',
-        borderWidth: 2,
-        tension: 0.4,
-        fill: true
-      }]
-    };
-
-    return {
-      typeDistribution,
-      statusDistribution,
-      monthlyTrend
-    };
+  const getRecentContacts = () => {
+    return [...contacts]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 3);
   };
 
-  const { typeDistribution, statusDistribution, monthlyTrend } = prepareFilteredVisualizations();
-  const chartData = prepareChartData();
-  const recentActivities = getRecentActivities();
-  const topCategories = getTopCategories();
-  const recentQuotes = getRecentQuotes();
-  const conversionRate = getQuoteConversionRate();
+  const getRecentLocations = () => {
+    return [...locations]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 3);
+  };
 
-  const columns = [
+  const INFO_CARDS = [
     {
-      title: 'Type',
-      dataIndex: 'type',
-      key: 'type',
-      filters: [
-        { text: 'Product', value: 'Product' },
-        { text: 'Specification', value: 'Specification' },
-        { text: 'Category', value: 'Category' },
-        { text: 'Catalog', value: 'Catalog' },
-        { text: 'Quote', value: 'Quote' },
-        { text: 'Opportunity', value: 'Opportunity' },
-      ],
-      onFilter: (value, record) => record.type === value,
-    },
-    {
-      title: 'Name/Number',
-      dataIndex: 'name',
-      key: 'name',
-      render: (text, record) => (
-        <span>
-          {record.display_name || record.name || record.number || 'N/A'}
-        </span>
+      key: 'activities',
+      title: 'Recent Activities',
+      icon: <Activity className="w-5 h-5 text-cyan-700" />,
+      description: 'Track the latest updates across the platform.',
+      content: (
+        <ul className="space-y-3">
+          {getRecentActivities().map((activity, index) => (
+            <li key={index} className="flex items-center">
+              <div className={`w-6 h-6 rounded-full ${
+                index === 0 ? 'bg-blue-100' : 
+                index === 1 ? 'bg-green-100' : 'bg-purple-100'
+              } flex items-center justify-center mr-2`}>
+                <span className={`text-xs ${
+                  index === 0 ? 'text-blue-600' : 
+                  index === 1 ? 'text-green-600' : 'text-purple-600'
+                } font-medium`}>{activity.initials}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm truncate">{activity.description}</p>
+                <p className="text-xs text-gray-500">
+                  {new Date(activity.timestamp).toLocaleString()}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
       ),
     },
     {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-      render: (text) => (
-        <span className="truncate max-w-xs inline-block">
-          {text || 'N/A'}
-        </span>
+      key: 'topProducts',
+      title: 'Top Products in Opportunities',
+      icon: <ShoppingCart className="w-5 h-5 text-cyan-700" />,
+      description: 'See which products are most frequently included in opportunities.',
+      content: (
+        <div className="space-y-3">
+          {getTopProductsInOpportunities().map((product, index) => (
+            <div key={index} className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className={`w-8 h-8 rounded-md ${
+                  index === 0 ? 'bg-amber-100' : 
+                  index === 1 ? 'bg-blue-100' : 'bg-purple-100'
+                } flex items-center justify-center mr-2`}>
+                  <span className={`text-xs ${
+                    index === 0 ? 'text-amber-800' : 
+                    index === 1 ? 'text-blue-800' : 'text-purple-800'
+                  } font-medium`}>{product.name?.charAt(0) || 'P'}</span>
+                </div>
+                <span className="text-sm truncate max-w-[120px]">{product.name}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-xs font-medium">{product.oppCount} opportunities</span>
+                <span className={`block text-xs ${index === 2 ? 'text-red-600' : 'text-green-600'}`}>
+                  {index === 2 ? '-' : '+'}{product.growth}%
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       ),
     },
     {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (text, record) => (
-        <span className={`px-2 py-1 rounded-full text-xs ${
-          text === 'Published' || record.state === 'Approved' || record.stage?.display_value === 'Closed - Won' ? 
-            'bg-green-100 text-green-800' :
-          text === 'In Draft' || record.state === 'Draft' ? 
-            'bg-yellow-100 text-yellow-800' :
-          text === 'Retired' || record.stage?.display_value === 'Closed - Lost' ? 
-            'bg-red-100 text-red-800' :
-            'bg-gray-100 text-gray-800'
-        }`}>
-          {text || record.state || record.stage?.display_value || 'N/A'}
-        </span>
+      key: 'conversion',
+      title: 'Quote Conversion',
+      icon: <TrendingUpIcon className="w-5 h-5 text-cyan-700" />,
+      description: 'Track how many quotes convert to won opportunities.',
+      content: (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center">
+              <PieChart className="w-4 h-4 text-yellow-500 mr-2" />
+              <span className="text-sm font-medium">Conversion Rate</span>
+            </div>
+            <Badge count={`${getQuoteConversionRate()}%`} style={{ backgroundColor: '#52c41a' }} />
+          </div>
+          <Progress 
+            percent={parseFloat(getQuoteConversionRate())} 
+            strokeColor={{
+              '0%': '#108ee9',
+              '100%': '#87d068',
+            }}
+            showInfo={false}
+          />
+          <div className="flex justify-between text-xs text-gray-500 mt-2">
+            <span>0%</span>
+            <span>100%</span>
+          </div>
+          <Divider className="my-3" />
+          <div className="text-xs text-gray-600">
+            <span>{[...opportunities].filter(o => o.stage?.name === 'Closed - Won').length} won opportunities</span>
+          </div>
+        </div>
       ),
-      filters: [
-        { text: 'Published/Approved/Won', value: 'active' },
-        { text: 'In Draft', value: 'draft' },
-        { text: 'Retired/Lost', value: 'retired' },
-      ],
-      onFilter: (value, record) => {
-        if (value === 'active') {
-          return record.status === 'Published' || record.state === 'Approved' || record.stage?.display_value === 'Closed - Won';
-        } else if (value === 'draft') {
-          return record.status === 'In Draft' || record.state === 'Draft';
-        } else if (value === 'retired') {
-          return record.status === 'Retired' || record.stage?.display_value === 'Closed - Lost';
-        }
-        return true;
-      },
     },
     {
-      title: 'Last Updated',
-      dataIndex: 'sys_updated_on',
-      key: 'sys_updated_on',
-      render: (text) => (
-        <span>{text ? new Date(text).toLocaleDateString() : 'N/A'}</span>
+      key: 'topCategories',
+      title: 'Top Categories',
+      icon: <Tag className="w-5 h-5 text-cyan-700" />,
+      description: 'See which categories have the most products.',
+      content: (
+        <div className="space-y-3">
+          {getTopCategories().map((category, index) => (
+            <div key={index} className="flex items-center justify-between">
+              <span className="text-sm">{category.name || 'Unnamed Category'}</span>
+              <span className="text-xs font-medium px-2 py-1 bg-blue-50 text-blue-600 rounded-full">
+                {category.productCount} products
+              </span>
+            </div>
+          ))}
+        </div>
       ),
-      sorter: (a, b) => new Date(a.sys_updated_on || 0) - new Date(b.sys_updated_on || 0),
     },
     {
-      title: 'Amount',
-      dataIndex: 'amount',
-      key: 'amount',
-      render: (text) => (
-        <span>{text ? `$${text.toLocaleString()}` : 'N/A'}</span>
+      key: 'recentQuotes',
+      title: 'Recent Quotes',
+      icon: <Award className="w-5 h-5 text-cyan-700" />,
+      description: 'View the most recently created quotes.',
+      content: (
+        <div className="space-y-3">
+          {getRecentQuotes().map((quote, index) => (
+            <div key={index} className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">{quote.number}</p>
+                <p className="text-xs text-gray-500">
+                  {new Date(quote.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+              <span className="text-sm font-bold">${quote.amount.toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
       ),
-      sorter: (a, b) => (a.amount || 0) - (b.amount || 0),
     },
     {
-      title: 'Actions',
+      key: 'recentAccounts',
+      title: 'Recent Accounts',
+      icon: <Briefcase className="w-5 h-5 text-cyan-700" />,
+      description: 'Recently created client accounts.',
+      content: (
+        <div className="space-y-3">
+          {getRecentAccounts().map((account, index) => (
+            <div key={index} className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">{account.name}</p>
+                <p className="text-xs text-gray-500">
+                  {account.email}
+                </p>
+              </div>
+              <span className="text-xs font-medium px-2 py-1 bg-green-50 text-green-600 rounded-full">
+                {account.contactCount} contacts
+              </span>
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      key: 'recentContacts',
+      title: 'Recent Contacts',
+      icon: <Phone className="w-5 h-5 text-cyan-700" />,
+      description: 'Recently created contacts.',
+      content: (
+        <div className="space-y-3">
+          {getRecentContacts().map((contact, index) => (
+            <div key={index} className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">{contact.firstName} {contact.lastName}</p>
+                <p className="text-xs text-gray-500">
+                  {contact.email}
+                </p>
+              </div>
+              <span className="text-xs text-gray-500">
+                {contact.account?.name || 'No account'}
+              </span>
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      key: 'recentLocations',
+      title: 'Recent Locations',
+      icon: <Globe className="w-5 h-5 text-cyan-700" />,
+      description: 'Recently created locations.',
+      content: (
+        <div className="space-y-3">
+          {getRecentLocations().map((location, index) => (
+            <div key={index} className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">{location.name}</p>
+                <p className="text-xs text-gray-500">
+                  {location.city}, {location.country}
+                </p>
+              </div>
+              <span className="text-xs text-gray-500">
+                {location.account?.name || 'No account'}
+              </span>
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    {
       key: 'actions',
-      render: (_, record) => (
-        <div className="flex space-x-2">
-          <Tooltip title="View Details">
-            <button className="text-blue-600 hover:text-blue-800">
-              <FileText className="w-4 h-4" />
-            </button>
-          </Tooltip>
-          <Tooltip title="Edit">
-            <button className="text-green-600 hover:text-green-800">
-              <Edit className="w-4 h-4" />
-            </button>
-          </Tooltip>
+      title: 'Quick Actions',
+      icon: <Zap className="w-5 h-5 text-cyan-700" />,
+      description: 'Create new entries or view reports instantly.',
+      content: (
+        <div className="grid grid-cols-3 gap-2 mt-3">
+          <button
+            className="flex items-center justify-center gap-1 p-2 text-xs rounded-md bg-cyan-700 text-white font-medium shadow-sm
+                       hover:bg-cyan-600 active:bg-cyan-800 transition-all duration-200
+                       focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/dashboard/catalog');
+            }}
+          >
+            <Layers3 className="w-3 h-3" />
+            <span>Catalog</span>
+          </button>
+
+          <button
+            className="flex items-center justify-center gap-1 p-2 text-xs rounded-md bg-cyan-700 text-white font-medium shadow-sm
+                       hover:bg-cyan-600 active:bg-cyan-800 transition-all duration-200
+                       focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/dashboard/category');
+            }}
+          >
+            <FolderKanban className="w-3 h-3" />
+            <span>Category</span>
+          </button>
+
+          <button
+            className="flex items-center justify-center gap-1 p-2 text-xs rounded-md bg-cyan-700 text-white font-medium shadow-sm
+                       hover:bg-cyan-600 active:bg-cyan-800 transition-all duration-200
+                       focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/dashboard/product-specification');
+            }}
+          >
+            <FileText className="w-3 h-3" />
+            <span>Spec</span>
+          </button>
+
+          <button
+            className="flex items-center justify-center gap-1 p-2 text-xs rounded-md bg-cyan-700 text-white font-medium shadow-sm
+                       hover:bg-cyan-600 active:bg-cyan-800 transition-all duration-200
+                       focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/dashboard/product-offering');
+            }}
+          >
+            <PackageOpen className="w-3 h-3" />
+            <span>Product</span>
+          </button>
+
+          <button
+            className="flex items-center justify-center gap-1 p-2 text-xs rounded-md bg-cyan-700 text-white font-medium shadow-sm
+                       hover:bg-cyan-600 active:bg-cyan-800 transition-all duration-200
+                       focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/dashboard/opportunity');
+            }}
+          >
+            <TrendingUp className="w-3 h-3" />
+            <span>Opp</span>
+          </button>
+
+          <button
+            className="flex items-center justify-center gap-1 p-2 text-xs rounded-md bg-cyan-700 text-white font-medium shadow-sm
+                       hover:bg-cyan-600 active:bg-cyan-800 transition-all duration-200
+                       focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/dashboard/quote');
+            }}
+          >
+            <Repeat className="w-3 h-3" />
+            <span>Quotes</span>
+          </button>
+
+          <button
+            className="flex items-center justify-center gap-1 p-2 text-xs rounded-md bg-cyan-700 text-white font-medium shadow-sm
+                       hover:bg-cyan-600 active:bg-cyan-800 transition-all duration-200
+                       focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/dashboard/account');
+            }}
+          >
+            <User className="w-3 h-3" />
+            <span>Accounts</span>
+          </button>
+
+          <button
+            className="flex items-center justify-center gap-1 p-2 text-xs rounded-md bg-cyan-700 text-white font-medium shadow-sm
+                       hover:bg-cyan-600 active:bg-cyan-800 transition-all duration-200
+                       focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/dashboard/contact');
+            }}
+          >
+            <User className="w-3 h-3" />
+            <span>Contacts</span>
+          </button>
+
+          <button
+            className="flex items-center justify-center gap-1 p-2 text-xs rounded-md bg-cyan-700 text-white font-medium shadow-sm
+                       hover:bg-cyan-600 active:bg-cyan-800 transition-all duration-200
+                       focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate('/dashboard/location');
+            }}
+          >
+            <MapPin className="w-3 h-3" />
+            <span>Locations</span>
+          </button>
         </div>
       ),
     },
   ];
 
-  const renderVisualizations = () => {
-    if (!typeDistribution || !statusDistribution || !monthlyTrend) {
-      return (
-        <Card className="shadow-sm border border-gray-200 mb-6">
-          <div className="text-center py-8 text-gray-500">
-            No data available for the current filters
-          </div>
-        </Card>
-      );
-    }
-
-    const commonOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'top',
-          labels: {
-            font: {
-              size: 12
-            }
-          }
-        },
-        tooltip: {
-          bodyFont: {
-            size: 12
-          }
-        }
-      }
-    };
-
-    return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <Card 
-          title="Records by Type" 
-          className="shadow-sm border border-gray-200"
-        >
-          <div className="h-64">
-            {visualizationType === 'bar' ? (
-              <Bar 
-                data={typeDistribution}
-                options={{
-                  ...commonOptions,
-                  scales: {
-                    y: {
-                      beginAtZero: true
-                    }
-                  }
-                }}
-              />
-            ) : (
-              <Pie 
-                data={typeDistribution}
-                options={commonOptions}
-              />
-            )}
-          </div>
-        </Card>
-
-        <Card 
-          title="Records by Status" 
-          className="shadow-sm border border-gray-200"
-        >
-          <div className="h-64">
-            {visualizationType === 'bar' ? (
-              <Bar 
-                data={statusDistribution}
-                options={{
-                  ...commonOptions,
-                  scales: {
-                    y: {
-                      beginAtZero: true
-                    }
-                  }
-                }}
-              />
-            ) : (
-              <Doughnut 
-                data={statusDistribution}
-                options={commonOptions}
-              />
-            )}
-          </div>
-        </Card>
-
-        <Card 
-          title="Monthly Trend" 
-          className="shadow-sm border border-gray-200"
-        >
-          <div className="h-64">
-            {visualizationType === 'bar' ? (
-              <Bar 
-                data={monthlyTrend}
-                options={{
-                  ...commonOptions,
-                  scales: {
-                    y: {
-                      beginAtZero: true
-                    }
-                  }
-                }}
-              />
-            ) : (
-              <Line 
-                data={monthlyTrend}
-                options={commonOptions}
-              />
-            )}
-          </div>
-        </Card>
-      </div>
-    );
+  const handleTabChange = (tabKey) => {
+    setActiveTab(tabKey);
+    // Reset to main tab when switching between Dashboard and Client
+    setActiveSubTab(tabKey);
   };
 
+  const handleSubTabChange = (subTabKey) => {
+    setActiveSubTab(subTabKey);
+  };
+
+  const renderContent = () => {
+    switch (activeSubTab) {
+      // Dashboard components
+      case 'Dashboard': return <Dashboard />;
+      case 'Category': return <Category />;
+      case 'Catalog': return <Catalog />;
+      case 'ProductOffering': return <ProductOffering />;
+      case 'ProductSpecification': return <ProductSpecification />;
+      case 'Quotes': return <Quotes />;
+      case 'Opportunity': return <Opportunity />;
+      
+      // Client components
+      case 'Client': return <Client />;
+      case 'Account': return <Account />;
+      case 'Contact': return <Contact />;
+      case 'Location': return <Location />;
+      
+      default: return <Dashboard />;
+    }
+  };
+
+  const currentTabData = TAB_DATA.find(tab => tab.key === activeTab);
+
   return (
-    <div className="w-full min-h-screen bg-gray-50 text-gray-800">
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-        
-        <div className="mb-2"> 
-          <div className="flex flex-wrap gap-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? `${tab.bgColor} ${tab.color} shadow-sm`
-                    : "text-gray-500 hover:bg-gray-100"
+    <div className="p-6 font-sans bg-gray-100 min-h-screen flex flex-col">
+
+      {/* Info Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        {INFO_CARDS.map((card) => (
+          <div
+            key={card.key}
+            onClick={() => setOpenCard(openCard === card.key ? null : card.key)}
+            className={`cursor-pointer bg-white p-4 rounded-lg shadow-md border border-gray-200 transition transform hover:scale-[1.02] ${
+              openCard === card.key ? 'ring-2 ring-cyan-500' : ''
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              {card.icon}
+              <h3 className="text-cyan-700 font-semibold">{card.title}</h3>
+            </div>
+            <p className="text-sm text-gray-600">{card.description}</p>
+
+            {openCard === card.key && (
+              <div className="mt-3 animate-fadeIn">
+                {card.content}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Main Tabs */}
+      <div className="flex flex-col mb-6 bg-white rounded-lg shadow-md p-3 border border-cyan-400">
+        {/* Primary Tabs */}
+        <div className="flex mb-3">
+          {TAB_DATA.map(({ key, label, icon }) => (
+            <button
+              key={key}
+              onClick={() => handleTabChange(key)}
+              className={`flex items-center justify-center gap-1 px-4 py-2 text-sm font-medium rounded-md transition-all duration-300 ease-in-out mr-2
+                ${activeTab === key
+                  ? 'bg-cyan-700 text-white shadow-md shadow-cyan-400/30'
+                  : 'text-cyan-800 hover:bg-cyan-100 hover:text-cyan-900'
                 }`}
+            >
+              {icon}
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Secondary Tabs */}
+        {currentTabData?.subTabs && (
+          <div className="flex flex-wrap gap-2">
+            {currentTabData.subTabs.map(({ key, label, icon }) => (
+              <button
+                key={key}
+                onClick={() => handleSubTabChange(key)}
+                className={`flex items-center justify-center gap-1 px-3 py-1 text-sm font-medium rounded-md transition-all duration-300 ease-in-out
+                  ${activeSubTab === key
+                    ? 'bg-cyan-600 text-white shadow-md shadow-cyan-400/30'
+                    : 'text-cyan-800 hover:bg-cyan-100 hover:text-cyan-900'
+                  }`}
               >
-                {tab.icon}
-                {tab.title}
+                {icon}
+                {label}
               </button>
             ))}
           </div>
-        </div>
-
-        {activeTab === 'dashboard' ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">  
-              <Card className="shadow-sm border border-gray-200 hover:shadow-md transition-all">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Total Products</p>
-                    <p className="text-2xl font-bold text-indigo-600">{stats.products?.length || 0}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-indigo-50 text-indigo-600">
-                    <Package className="w-5 h-5" />
-                  </div>
-                </div>
-                <Divider className="my-2" />  
-                <div className="flex justify-between text-xs">  
-                  <span className="text-green-600">
-                    <CheckCircle2 className="inline w-3 h-3 mr-1" />  
-                    {stats.products?.filter(p => p.status === 'Published').length || 0} Published
-                  </span>
-                  <span className="text-yellow-600">
-                    <Edit className="inline w-3 h-3 mr-1" />  
-                    {stats.products?.filter(p => p.status === 'In Draft').length || 0} Draft
-                  </span>
-                </div>
-              </Card>
-
-              <Card className="shadow-sm border border-gray-200 hover:shadow-md transition-all">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Total Quotes</p>
-                    <p className="text-2xl font-bold text-pink-600">{stats.quote?.length || 0}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-pink-50 text-pink-600">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                </div>
-                <Divider className="my-2" />
-                <div className="flex justify-between text-xs">
-                  <span className="text-green-600">
-                    <CheckCircle2 className="inline w-3 h-3 mr-1" />
-                    {stats.quote?.filter(q => q.state === 'Approved').length || 0} Approved
-                  </span>
-                  <span className="text-yellow-600">
-                    <Edit className="inline w-3 h-3 mr-1" />
-                    {stats.quote?.filter(q => q.state === 'Draft').length || 0} Draft
-                  </span>
-                </div>
-              </Card>
-
-              <Card className="shadow-sm border border-gray-200 hover:shadow-md transition-all">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Total Opportunities</p>
-                    <p className="text-2xl font-bold text-cyan-600">{stats.opportunities?.length || 0}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-cyan-50 text-cyan-600">
-                    <Briefcase className="w-5 h-5" />
-                  </div>
-                </div>
-                <Divider className="my-2" />
-                <div className="flex justify-between text-xs">
-                  <span className="text-green-600">
-                    <TrendingUp className="inline w-3 h-3 mr-1" />
-                    {stats.opportunities?.filter(o => o.stage?.display_value === 'Closed - Won').length || 0} Won
-                  </span>
-                  <span className="text-red-600">
-                    <TrendingUp className="inline w-3 h-3 mr-1 transform rotate-180" />
-                    {stats.opportunities?.filter(o => o.stage?.display_value === 'Closed - Lost').length || 0} Lost
-                  </span>
-                </div>
-              </Card>
-
-              <Card className="shadow-sm border border-gray-200 hover:shadow-md transition-all">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Total Revenue</p>
-                    <p className="text-2xl font-bold text-emerald-600">
-                      ${(stats.quote?.reduce((acc, quote) => {
-                        const amount = parseFloat(quote.total_amount?.replace('$', '').replace(',', '') || 0);
-                        return acc + amount;
-                      }, 0) || 0).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-emerald-50 text-emerald-600">
-                    <TrendingUp className="w-5 h-5" />
-                  </div>
-                </div>
-                <Divider className="my-2" />
-                <div className="text-xs text-gray-600">
-                  <span>
-                    <DollarSign className="inline w-3 h-3 mr-1" />
-                    Avg. Quote: ${((stats.quote?.reduce((acc, quote) => {
-                      const amount = parseFloat(quote.total_amount?.replace('$', '').replace(',', '') || 0);
-                      return acc + amount;
-                    }, 0) / (stats.quote?.length || 1) || 0).toFixed(2))}
-                  </span>
-                </div>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-6">  
-              <Card 
-                title={
-                  <div className="flex items-center">
-                    <LineChart className="w-4 h-4 text-purple-600 mr-2" /> 
-                    <span className="text-sm font-medium">Revenue Trend</span> 
-                  </div>
-                }
-                className="shadow-sm border border-gray-200"
-                bodyStyle={{ padding: '12px' }} 
-              >
-                <div className="h-48"> 
-                  <Line 
-                    data={chartData.revenueData}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: {
-                          position: 'top',
-                          labels: {
-                            font: {
-                              size: 10
-                            }
-                          }
-                        },
-                        tooltip: {
-                          bodyFont: {
-                            size: 10  
-                          },
-                          callbacks: {
-                            label: (context) => `$${context.raw.toLocaleString()}`
-                          }
-                        }
-                      },
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                          ticks: {
-                            callback: (value) => `$${value.toLocaleString()}`,
-                            font: {
-                              size: 10  
-                            }
-                          }
-                        },
-                        x: {
-                          ticks: {
-                            font: {
-                              size: 10 
-                            }
-                          }
-                        }
-                      }
-                    }}
-                  />
-                </div>
-              </Card>
-
-              <Card 
-                title={
-                  <div className="flex items-center">
-                    <PieChart className="w-4 h-4 text-green-600 mr-2" />  
-                    <span className="text-sm font-medium">Product Status</span>  
-                  </div>
-                }
-                className="shadow-sm border border-gray-200"
-                bodyStyle={{ padding: '12px' }} 
-              >
-                <div className="h-48"> 
-                  <Doughnut 
-                    data={chartData.productStatusData}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: {
-                          position: 'right',
-                          labels: {
-                            font: {
-                              size: 10 
-                            }
-                          }
-                        },
-                        tooltip: {
-                          bodyFont: {
-                            size: 10  
-                          },
-                          callbacks: {
-                            label: (context) => {
-                              const label = context.label || '';
-                              const value = context.raw || 0;
-                              const total = context.dataset.data.reduce((acc, data) => acc + data, 0);
-                              const percentage = Math.round((value / total) * 100);
-                              return `${label}: ${value} (${percentage}%)`;
-                            }
-                          }
-                        }
-                      }
-                    }}
-                  />
-                </div>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8"> 
-              <Card className="shadow-sm border border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center">
-                    <Zap className="w-4 h-4 text-yellow-500 mr-2" />
-                    <span className="text-sm font-medium">Quote Conversion</span>
-                  </div>
-                  <Badge count={`${conversionRate}%`} style={{ backgroundColor: '#52c41a' }} />
-                </div>
-                <Progress 
-                  percent={parseFloat(conversionRate)} 
-                  strokeColor={{
-                    '0%': '#108ee9',
-                    '100%': '#87d068',
-                  }}
-                  showInfo={false}
-                />
-                <div className="flex justify-between text-xs text-gray-500 mt-2">
-                  <span>0%</span>
-                  <span>100%</span>
-                </div>
-                <Divider className="my-3" />
-                <div className="text-xs text-gray-600">
-                  <span>{stats.opportunities?.filter(o => o.stage?.display_value === 'Closed - Won').length || 0} won opportunities</span>
-                </div>
-              </Card>
-
-              <Card 
-                title={
-                  <div className="flex items-center">
-                    <Tag className="w-4 h-4 text-blue-500 mr-2" />
-                    <span className="text-sm font-medium">Top Categories</span>
-                  </div>
-                }
-                className="shadow-sm border border-gray-200"
-              >
-                <div className="space-y-3">
-                  {topCategories.map((category, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm">{category.name || 'Unnamed Category'}</span>
-                      <span className="text-xs font-medium px-2 py-1 bg-blue-50 text-blue-600 rounded-full">
-                        {category.productCount} products
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              <Card 
-                title={
-                  <div className="flex items-center">
-                    <FileText className="w-4 h-4 text-pink-500 mr-2" />
-                    <span className="text-sm font-medium">Recent Quotes</span>
-                  </div>
-                }
-                className="shadow-sm border border-gray-200"
-              >
-                <div className="space-y-3">
-                  {recentQuotes.map((quote, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium">{quote.number}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(quote.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <span className="text-sm font-bold">${quote.amount.toLocaleString()}</span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6"> 
-              <Card 
-                title={
-                  <div className="flex items-center">
-                    <ShoppingCart className="w-4 h-4 text-amber-500 mr-2" />
-                    <span className="text-sm font-medium">Top Products</span>
-                  </div>
-                }
-                className="shadow-sm border border-gray-200"
-                bodyStyle={{ padding: '12px' }}
-              >
-                <div className="space-y-3"> 
-                  {getTopProducts().map((product, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className={`w-8 h-8 rounded-md ${
-                          index === 0 ? 'bg-amber-100' : 
-                          index === 1 ? 'bg-blue-100' : 'bg-purple-100'
-                        } flex items-center justify-center mr-2`}>
-                          <span className={`text-xs ${
-                            index === 0 ? 'text-amber-800' : 
-                            index === 1 ? 'text-blue-800' : 'text-purple-800'
-                          } font-medium`}>{product.code?.charAt(0) || 'P'}</span>
-                        </div>
-                        <span className="text-sm truncate max-w-[120px]">{product.display_name || product.name}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs font-medium">{product.sales} sold</span>
-                        <span className={`block text-xs ${product.growth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {product.growth >= 0 ? '+' : ''}{product.growth}%
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              <Card 
-                title={
-                  <div className="flex items-center">
-                    <Activity className="w-4 h-4 text-blue-500 mr-2" />
-                    <span className="text-sm font-medium">Recent Activities</span>
-                  </div>
-                }
-                className="shadow-sm border border-gray-200"
-                bodyStyle={{ padding: '12px' }}
-              >
-                <ul className="space-y-3"> 
-                  {recentActivities.map((activity, index) => (
-                    <li key={index} className="flex items-center">
-                      <div className={`w-6 h-6 rounded-full ${
-                        index === 0 ? 'bg-blue-100' : 
-                        index === 1 ? 'bg-green-100' : 'bg-purple-100'
-                      } flex items-center justify-center mr-2`}>
-                        <span className={`text-xs ${
-                          index === 0 ? 'text-blue-600' : 
-                          index === 1 ? 'text-green-600' : 'text-purple-600'
-                        } font-medium`}>{activity.initials}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm truncate">{activity.description}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(activity.timestamp).toLocaleString()}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            </div>
-
-            <div className="mt-10"> 
-              <Card 
-                title="All Data Records"
-                className="shadow-sm border border-gray-200"
-                extra={
-                  <div className="flex flex-wrap gap-2 items-center">
-                    <Select
-                      placeholder="Filter by type"
-                      allowClear
-                      onChange={setSelectedType}
-                      className="w-full sm:w-40"
-                    >
-                      <Option value="Product">Product</Option>
-                      <Option value="Specification">Specification</Option>
-                      <Option value="Category">Category</Option>
-                      <Option value="Catalog">Catalog</Option>
-                      <Option value="Quote">Quote</Option>
-                      <Option value="Opportunity">Opportunity</Option>
-                    </Select>
-                    <Select
-                      placeholder="Filter by status"
-                      allowClear
-                      onChange={setSelectedStatus}
-                      className="w-full sm:w-40"
-                    >
-                      <Option value="active">Active</Option>
-                      <Option value="draft">Draft</Option>
-                      <Option value="retired">Retired</Option>
-                    </Select>
-                    <DatePicker.RangePicker 
-        onChange={(dates) => setDateRange(dates || [])}
-        className="w-full sm:w-64"
-        value={dateRange?.length ? dateRange : null}
-      />
-                    <Dropdown overlay={exportMenu} trigger={['click']}>
-                      <Button icon={<Download className="w-4 h-4" />}>
-                        Export
-                      </Button>
-                    </Dropdown>
-                    <Radio.Group 
-                      value={visualizationType}
-                      onChange={e => setVisualizationType(e.target.value)}
-                      size="small"
-                      buttonStyle="solid"
-                      className="mr-2"
-                    >
-                      <Radio.Button value="bar">
-                        <BarChart2 className="w-3 h-3" />
-                      </Radio.Button>
-                      <Radio.Button value="pie">
-                        <PieChart className="w-3 h-3" />
-                      </Radio.Button>
-                      <Radio.Button value="line">
-                        <LineChart className="w-3 h-3" />
-                      </Radio.Button>
-                    </Radio.Group>
-                  </div>
-                }
-              >
-                {renderVisualizations()}
-                
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                  <div className="text-sm text-gray-700 font-medium">
-                    Showing <span className="font-semibold text-cyan-700">{filteredData?.length || 0}</span> records
-                  </div>
-
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <AntSearch
-                      placeholder="Search records..."
-                      allowClear
-                      enterButton={<Search className="w-4 h-4" />}
-                      size="middle"
-                      onSearch={value => setSearchText(value)}
-                      className="w-full sm:w-44 md:w-52"
-                    />
-
-                    <Button
-                      type="default"
-                      icon={<RefreshCw className="w-4 h-4" />}
-                      onClick={() => {
-                        setSearchText('');
-                        setSelectedType(null);
-                        setSelectedStatus(null);
-                        setDateRange([]);
-                      }}
-                      className="text-gray-700 border-gray-300 hover:border-cyan-700 hover:text-cyan-700 transition"
-                      size="middle"
-                    >
-                      Reset Filters
-                    </Button>
-                  </div>
-                </div>
-                
-                <Table
-                  columns={columns}
-                  dataSource={filteredData}
-                  rowKey="sys_id"
-                  pagination={{ 
-                    pageSize: 10,
-                    showSizeChanger: true,
-                    pageSizeOptions: ['10', '20', '50', '100']
-                  }}
-                  scroll={{ x: true }}
-                  loading={loading}
-                />
-              </Card>
-            </div>
-
-            <AIML />
-          </>
-        ) : (
-          <>
-            {tabs.find((tab) => tab.id === activeTab)?.component}
-            <AIML />
-          </>
         )}
-      </main>
+      </div>
 
-      <footer className="bg-white border-t border-gray-200 py-4 px-6 mt-8"> 
-        <div className="flex items-center justify-between text-sm text-gray-500">
-          <div>
+      {/* Main content */}
+      <div className="flex-1 mb-6"> {/* Added mb-6 for spacing before the new section */}
+        {renderContent()}
+      </div>
+      
+      {/* AI/ML Section - Added here as requested */}
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-blue-300">
+          <h1 className="text-xl font-bold text-cyan-700 mb-4 flex items-center">
+              <Lightbulb className="w-6 h-6 mr-2 text-blue-600" /> AI & Machine Learning Insights
+          </h1>
+          <AIML />
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 py-4 mt-auto"> {/* Changed mt-8 to mt-auto for sticky footer behavior */}
+        <div className="flex flex-col md:flex-row items-center justify-between text-sm text-gray-500">
+          <div className="mb-2 md:mb-0">
             © {new Date().getFullYear()} ProductHub. All rights reserved.
           </div>
           <div className="flex items-center space-x-4">
