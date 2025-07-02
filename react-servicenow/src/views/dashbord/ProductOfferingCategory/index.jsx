@@ -163,14 +163,22 @@ const ProductOfferingCategory = () => {
     },
   ];
 
-  // Row selection configuration
+// Custom row selection configuration
   const rowSelection = {
     selectedRowKeys,
-    onChange: setSelectedRowKeys,
-    getCheckboxProps: (record) => ({
-      disabled: record.status === 'inactive',
-    }),
+    onChange: (selectedKeys) => {
+      setSelectedRowKeys(selectedKeys);
+    },
+    getCheckboxProps: (record) => {
+      const hasPublished = record.productOffering?.some(productOffering => productOffering.status === 'published') || false;
+      return {
+        disabled: hasPublished,
+        // This will show a native tooltip on hover for disabled checkboxes
+        title: hasPublished ? "Cannot select catalog with published categories" : undefined
+      };
+    },
   };
+
 
   // Empty state configuration
   const emptyState = (
@@ -250,10 +258,13 @@ const ProductOfferingCategory = () => {
             current={current}
             total={totalItems}
             pageSize={pageSize}
+            onChange={(page) => {
+              setCurrent(page);
+            }}
             className="mt-2 md:mt-0"
           />
           <div className="text-gray-600 text-sm">
-            to  {Math.min(current * pageSize, totalItems)} of {totalItems}  </div>
+              Showing {Math.min((current - 1) * pageSize + 1, totalItems)} to {Math.min(current * pageSize, totalItems)} of {totalItems} </div>
         </div>
       </div>
     </div>

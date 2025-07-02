@@ -351,16 +351,20 @@ function ProductOfferingCategoryFormPage() {
                 render: (status) => <StatusCell status={status} />,
               },
               {
-                title: 'Valid From',
-                dataIndex: 'validFor',
-                key: 'startDateTime',
-                render: (validFor) => formatDate(validFor?.startDateTime),
+                title: 'Start Date',
+                key: 'start_date',
+                sorter: (a, b) => new Date(a.validFor.startDateTime) - new Date(b.validFor.startDateTime),
+                render: (_, record) => record?.validFor?.startDateTime
+                  ? new Date(record.validFor.startDateTime).toISOString().split("T")[0]
+                  : 'N/A',
               },
               {
-                title: 'Valid To',
-                dataIndex: 'validFor',
-                key: 'endDateTime',
-                render: (validFor) => formatDate(validFor?.endDateTime),
+                title: 'End Date',
+                key: 'end_date',
+                sorter: (a, b) => new Date(a.validFor.endDateTime) - new Date(b.validFor.endDateTime),
+                render: (_, record) => record?.validFor?.endDateTime
+                  ? new Date(record.validFor.endDateTime).toISOString().split("T")[0]
+                  : 'N/A',
               },
             ]}
             dataSource={currentCategory?.productOffering || []}

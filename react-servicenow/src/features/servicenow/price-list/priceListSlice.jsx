@@ -2,13 +2,14 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
 // ServiceNow API headers
 const getHeaders = () => ({
   'Content-Type': 'application/json',
   'authorization': `${localStorage.getItem('access_token')}`, // or your auth method
 });
 
-// 2. Price List CRUD operations
+// CREATE Price List
 export const createPriceList = createAsyncThunk(
   'opportunity/createPriceList',
   async (priceListData, { rejectWithValue }) => {
@@ -25,14 +26,16 @@ export const createPriceList = createAsyncThunk(
   }
 );
 
+// GET Price List
 export const getPriceList = createAsyncThunk(
   'opportunity/getPriceList',
-  async ({q}, { rejectWithValue }) => {
+  async ({ q }, { rejectWithValue }) => {
     try {
       const response = await axios.get(
         `${backendUrl}/api/price-list`,
-        { headers: getHeaders(),
-          params: {q}
+        {
+          headers: getHeaders(),
+          params: { q }
         }
       );
       return response.data;
@@ -42,11 +45,11 @@ export const getPriceList = createAsyncThunk(
   }
 );
 
+// DELETE Price List
 export const deletePriceList = createAsyncThunk(
   'opportunity/deletePriceList',
   async (id, { rejectWithValue }) => {
     try {
-      
       const response = await axios.delete(
         `${backendUrl}/api/price-list/${id}`,
         { headers: getHeaders() }
@@ -58,12 +61,18 @@ export const deletePriceList = createAsyncThunk(
   }
 );
 
+// Initial state
 const initialState = {
-  priceLists:[],
+  priceLists: [],
+  currentPriceList: null,
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0,
+  limit: 6,
   loading: false,
-  error: null,
+  loadingPriceList: false,
+  error: null
 };
-
 
 const priceListSlice = createSlice({
   name: 'priceList',
@@ -75,6 +84,9 @@ const priceListSlice = createSlice({
     setCurrentPage: (state, action) => {
       state.currentPage = action.payload;
     },
+    setCurrentPriceList: (state, action) => {
+      state.currentPriceList = action.payload;
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -96,26 +108,21 @@ const priceListSlice = createSlice({
         state.loading = true;
       })
       .addCase(getPriceList.fulfilled, (state, action) => {
-        
         state.loading = false;
         state.priceLists = action.payload;
       })
       .addCase(getPriceList.rejected, (state, action) => {
-        console.log(action);
         state.loading = false;
         state.error = action.payload?.error?.message || 'Failed to fetch Price List';
       })
-      
+
       // Delete Price List
       .addCase(deletePriceList.pending, (state) => {
         state.loading = true;
       })
       .addCase(deletePriceList.fulfilled, (state, action) => {
-        console.log(action.payload)
-        console.log(state.priceLists)
         state.priceLists = state.priceLists.filter(p => p._id !== action.payload.mongoId);
         state.loading = false;
-        
       })
       .addCase(deletePriceList.rejected, (state, action) => {
         state.loading = false;
@@ -123,5 +130,7 @@ const priceListSlice = createSlice({
       });
   },
 });
+
+export const { resetError, setCurrentPage, setCurrentPriceList } = priceListSlice.actions;
 
 export default priceListSlice.reducer;

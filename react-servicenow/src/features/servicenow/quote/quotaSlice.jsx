@@ -31,9 +31,7 @@ export const getQuote = createAsyncThunk(
       const response = await axios.get(
         `${backendUrl}/api/quote/${id}`,
         getAuthHeaders()
-      );
-      console.log(response.data);
-      
+      );      
       return response.data || null;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);

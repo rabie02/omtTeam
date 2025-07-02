@@ -57,6 +57,7 @@ export const createCatalog = createAsyncThunk(
     try {
       // Ensure status is set to draft for new catalogs
       const catalogData = { ...productData, status: 'draft' };
+      
       const access_token = localStorage.getItem('access_token');
       const response = await axios.post(`${backendUrl}/api/product-offering-catalog`, catalogData, {
         headers: { authorization: access_token },

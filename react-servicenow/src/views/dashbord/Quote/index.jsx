@@ -29,8 +29,6 @@ const Quote = () => {
         error
     } = useSelector(state => state.quote);
 
-    { console.log(data) }
-
     const [searchTerm, setSearchTerm] = useState('');
     const [pageSize, setPageSize] = useState(10);  // Match initial limit from slice
     const [current, setCurrent] = useState(1);
@@ -63,6 +61,7 @@ const Quote = () => {
             title: 'Number',
             dataIndex: 'number',
             key: 'number',
+            fixed: 'left',
             sorter: (a, b) => a.number?.localeCompare(b.number),
             render: (text, record) => (
                 <span
@@ -208,11 +207,13 @@ const Quote = () => {
                         current={current}
                         total={totalItems}
                         pageSize={pageSize}
-                       
+                        onChange={(page) => {
+                            setCurrent(page);
+                        }}
                         className="mt-2 md:mt-0"
                     />
                     <div className="text-gray-600 text-sm">
-                        to  {Math.min(current * pageSize, totalItems)} of {totalItems}
+                         Showing {Math.min((current - 1) * pageSize + 1, totalItems)} to {Math.min(current * pageSize, totalItems)} of {totalItems}
                     </div>
                 </div>
             </div>

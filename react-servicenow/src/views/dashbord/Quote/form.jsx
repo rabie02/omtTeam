@@ -117,28 +117,28 @@ function QuoteFormPage() {
   };
 
   // Handle download contract
-  const handleDownloadContract = async (contractId, quoteNumber) => {
-    try {
-      setPartiallyLoading(true);
-      const response = await dispatch(downloadContract(contractId)).unwrap();
-      
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([response]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Contract_${quoteNumber}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-    } catch (error) {
-      notification.error({
-        message: 'Error',
-        description: error.message || 'Failed to download contract'
-      });
-    } finally {
-      setPartiallyLoading(false);
-    }
-  };
+ const handleDownloadContract = async (contractId, quoteNumber) => {
+  try {
+    setPartiallyLoading(true);
+    const response = await dispatch(downloadContract({contractId, quoteNumber})).unwrap(); 
+    // Create download link using the content and fileName from the response
+    const url = window.URL.createObjectURL(new Blob([response.content]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', response.fileName); // Use the filename from the response
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode.removeChild(link);
+    
+  } catch (error) {
+    notification.error({
+      message: 'Error',
+      description: error.message || 'Failed to download contract'
+    });
+  } finally {
+    setPartiallyLoading(false);
+  }
+};
 
   // Determine status actions
   const getStatusActions = (currentStatus) => {

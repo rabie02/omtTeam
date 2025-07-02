@@ -1,5 +1,5 @@
 // src/components/categories/CategoryTable.jsx
-import React from 'react';
+import React, { useState, useEffect,useRef } from 'react';
 import { Table, Badge, Tooltip, Popconfirm, Button } from 'antd';
 
 // Integrated StatusCell component
@@ -77,7 +77,7 @@ const BulkActions = ({
   </div>
 );
 
-// Main Table Component with integrated sub-components
+
 const CategoryTable = ({ 
   data, 
   columns, 
@@ -87,25 +87,56 @@ const CategoryTable = ({
   onRowClick,
   bulkActionsProps
 }) => {
+  const [scrollConfig, setScrollConfig] = useState({ x: 'max-content', y: undefined });
+  const tableRef = useRef(null);
+  const ROW_HEIGHT = 55; // Approx. height per row
+  const MIN_HEIGHT = 200; // Min table height
+  const MAX_HEIGHT_PERCENT = 0.7; // Max 70% of viewport
+
+  useEffect(() => {
+    const calculateScroll = () => {
+      // 1. Calculate required height based on data
+      const contentHeight = data.length * ROW_HEIGHT;
+      
+      // 2. Calculate max allowed height (70% of viewport)
+      const maxViewportHeight = window.innerHeight * MAX_HEIGHT_PERCENT;
+      
+      // 3. Determine the actual height to use
+      const tableHeight = Math.max(
+        MIN_HEIGHT,
+        Math.min(contentHeight, maxViewportHeight)
+      );
+
+      // 4. Check if scrolling is needed
+      const shouldEnableScroll = contentHeight > tableHeight;
+
+      // 5. Update scroll config
+      setScrollConfig({
+        x: 'max-content',
+        y: shouldEnableScroll ? tableHeight : undefined, // Only set if needed
+      });
+    };
+
+    calculateScroll();
+    window.addEventListener('resize', calculateScroll);
+    return () => window.removeEventListener('resize', calculateScroll);
+  }, [data.length]);
+
   const handleRow = (record) => ({
-    onClick: () => onRowClick(record._id)
+    onClick: () => onRowClick(record._id),
   });
 
   return (
     <div className="flex flex-col h-full">
-      {/* Bulk Actions */}
-      {bulkActionsProps && bulkActionsProps.selectedCount > 0 && (
-        <BulkActions {...bulkActionsProps} />
-      )}
+      {bulkActionsProps?.selectedCount > 0 && <BulkActions {...bulkActionsProps} />}
       
-      {/* Main Table */}
-      <div className="flex-grow overflow-auto">
+      <div className="flex-grow" ref={tableRef}>
         <Table
           rowSelection={rowSelection}
           columns={columns}
           dataSource={data.map(item => ({ ...item, key: item._id }))}
           pagination={false}
-          scroll={{ x: 'max-content' }}
+          scroll={scrollConfig} // Dynamic scroll (y only if needed)
           className="service-now-table"
           rowClassName="hover:bg-gray-50 cursor-pointer"
           loading={loading}
@@ -117,8 +148,7 @@ const CategoryTable = ({
   );
 };
 
-// Attach sub-components to main component
 CategoryTable.StatusCell = StatusCell;
 CategoryTable.BulkActions = BulkActions;
-
 export default CategoryTable;
+
