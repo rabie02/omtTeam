@@ -7,7 +7,7 @@ import {
   getQuote, 
   resetCurrentQuote,
   updateQuoteState 
-} from '../../../features/servicenow/quote/quoteSlice';
+} from '../../../features/servicenow/quote/quotaSlice';
 import {
   generateContract,
   downloadContract
@@ -117,39 +117,33 @@ function QuoteFormPage() {
   };
 
   // Handle download contract
-  const handleDownloadContract = async (contractId, quoteNumber) => {
-    try {
-      setPartiallyLoading(true);
-      const response = await dispatch(downloadContract(contractId)).unwrap();
-      
-      // Create download link
-      const url = window.URL.createObjectURL(new Blob([response]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `Contract_${quoteNumber}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-    } catch (error) {
-      notification.error({
-        message: 'Error',
-        description: error.message || 'Failed to download contract'
-      });
-    } finally {
-      setPartiallyLoading(false);
-    }
-  };
+ const handleDownloadContract = async (contractId, quoteNumber) => {
+  try {
+    setPartiallyLoading(true);
+    const response = await dispatch(downloadContract({contractId, quoteNumber})).unwrap(); 
+    // Create download link using the content and fileName from the response
+    const url = window.URL.createObjectURL(new Blob([response.content]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', response.fileName); // Use the filename from the response
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode.removeChild(link);
+    
+  } catch (error) {
+    notification.error({
+      message: 'Error',
+      description: error.message || 'Failed to download contract'
+    });
+  } finally {
+    setPartiallyLoading(false);
+  }
+};
 
   // Determine status actions
   const getStatusActions = (currentStatus) => {
     switch (currentStatus) {
       case 'draft':
-        return { action: 'Submit', newStatus: 'pending' };
-      case 'draft':
-        return { action: 'Approve', newStatus: 'Approved' };
-      case 'approved':
-        return { action: 'Reject', newStatus: 'rejected' };
-      case 'rejected':
         return { action: 'Approve', newStatus: 'Approved' };
       default:
         return { action: 'Approve', newStatus: 'approved' };
@@ -157,9 +151,59 @@ function QuoteFormPage() {
   };
 
   const { action, newStatus } = getStatusActions(currentQuote?.state);
-  const isApproved = currentQuote?.state == 'Approved';
+  const isApproved = currentQuote?.state === 'Approved';
 
   // Tab items configuration
+  
+
+  // Fetch quote details
+  useEffect(() => {
+    if (isEditMode) {
+      dispatch(getQuote(id)).then(() => setInitialized(true));
+    } else {
+      setInitialized(true);
+    }
+
+    return () => {
+      dispatch(resetCurrentQuote());
+    };
+  }, [id, isEditMode, dispatch]);
+
+  // Initialize form with proper default values
+  const initialValues = {
+    number: '',
+    state: 'draft',
+    version: '',
+    currency: 'USD',
+    subscription_start_date: '',
+    subscription_end_date: '',
+    short_description: '',
+    expiration_date: '',
+    account: null,
+    price_list: null,
+    quote_lines: [],
+  };
+
+  // Merge with currentQuote if available
+  if (isEditMode && currentQuote && !loading) {
+    initialValues.number = currentQuote.number || '';
+    initialValues.state = currentQuote.state || 'draft';
+    initialValues.version = currentQuote.version || '';
+    initialValues.currency = currentQuote.currency || 'USD';
+    initialValues.subscription_start_date = currentQuote.subscription_start_date || '';
+    initialValues.subscription_end_date = currentQuote.subscription_end_date || '';
+    initialValues.short_description = currentQuote.short_description || '';
+    initialValues.expiration_date = currentQuote.expiration_date || '';
+    initialValues.account = currentQuote.account || null;
+    initialValues.price_list = currentQuote.price_list || null;
+    initialValues.quote_lines = currentQuote.quote_lines || [];
+  }
+
+  const formik = useFormik({
+    initialValues,
+    enableReinitialize: true,
+  });
+
   const tabItems = [
     {
       key: '1',
@@ -371,54 +415,6 @@ function QuoteFormPage() {
     },
   ];
 
-  // Fetch quote details
-  useEffect(() => {
-    if (isEditMode) {
-      dispatch(getQuote(id)).then(() => setInitialized(true));
-    } else {
-      setInitialized(true);
-    }
-
-    return () => {
-      dispatch(resetCurrentQuote());
-    };
-  }, [id, isEditMode, dispatch]);
-
-  // Initialize form with proper default values
-  const initialValues = {
-    number: '',
-    state: 'draft',
-    version: '',
-    currency: 'USD',
-    subscription_start_date: '',
-    subscription_end_date: '',
-    short_description: '',
-    expiration_date: '',
-    account: null,
-    price_list: null,
-    quote_lines: [],
-  };
-
-  // Merge with currentQuote if available
-  if (isEditMode && currentQuote && !loading) {
-    initialValues.number = currentQuote.number || '';
-    initialValues.state = currentQuote.state || 'draft';
-    initialValues.version = currentQuote.version || '';
-    initialValues.currency = currentQuote.currency || 'USD';
-    initialValues.subscription_start_date = currentQuote.subscription_start_date || '';
-    initialValues.subscription_end_date = currentQuote.subscription_end_date || '';
-    initialValues.short_description = currentQuote.short_description || '';
-    initialValues.expiration_date = currentQuote.expiration_date || '';
-    initialValues.account = currentQuote.account || null;
-    initialValues.price_list = currentQuote.price_list || null;
-    initialValues.quote_lines = currentQuote.quote_lines || [];
-  }
-
-  const formik = useFormik({
-    initialValues,
-    enableReinitialize: true,
-  });
-
   const handleCancel = () => navigate('/dashboard/quote');
 
   // Format date for display
@@ -468,36 +464,8 @@ function QuoteFormPage() {
 
           {isEditMode && (
             <div className="flex items-center gap-2">
-              <Popconfirm
-                title="Are you sure you want to delete this quote?"
-                onConfirm={() => {}}
-                okText="Yes"
-                cancelText="No"
-                okButtonProps={{ danger: true }}
-              >
-                <button
-                  className="text-red-600 hover:text-red-800 bg-white border border-red-600 hover:bg-red-50 px-4 h-10 flex justify-center items-center rounded"
-                  disabled={deleting}
-                >
-                  {deleting ? (
-                    <Spin indicator={<i className="ri-refresh-line animate-spin text-lg"></i>} />
-                  ) : (
-                    <>
-                      <i className="ri-delete-bin-line text-lg mr-2"></i>
-                      Delete
-                    </>
-                  )}
-                </button>
-              </Popconfirm>
 
-              <button
-                className="text-white bg-cyan-600 hover:bg-cyan-700 px-4 h-10 flex justify-center items-center rounded"
-              >
-                <i className="ri-download-line text-lg mr-2"></i>
-                Export PDF
-              </button>
-
-              {/* Status toggle button in header */ console.log(isApproved)}
+              {/* Status toggle button in header */}
               {!isApproved && (
                 <Tooltip title={`${action} Quote`}>
                   <Popconfirm
@@ -507,8 +475,7 @@ function QuoteFormPage() {
                     okText="Yes"
                     cancelText="No"
                   >
-                    <button className="text-white bg-green-600 hover:bg-green-700 px-4 h-10 flex justify-center items-center rounded">
-                      <i className="ri-check-line text-lg mr-2"></i>
+                    <button className="overflow-hidden relative w-32 h-10 bg-cyan-700 text-white hover:bg-cyan-800 cursor-pointer">
                       {action}
                     </button>
                   </Popconfirm>
@@ -517,12 +484,11 @@ function QuoteFormPage() {
               {isApproved && (
                 <Tooltip title={currentQuote.contracts?.length > 0 ? "Download Contract" : "Generate Contract"}>
                   {currentQuote.contracts?.length > 0 ? (
-                    <button
-                      className="text-white bg-orange-500 hover:bg-orange-600 px-4 h-10 flex justify-center items-center rounded"
+                    <button className="overflow-hidden relative w-fit px-2 h-10 bg-cyan-700 text-white hover:bg-cyan-800 cursor-pointer"
                       onClick={() => handleDownloadContract(currentQuote?.contracts[0]._id, currentQuote.number)}
                       disabled={partiallyLoading}
                     >
-                      <i className="ri-contract-fill text-lg mr-2"></i>
+                     
                       Download Contract
                     </button>
                   ) : (
@@ -533,17 +499,37 @@ function QuoteFormPage() {
                       okText="Yes"
                       cancelText="No"
                     >
-                      <button
-                        className="text-white bg-orange-500 hover:bg-orange-600 px-4 h-10 flex justify-center items-center rounded"
+                    <button className="overflow-hidden relative w-fit px-2 h-10 bg-cyan-700 text-white hover:bg-cyan-800 cursor-pointer"
                         disabled={partiallyLoading}
                       >
-                        <i className="ri-contract-line text-lg mr-2"></i>
+                        
                         Generate Contract
                       </button>
                     </Popconfirm>
                   )}
                 </Tooltip>
               )}
+               <Popconfirm
+                title="Are you sure you want to delete this quote?"
+                onConfirm={() => {}}
+                okText="Yes"
+                cancelText="No"
+                okButtonProps={{ danger: true }}
+              >
+                <button
+                  className="overflow-hidden relative w-32 h-10 border-2 rounded-md text-base font-medium z-10 group transition-colors bg-white border-cyan-700 text-cyan-700 hover:bg-cyan-50 cursor-pointer"
+                  disabled={deleting}
+                >
+                  {deleting ? (
+                    <Spin indicator={<i className="ri-refresh-line animate-spin text-lg"></i>} />
+                  ) : (
+                    <>
+                     
+                      Delete
+                    </>
+                  )}
+                </button>
+              </Popconfirm>
             </div>
           )}
         </div>
@@ -658,7 +644,7 @@ function QuoteFormPage() {
               <div className="w-full md:w-1/2">
                 <label className="block font-medium mb-1 text-gray-700">Status</label>
                 <div className="flex space-x-4">
-                  {['draft', 'pending', 'approved', 'rejected'].map(status => (
+                  {['draft',  'Approved',].map(status => (
                     <label
                       key={status}
                       className={`flex items-center px-4 py-2 border rounded-md cursor-not-allowed ${formik.values.state === status

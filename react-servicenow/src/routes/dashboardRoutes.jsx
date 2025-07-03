@@ -12,7 +12,8 @@ import ProductOfferingFormPage from '../views/dashbord/ProductOffering/form'
 import PS from '../views/dashbord/ProductSpec';
 import ProductSpecificationFormPage from '../views/dashbord/ProductSpec/form'
 import AiSearch from '../views/dashbord/ai-search';
-import Quote from '../views/dashbord/quote';
+import Quote from '../views/dashbord/Quote/index';
+import QuoteFormPage from '../views/dashbord/Quote/form'
 import Profile from '../views/dashbord/ProfilePage'
 import Opportunity from '../views/dashbord/Opportunity/index';
 import OpportunityFormPage from '../views/dashbord/Opportunity/form';
@@ -53,7 +54,7 @@ const dashboardRoutes = {
       element: <ProductOfferingCategoryFormPage />
     },
     { path: 'product-offering', element: <PO /> },
-      {
+    {
       path: 'product-offering/create',
       element: <ProductOfferingFormPage />
     },
@@ -78,6 +79,10 @@ const dashboardRoutes = {
     { path: 'price-list', element: <PriceList /> },
     { path: 'help', element: <AiSearch /> },
     { path: 'quote', element: <Quote /> },
+    {
+      path: 'quote/edit/:id',
+      element: <QuoteFormPage />
+    },
     { path: 'profile', element: <Profile /> },
     { path: 'account', element: <Account /> },
     { path: 'contact', element: <Contact /> },

@@ -3,6 +3,7 @@ const router = express.Router();
 
 // Import controllers
 const getAll = require('../../controllers/Quote/getall')
+const getOne = require('../../controllers/Quote/getbydetails')
 const getForCase = require('../../controllers/Quote/getForCase')
 const update = require('../../controllers/Quote/update')
 const create = require('../../controllers/Quote/create')
@@ -11,6 +12,7 @@ const updateStatus = require('../../controllers/Quote/updateState')
 const getLatestOneByOpportunity = require('../../controllers/Quote/getByOpportunityId');
 
 router.get('/quote', getAll);
+router.get('/quote/:id', getOne);
 router.get('/quotetocase', getForCase);
 router.post('/quote/:id', create);
 router.delete('/quote/:id', deleteQuote);

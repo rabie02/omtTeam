@@ -1,36 +1,38 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-const initialState = {
-  data: [],
-  loading: false,
-  error: null,
-  createLoading: false,
-  createError: null,
-  updateLoading: false,
-  updateError: null,
-  deleteLoading: false,
-  deleteError: null,
-  page: 1,
-  totalPages: 0,
-  total: 0,
-  limit: 6,
-  searchQuery: ''
+// Helper function to get auth headers
+const getAuthHeaders = () => {
+  const access_token = localStorage.getItem('access_token');
+  return { headers: { authorization: access_token } };
 };
 
 // Async Thunks
 export const getQuotes = createAsyncThunk(
   'quotes/getall',
-  async ({ page = 1, limit = 6, q }, { rejectWithValue }) => {
+  async ({ page = 1, limit = 6, q = '' }, { rejectWithValue }) => {
     try {
-      const access_token = localStorage.getItem('access_token');
       const response = await axios.get(`${backendUrl}/api/quote`, {
-        headers: { authorization: access_token },
+        ...getAuthHeaders(),
         params: { page, limit, q }
       });
-      return response.data;
+      return response.data || { data: [], page: 1, totalPages: 1, total: 0 };
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+export const getQuote = createAsyncThunk(
+  'quotes/getOne',
+  async (id, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(
+        `${backendUrl}/api/quote/${id}`,
+        getAuthHeaders()
+      );      
+      return response.data || null;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
@@ -41,12 +43,12 @@ export const createQuote = createAsyncThunk(
   'quotes/create',
   async (opportunityId, { rejectWithValue }) => {
     try {
-      const access_token = localStorage.getItem('access_token');
       const response = await axios.post(
-        `${backendUrl}/api/quote/${opportunityId}`, {},
-        { headers: { authorization: access_token } }
+        `${backendUrl}/api/quote/${opportunityId}`, 
+        {},
+        getAuthHeaders()
       );
-      return response.data;
+      return response.data?.result || null;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
@@ -54,18 +56,15 @@ export const createQuote = createAsyncThunk(
 );
 
 export const updateQuoteState = createAsyncThunk(
-  'quotes/update',
+  'quotes/updateState',
   async ({ id, state }, { rejectWithValue }) => {
     try {
-      const access_token = localStorage.getItem('access_token');
-console.log(state);
-
       const response = await axios.patch(
         `${backendUrl}/api/quote-state/${id}`,
-         {state},
-        { headers: { authorization: access_token } }
+        { state },
+        getAuthHeaders()
       );
-      return response.data.result; // Updated quote object
+      return response.data.result || null;
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.error?.message || 
@@ -76,29 +75,58 @@ console.log(state);
   }
 );
 
-export const deleteQuote = createAsyncThunk(
-  'quotes/delete',
-  async (quoteId, { rejectWithValue }) => {
+export const updateQuote = createAsyncThunk(
+  'quotes/update',
+  async ({ id, ...quoteData }, { rejectWithValue }) => {
     try {
-      const access_token = localStorage.getItem('access_token');
-      const response = await axios.delete(
-        `${backendUrl}/api/quote/${quoteId}`,
-        { headers: { authorization: access_token } }
+      const response = await axios.patch(
+        `${backendUrl}/api/quote/${id}`,
+        quoteData,
+        getAuthHeaders()
       );
-      return response.data;
+      return response.data || null;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || error.message);
     }
   }
 );
 
+export const deleteQuote = createAsyncThunk(
+  'quotes/delete',
+  async (id, { rejectWithValue }) => {
+    try {
+      await axios.delete(
+        `${backendUrl}/api/quote/${id}`,
+        getAuthHeaders()
+      );
+      return id;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+// Slice
 const quoteSlice = createSlice({
-  name: 'quotes',
-  initialState,
+  name: 'quote',
+  initialState: { 
+    data: [],
+    currentQuote: null,
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    limit: 6,
+    loading: false,
+    loadingQuote: false,
+    error: null
+  },
   reducers: {
     resetQuotes: () => initialState,
+    resetCurrentQuote: (state) => {
+      state.currentQuote = null;
+    },
     setPage: (state, action) => {
-      state.page = action.payload;
+      state.currentPage = action.payload;
     },
     setSearchQuery: (state, action) => {
       state.searchQuery = action.payload;
@@ -106,73 +134,118 @@ const quoteSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Get Quotes
+      // getQuotes
       .addCase(getQuotes.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(getQuotes.fulfilled, (state, action) => {
+        state.data = action.payload.data ;         
+        state.currentPage = action.payload.page || 1;
+        state.totalPages = action.payload.totalPages || 1;
+        state.totalItems = action.payload.total || 0;
+        state.limit = action.meta.arg?.limit || 6;
         state.loading = false;
-        state.data = action.payload.data;
-        state.total = action.payload.total;
-        state.page = action.payload.page;
-        state.totalPages = action.payload.totalPages;
-        state.limit = action.payload.limit || state.limit;
       })
       .addCase(getQuotes.rejected, (state, action) => {
-        state.loading = false;
         state.error = action.payload;
-        state.data = [];
-        state.total = 0;
-        state.totalPages = 0;
+        state.loading = false;
       })
       
-      // Create Quote
-      .addCase(createQuote.pending, (state) => {
-        state.createLoading = true;
-        state.createError = null;
+      // getQuote
+      .addCase(getQuote.pending, (state) => {
+        state.loadingQuote = true;
+        state.error = null;
       })
-      .addCase(createQuote.fulfilled, (state) => {
-        state.createLoading = false;
+      .addCase(getQuote.fulfilled, (state, action) => {
+        state.currentQuote = action.payload;
+        state.loadingQuote = false;
+      })
+      .addCase(getQuote.rejected, (state, action) => {
+        state.error = action.payload;
+        state.loadingQuote = false;
+      })
+      
+      // createQuote
+      .addCase(createQuote.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createQuote.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.data.unshift(action.payload);
+          state.totalItems += 1;
+        }
+        state.loading = false;
       })
       .addCase(createQuote.rejected, (state, action) => {
-        state.createLoading = false;
-        state.createError = action.payload;
+        state.error = action.payload;
+        state.loading = false;
       })
       
-      // Update Quote
+      // updateQuote
+      .addCase(updateQuote.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateQuote.fulfilled, (state, action) => {
+        if (action.payload) {
+          const index = state.data.findIndex(q => q._id === action.payload._id);
+          if (index !== -1) {
+            state.data[index] = action.payload;
+          }
+          if (state.currentQuote?._id === action.payload._id) {
+            state.currentQuote = action.payload;
+          }
+        }
+        state.loading = false;
+      })
+      .addCase(updateQuote.rejected, (state, action) => {
+        state.error = action.payload;
+        state.loading = false;
+      })
+      
+      // updateQuoteState
       .addCase(updateQuoteState.pending, (state) => {
-        state.updateLoading = true;
-        state.updateError = null;
+        state.loading = true;
+        state.error = null;
       })
       .addCase(updateQuoteState.fulfilled, (state, action) => {
-        state.updateLoading = false;
-        // Update specific quote in state
-        state.data = state.data.map(quote => 
-          quote._id === action.payload._id ? action.payload : quote
-        );
+        if (action.payload) {
+          const index = state.data.findIndex(q => q._id === action.payload._id);
+          if (index !== -1) {
+            state.data[index] = action.payload;
+          }
+          if (state.currentQuote?._id === action.payload._id) {
+            state.currentQuote = action.payload;
+          }
+        }
+        state.loading = false;
       })
       .addCase(updateQuoteState.rejected, (state, action) => {
-        state.updateLoading = false;
-        state.updateError = action.payload;
+        state.error = action.payload;
+        state.loading = false;
       })
       
-      // Delete Quote
+      // deleteQuote
       .addCase(deleteQuote.pending, (state) => {
-        state.deleteLoading = true;
-        state.deleteError = null;
+        state.loading = true;
+        state.error = null;
       })
       .addCase(deleteQuote.fulfilled, (state, action) => {
-        state.deleteLoading = false;
-        state.data = state.data.filter(p => p._id !== action.payload._id);
-        state.total -= 1;
+        state.data = state.data.filter(q => q._id !== action.payload);
+        state.totalItems = Math.max(0, state.totalItems - 1);
+        if (state.currentQuote?._id === action.payload) {
+          state.currentQuote = null;
+        }
+        state.loading = false;
       })
       .addCase(deleteQuote.rejected, (state, action) => {
-        state.deleteLoading = false;
-        state.deleteError = action.payload;
+        state.error = action.payload;
+        state.loading = false;
       });
   }
 });
 
-export const { resetQuotes, setPage, setSearchQuery } = quoteSlice.actions;
+export const { resetQuotes, resetCurrentQuote, setPage, setSearchQuery } = quoteSlice.actions;
 export default quoteSlice.reducer;

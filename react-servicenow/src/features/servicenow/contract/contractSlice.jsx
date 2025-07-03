@@ -36,9 +36,10 @@ export const downloadContract = createAsyncThunk(
   'contract/download',
   async (args, { rejectWithValue }) => { // Change to accept single args object
     try {
-      const { contract_id, quoteNumber } = args; // Destructure arguments
+      const { contractId, quoteNumber } = args; // Destructure arguments
+          
       const response = await axios.get(
-        `${backendUrl}/api/download-contract/${contract_id}`,
+        `${backendUrl}/api/download-contract/${contractId}`,
         {
           headers: getHeaders(),
           responseType: 'blob'
@@ -49,7 +50,7 @@ export const downloadContract = createAsyncThunk(
       const finalFileName = `contract-${sanitizedQuoteNumber}-${dayjs().format('YYYY-MM-DD_HH-mm')}.pdf`;
   
       return {
-        id: contract_id,
+        id: contractId,
         content: response.data,
         fileName: response.headers['content-disposition']
           ?.split('filename=')[1]

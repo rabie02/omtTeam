@@ -142,7 +142,26 @@
 }
 
 .ant-table-cell {
-  padding: 12px 16px !important;
+  padding: 11.5px 16px !important;
+}
+
+
+.service-now-table .ant-table-body::-webkit-scrollbar {
+  width: 5px;
+  height: 8px;
+}
+
+.service-now-table .ant-table-body::-webkit-scrollbar-track {
+  background: #00759536;
+}
+
+.service-now-table .ant-table-body::-webkit-scrollbar-thumb {
+  background-color: #005f78;
+  border-radius: 0px;
+}
+
+.service-now-table .ant-table-body::-webkit-scrollbar-thumb:hover {
+  background: #007595;
 }
 
 /* select */
@@ -155,7 +174,7 @@
   height: 39.6px !important;
 }
 
-.ant-select{
+.ant-select {
   border: 1px #d1d5dc solid;
 }
 
@@ -203,7 +222,7 @@
 }
 
 .tabs .ant-tabs-nav .ant-tabs-tab {
- 
+
   border-top: 5px solid #00607891 !important;
 }
 
@@ -222,4 +241,11 @@
 
 .tabs .ant-tabs-content-holder {
   border: 1px solid #0060786e !important;
+}
+
+
+/* Style for disabled checkboxes */
+.ant-checkbox-disabled + span {
+  color: rgba(0, 0, 0, 0.25);
+  cursor: not-allowed;
 }
