@@ -44,7 +44,7 @@ async function createLocation(req, res = null) {
       country: req.body.country || '',
       zip: req.body.zip || '',
       account: accountDoc.sys_id, // Use sys_id for ServiceNow
-      external_id: savedLocation._id.toString(), // Add MongoDB ID here
+      sn_tmt_core_external_id: savedLocation._id.toString(), // Add MongoDB ID here
       sys_class_name: 'cmn_location'
     };
 

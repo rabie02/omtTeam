@@ -46,7 +46,7 @@ async function createContact(req, res = null) {
       user_password: req.body.password || '',
       is_primary_contact: req.body.isPrimaryContact ?? true,
       active: req.body.active || true,
-      external_id: savedContact._id.toString(), // Add MongoDB ID here
+      sn_tmt_core_external_id: savedContact._id.toString(), // Add MongoDB ID here
       ...(req.body.jobTitle && { job_title: req.body.jobTitle }),
       sys_class_name: 'customer_contact'
     };

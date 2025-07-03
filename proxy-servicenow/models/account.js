@@ -16,6 +16,7 @@ const accountSchema = new mongoose.Schema({
   email: String,
   website: String,
   customer: String,
+  number: String,
 
   // New field
   archived: {

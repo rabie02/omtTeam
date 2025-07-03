@@ -117,9 +117,10 @@ export const verifyAccountToken = createAsyncThunk(
         `${backendUrl}/api/verify-account-token/${token}`,
         { headers: getHeaders() }
       );
-      return response.data;
+      return response.data?.data || response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || error.message);
+      const message = error.response?.data?.message || 'Failed to verify token';
+      return rejectWithValue(message);
     }
   }
 )

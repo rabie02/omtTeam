@@ -17,7 +17,6 @@ module.exports = async (req, res) => {
     // Prepare update data for ServiceNow
     const snUpdateData = {
       ...req.body,
-      external_id: mongoId.toString() // Add MongoDB ID to external_id
     };
     
     // Update in ServiceNow using basic auth
