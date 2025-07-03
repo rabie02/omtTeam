@@ -16,7 +16,7 @@ export const createPriceList = createAsyncThunk(
       const response = await axios.post(
         `${backendUrl}/api/price-list`,
         priceListData,
-        { headers: getHeaders() }
+        { withCredentials: true }
       );
       return response.data;
     } catch (error) {
@@ -31,7 +31,7 @@ export const getPriceList = createAsyncThunk(
     try {
       const response = await axios.get(
         `${backendUrl}/api/price-list`,
-        { headers: getHeaders(),
+        {withCredentials: true,
           params: {q}
         }
       );

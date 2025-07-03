@@ -57,7 +57,7 @@ function Header() {
       localStorage.removeItem('access_token');
       localStorage.removeItem('currentUser');
       message.success('Logged out successfully');
-      navigate('/login');
+      navigate('/');
     } catch (error) {
       message.error('Logout failed');
       console.error('Logout error:', error);

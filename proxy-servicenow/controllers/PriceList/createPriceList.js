@@ -16,7 +16,7 @@ async function createPriceList(req, res = null) {
     }
 
     // Create in ServiceNow
-    const connection = snConnection.getConnection(req.user.sn_access_token);
+    const connection = snConnection.getConnection(req.session.sn_access_token);
     const snResponse = await axios.post(
       `${connection.baseURL}/api/now/table/sn_csm_pricing_price_list`,
       payload,

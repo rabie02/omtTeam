@@ -52,7 +52,7 @@ export const getOpportunities = createAsyncThunk(
       const response = await axios.get(
         `${backendUrl}/api/opportunity`,
         { 
-          headers: getHeaders(),
+          withCredentials: true,
           params: { page, limit, q }
          },
         

@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useDispatch } from "react-redux";
 import { useSearchParams } from 'react-router-dom'; // Corrected import to 'react-router-dom'
-import { createAccount } from "../../features/auth/authActions"; // Assuming this path is correct
+import { createAccount } from "../../features/auth/authActions";
 import {
   Card,
   CardHeader,

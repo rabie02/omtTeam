@@ -6,18 +6,25 @@ const API_URL = import.meta.env.VITE_BACKEND_URL;
 
 export const userLogin = createAsyncThunk(
   'auth/login',
-  async ({ username, password }, { rejectWithValue }) => {
+  async ({ username, password }, { rejectWithValue, dispatch }) => {
     try {
       const { data } = await axios.post(
-        `${API_URL}/api/get-token`,
+        `${API_URL}/api/login`,
         { username, password },
         {
           headers: { 'Content-Type': 'application/json' },
-          timeout: 8000,
-          withCredentials: true
+          withCredentials: true,
+          timeout: 8000
         }
       );
-      return data;
+      
+      // Fetch user info after successful login
+      const userResponse = await dispatch(fetchUserInfo());
+      
+      return {
+        ...data,
+        user: userResponse.payload.user
+      };
     } catch (error) {
       if (!error.response) {
         return rejectWithValue({
@@ -56,42 +63,60 @@ export const registerUser = createAsyncThunk(
 );
 
 
-
 export const userLogout = createAsyncThunk(
   'auth/logout',
-  async () => {
+  async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('access_token');
-      
-      // Always clear client-side storage immediately
-      localStorage.removeItem('access_token');
-      
-      // Only attempt API logout if we have a token
-      if (token) {
-        await axios.post(
-          `${API_URL}/api/logout`,
-          {},
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            withCredentials: true
-          }
-        );
-      }
-      
-      // Optionally handle session/cookie removal here as well
-      document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT'; 
+      // Make logout request
+      await axios.post(
+        `${API_URL}/api/logout`,
+        {},
+        {
+          withCredentials: true,
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 10000 // 10 second timeout
+        }
+      );
+
+      // Force clear cookies as fallback
+      clearAllCookies();
 
       return true;
     } catch (error) {
-      console.error('Logout API error:', error);
-      // Notify user of logout failure if needed
-      return false;
+      handleLogoutError(error);
+      return rejectWithValue(formatError(error));
     }
   }
 );
+
+// Helper functions
+function clearAllCookies() {
+  document.cookie.split(';').forEach(cookie => {
+    const [name] = cookie.trim().split('=');
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  });
+}
+
+function formatError(error) {
+  if (error.response) {
+    return {
+      message: error.response.data?.message || 'Logout failed',
+      status: error.response.status
+    };
+  }
+  return {
+    message: error.message || 'Network error during logout',
+    status: 0
+  };
+}
+
+function handleLogoutError(error) {
+  if (error.code === 'ECONNABORTED') {
+    console.warn('Logout timeout - session may still be active');
+  } else {
+    console.error('Logout error:', error);
+  }
+}
 
 export const createAccount = createAsyncThunk(
   'auth/createAccount',
@@ -123,14 +148,15 @@ export const fetchUserInfo = createAsyncThunk(
   'auth/fetchUserInfo',
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('access_token');
       const { data } = await axios.get(`${API_URL}/api/me`, {
-        headers: {
-          Authorization: token,
-        },
-        withCredentials: true // Optional: Only if you rely on cookies too
+        withCredentials: true
       });
-      return data;
+      
+      if (!data?.user) {
+        throw new Error('No user data returned');
+      }
+      
+      return { user: data.user };
     } catch (err) {
       return rejectWithValue(err.response?.data || {
         error: 'fetch_failed',

@@ -1,8 +1,7 @@
+// routes/api/auth/login.js
 const express = require('express');
 const axios = require('axios');
-const jwt = require('jsonwebtoken');
-require('dotenv').config();
-
+const { body, validationResult } = require('express-validator');
 const router = express.Router();
 
 const ERROR_MESSAGES = {
@@ -11,121 +10,130 @@ const ERROR_MESSAGES = {
   AUTH_FAILED: 'Unable to authenticate'
 };
 
-router.post('/get-token', async (req, res) => {
-  const { username = '', password = '' } = req.body;
-
-  if (!username.trim() || !password.trim()) {
-    return res.status(400).json({
-      error: 'missing_fields',
-      error_description: ERROR_MESSAGES.MISSING_FIELDS
-    });
-  }
-
-  const authData = new URLSearchParams({
-    grant_type: 'password',
-    client_id: process.env.CLIENT_ID,
-    client_secret: process.env.CLIENT_SECRET,
-    username: username.trim(),
-    password: password.trim()
-  });
-
-  try {
-    const { data } = await axios.post(
-      `${process.env.SERVICE_NOW_URL}/oauth_token.do`,
-      authData,
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Accept: 'application/json'
-        },
-        timeout: 10000,
-        validateStatus: status => status < 500
-      }
-    );
-
-    if (!data?.access_token) {
-      return res.status(401).json({
-        error: 'invalid_credentials',
-        error_description: data?.error_description || ERROR_MESSAGES.INVALID_CREDENTIALS
+router.post(
+  '/login',
+  [
+    body('username').trim().notEmpty().withMessage('Username is required'),
+    body('password').trim().notEmpty().withMessage('Password is required')
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        error: 'validation_error',
+        details: errors.array()
       });
     }
 
-    const payload = {
-      sub: username,
-      sn_access_token: data.access_token,
-      scope: data.scope,
-      iss: process.env.JWT_ISSUER || 'your-app',
-      iat: Math.floor(Date.now() / 1000),
-      role: 'user'
-    };
-
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: '8h'
+    const { username, password } = req.body;
+    const authData = new URLSearchParams({
+      grant_type: 'password',
+      client_id: process.env.CLIENT_ID,
+      client_secret: process.env.CLIENT_SECRET,
+      username,
+      password
     });
 
-    res.cookie('id_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
-      maxAge: 1000 * 60 * 60 * 8 // 8 hours
-    });
+    try {
+      const { data } = await axios.post(
+        `${process.env.SERVICE_NOW_URL}/oauth_token.do`,
+        authData,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Accept: 'application/json'
+          },
+          timeout: 10000,
+          validateStatus: status => status < 500
+        }
+      );
 
-    res.set({
-      'Cache-Control': 'no-store',
-      Pragma: 'no-cache',
-      'X-Content-Type-Options': 'nosniff',
-      'X-Frame-Options': 'DENY'
-    }).json({
-      id_token: token,
-      token_type: 'Bearer',
-      expires_in: data.expires_in,
-      scope: data.scope,
-      issued_at: new Date().toISOString()
-    });
+      if (!data?.access_token) {
+        return res.status(401).json({
+          error: 'invalid_credentials',
+          error_description: data?.error_description || ERROR_MESSAGES.INVALID_CREDENTIALS
+        });
+      }
 
-  } catch (err) {
-    const status = err.response?.status || 503;
-    const errorResponse = err.response?.data;
+      req.session.regenerate(err => {
+        if (err) return res.status(500).json({ error: 'session_regenerate_failed' });
 
-    console.error('Token error:', err.message);
-    if (err.response?.data) {
-      console.error('Response data:', JSON.stringify(err.response.data));
+        req.session.sn_access_token = data.access_token;
+        req.session.username = username;
+
+        res.json({
+          username,
+          token_type: 'Bearer',
+          expires_in: data.expires_in
+        });
+      });
+    } catch (err) {
+      const status = err.response?.status || 503;
+      const errorResponse = err.response?.data;
+
+      console.error('Login error:', err.message);
+      res.status(status).json({
+        error: errorResponse?.error || 'authentication_failed',
+        error_description: errorResponse?.error_description || ERROR_MESSAGES.AUTH_FAILED
+      });
     }
-
-    res.status(status).json({
-      error: errorResponse?.error || 'authentication_failed',
-      error_description: errorResponse?.error_description || ERROR_MESSAGES.AUTH_FAILED
-    });
   }
-});
-router.get('/me', async (req, res) => {
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.replace('Bearer ', '');
+);
 
-  if (!token) {
-    return res.status(401).json({ error: 'missing_token', error_description: 'Token is required' });
+router.get('/me', async (req, res) => {
+  if (!req.session?.sn_access_token || !req.session?.username) {
+    return res.status(401).json({
+      error: 'missing_token',
+      error_description: 'Authentication required'
+    });
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const snToken = decoded.sn_access_token;
-
     const response = await axios.get(
-      `${process.env.SERVICE_NOW_URL}/api/now/table/sys_user?sysparm_query=user_name=${decoded.sub}&sysparm_limit=1`,
+      `${process.env.SERVICE_NOW_URL}/api/now/table/sys_user?sysparm_query=user_name=${req.session.username}&sysparm_limit=1`,
       {
         headers: {
-          Authorization: `Bearer ${snToken}`,
-          Accept: 'application/json'
+          Authorization: `Bearer ${req.session.sn_access_token}`,
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
         }
       }
     );
-    const userInfo = response.data.result[0];
-    res.json({ user: userInfo });
+
+    if (!response.data.result || response.data.result.length === 0) {
+      return res.status(404).json({
+        error: 'user_not_found',
+        error_description: 'User not found in ServiceNow'
+      });
+    }
+
+    res.json({
+      user: response.data.result[0],
+      token_valid: true
+    });
   } catch (err) {
-    console.error('User info error:', err.message);
-    return res.status(401).json({ error: 'invalid_token', error_description: 'Token is invalid or expired' });
+    console.error('User info error:', err.response?.data || err.message);
+
+    if (err.response?.status === 401) {
+      req.session.destroy(() => {});
+    }
+
+    const status = err.response?.status || 500;
+    res.status(status).json({
+      error: 'service_now_error',
+      error_description: err.response?.data?.error?.message || 'Error fetching user information'
+    });
   }
 });
 
+router.get('/auth/verify', (req, res) => {
+  if (!req.session?.sn_access_token) {
+    return res.status(401).json({ authenticated: false });
+  }
+  res.status(200).json({
+    authenticated: true,
+    user: { username: req.session.username }
+  });
+});
 
 module.exports = router;

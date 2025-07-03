@@ -1,26 +1,41 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
-
-const TokenValid = (token) => {
-  try {
-    const decoded = jwtDecode(token);
-    const currentTime = Date.now() / 1000;
-    return decoded.exp > currentTime;
-  } catch (e) {
-    return false;
-  }
-};
+import axios from 'axios';
 
 const IsAuth = ({ children }) => {
-  const token = localStorage.getItem('access_token');
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (token && TokenValid(token)) {
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        // Make a lightweight request to check auth status
+        await axios.get('/api/auth/check', {
+          withCredentials: true // Sends cookies automatically
+        });
+        setIsAuthenticated(true);
+      } catch (error) {
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
+
+  if (isLoading) {
+    // Show minimal loading state (or null for no indicator)
+    return null;
+  }
+
+  // If authenticated, redirect to dashboard
+  if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
 
+  // Otherwise, show the auth-related children (login/signup pages)
   return children;
 };
-
 
 export default IsAuth;
