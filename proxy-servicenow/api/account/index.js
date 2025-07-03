@@ -26,7 +26,7 @@ router.post('/request-creation', requestCreation);
 router.get('/confirm-creation', confirmCreation);
 
 router.get('/verify-account-token/:token', verifyAccountToken);
-router.get('/send_mail_info/:token', sendMailInfo);
+router.post('/send_mail_info', sendMailInfo);
 
 
 module.exports = router;
