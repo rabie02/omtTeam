@@ -9,7 +9,7 @@ module.exports = async (req, res) => {
 
     // Build aggregation pipeline
     const pipeline = [
-      // Initial population of references
+      // Opportunity lookup with null preservation
       {
         $lookup: {
           from: 'opportunities',
@@ -18,8 +18,9 @@ module.exports = async (req, res) => {
           as: 'opportunity'
         }
       },
-      { $unwind: '$opportunity' },
-      // ➕ NEW: Contracts lookup (add this stage)
+      { $unwind: { path: '$opportunity', preserveNullAndEmptyArrays: true } },
+      
+      // Contracts lookup
       {
         $lookup: {
           from: 'contracts',
@@ -28,7 +29,8 @@ module.exports = async (req, res) => {
           as: 'contracts'
         }
       },
-      // Account lookup with nested contacts/locations
+      
+      // Account lookup with nested population
       {
         $lookup: {
           from: 'accounts',
@@ -36,16 +38,14 @@ module.exports = async (req, res) => {
           foreignField: '_id',
           as: 'account',
           pipeline: [
-            {
-              $lookup: {
+            { $lookup: {
                 from: 'contacts',
                 localField: '_id',
                 foreignField: 'account',
                 as: 'contacts',
-              }
+              } 
             },
-            {
-              $lookup: {
+            { $lookup: {
                 from: 'locations',
                 localField: '_id',
                 foreignField: 'account',
@@ -56,69 +56,65 @@ module.exports = async (req, res) => {
         }
       },
       { $unwind: { path: '$account', preserveNullAndEmptyArrays: true } },
+      
+      // Price list lookup
       {
         $lookup: {
-          from: 'price_lists', // Fixed collection name
+          from: 'price_lists',
           localField: 'price_list',
           foreignField: '_id',
           as: 'price_list'
         }
       },
       { $unwind: { path: '$price_list', preserveNullAndEmptyArrays: true } },
-
-      // Add quote lines with their population
+      
+      // Quote lines lookup with product offerings
       {
         $lookup: {
           from: 'quotelines',
           let: { quoteId: '$_id' },
           pipeline: [
-            {
-              $match: {
-                $expr: { $eq: ['$quote', '$$quoteId'] }
-              }
-            },
-            {
-              $lookup: {
+            { $match: { $expr: { $eq: ['$quote', '$$quoteId'] } } },
+            { $lookup: {
                 from: 'productofferings',
                 localField: 'product_offering',
                 foreignField: '_id',
                 as: 'product_offering'
               }
             },
-            { $unwind: '$product_offering' },
-            {
-              $lookup: {
+            { $unwind: { path: '$product_offering', preserveNullAndEmptyArrays: true } },
+            { $lookup: {
                 from: 'price_lists',
                 localField: 'price_list',
                 foreignField: '_id',
                 as: 'price_list'
               }
             },
-            { $unwind: '$price_list' }
+            { $unwind: { path: '$price_list', preserveNullAndEmptyArrays: true } }
           ],
           as: 'quote_lines'
         }
       }
     ];
 
-    // Add search functionality
+    // Add search AFTER all lookups (fields must be available)
     if (searchQuery) {
       const searchRegex = new RegExp(searchQuery, 'i');
-      pipeline.unshift({
+      pipeline.push({
         $match: {
           $or: [
             { 'account.name': searchRegex },
             { 'opportunity.name': searchRegex },
             { assigned_to: searchRegex },
             { short_description: searchRegex },
-            { version: searchRegex },
-            { number: searchRegex }
+            { $expr: { $regexMatch: { input: { $toString: "$version" }, regex: searchRegex } } },
+            { $expr: { $regexMatch: { input: { $toString: "$number" }, regex: searchRegex } } }
           ]
         }
       });
     }
 
-    // Add pagination using facet
+    // Add pagination
     pipeline.push({
       $facet: {
         data: [{ $skip: skip }, { $limit: limit }],
@@ -127,7 +123,6 @@ module.exports = async (req, res) => {
     });
 
     const [result] = await Quote.aggregate(pipeline);
-
     const data = result.data;
     const total = result.total[0]?.count || 0;
 

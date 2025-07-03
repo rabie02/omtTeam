@@ -1,16 +1,16 @@
 const axios = require('axios');
 const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
-const OpportunityLine = require('../../models/opportunityLine');
 const PriceList = require('../../models/priceList');
 const ProductOffering = require('../../models/ProductOffering');
 const Opportunity = require('../../models/opportunity'); 
-
+const opportunityLine = require('../../models/opportunityLine');
+const mongoose = require('mongoose');
 
 async function createOpportunityLine(req, res = null) {
   try {
 
-    const { price_list, product_offering, opportunity, ...rest } = req.body;
+    const { price_list, product_offering, opportunity,external_id, ...rest } = req.body;
 
     // Look up ServiceNow sys_ids for referenced documents
     const [priceListDoc, productOfferingDoc, opportunityDoc] = await Promise.all([
@@ -28,13 +28,15 @@ async function createOpportunityLine(req, res = null) {
     if (!opportunityDoc) {
       throw new Error(`Opportunity with ID ${opportunity} not found`);
     }
+    const newId = new mongoose.Types.ObjectId();
 
     // Prepare ServiceNow payload with sys_ids
     const snPayload = {
       ...rest,
+      external_id:newId,
       price_list: priceListDoc.sys_id,
       product_offering: productOfferingDoc.id,
-      opportunity: opportunityDoc.sys_id
+      opportunity: opportunityDoc.sys_id,
     };
 
     // Create in ServiceNow
@@ -45,8 +47,9 @@ async function createOpportunityLine(req, res = null) {
       { headers: connection.headers }
     );
     
-    // Prepare MongoDB document with references
-    const mongoDoc = {
+    // Prepare MongoDB document 
+    const mongoPayload = {
+      _id: newId,
       ...snResponse.data.result,
       priceList: price_list,
       productOffering: product_offering,
@@ -54,10 +57,11 @@ async function createOpportunityLine(req, res = null) {
       
     };
 
-    // Create in MongoDB
+    // update in MongoDB
     try {
-      const opportunityLine = new OpportunityLine(mongoDoc);
-      await opportunityLine.save();
+      
+      const opportunityLineDoc = new opportunityLine(mongoPayload);
+      await opportunityLineDoc.save();
 
       // Prepare response
       const response = {
@@ -66,7 +70,7 @@ async function createOpportunityLine(req, res = null) {
           priceList: price_list,
           productOffering: product_offering,
           opportunity: opportunity,
-          mongoId: opportunityLine._id
+          mongoId: opportunityLineDoc._id
         }
       };
 

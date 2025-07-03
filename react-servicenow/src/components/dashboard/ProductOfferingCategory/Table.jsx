@@ -175,57 +175,82 @@ function CategoryTable({ setData, setOpen, searchQuery, dispatch }) {
             title: 'Actions',
             key: 'actions',
             render: (_, record) => {
-                const { action, newStatus } = getStatusAction(record.status);
-                return (
-                    <div className="flex items-center">
-                        {/* Status Change Button - Hidden for archived */}
+    const { action, newStatus } = getStatusAction(record.status);
 
-                        <Tooltip title={`${action} Category`}>
-                            <Popconfirm
-                                title={`${action} Category`}
-                                description={`Are you sure to ${action.toLowerCase()} this category?`}
-                                onConfirm={() => handleUpdateStatus(record._id, newStatus)}
-                                disabled={record.status === "archived"}
-                                okText="Yes"
-                                cancelText="No"
-                            >
-                                <button 
-                                    className={`mx-1 ${record.status == "archived" ? "text-gray-300 cursor-not-allowed" : "mx-1 text-gray-500 hover:text-green-600  "}`}>
-                                    <i className="ri-loop-right-line text-2xl"></i>
-                                </button>
-                            </Popconfirm>
-                        </Tooltip>
+    // Disable all actions if the category has any product offerings
+    const hasProductOfferings = record.productOffering && record.productOffering.length > 0;
+    const disableAll = hasProductOfferings;
 
+    // Tooltip messages
+    const disabledTooltipMsg = "Action disabled due to existing product offerings.";
 
-                        {/* Edit Button - Only shown for draft */}
-                        <Tooltip title={record.status !== "draft" ? "Editing is only allowed in this status" : "Edit This Category"}>
-                            <button
-                                className={`mx-1 ${record.status !== "draft" ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-yellow-400"}`}
-                                onClick={() => changeData(record)}
-                                disabled={record.status !== "draft"}
-                            >
-                                <i className="ri-pencil-line text-2xl"></i>
-                            </button>
-                        </Tooltip>
+    return (
+        <div className="flex items-center">
 
+            {/* Status Change Button */}
+            <Tooltip title={disableAll ? disabledTooltipMsg : `${action} Category`}>
+                <Popconfirm
+                    title={`${action} Category`}
+                    description={`Are you sure to ${action.toLowerCase()} this category?`}
+                    onConfirm={() => handleUpdateStatus(record._id, newStatus)}
+                    disabled={record.status === "archived" || disableAll}
+                    okText="Yes"
+                    cancelText="No"
+                >
+                    <button
+                        className={`mx-1 ${record.status === "archived" || disableAll
+                            ? "text-gray-300 cursor-not-allowed"
+                            : "text-gray-500 hover:text-green-600"
+                            }`}
+                    >
+                        <i className="ri-loop-right-line text-2xl"></i>
+                    </button>
+                </Popconfirm>
+            </Tooltip>
 
-                        {/* Delete Button - Always shown */}
-                        <Tooltip title="Delete This Category">
-                            <Popconfirm
-                                title="Delete Category"
-                                description="Are you sure to delete this category?"
-                                onConfirm={() => handleDelete(record._id)}
-                                okText="Yes"
-                                cancelText="No"
-                            >
-                                <button className=" mx-1 text-gray-500 hover:text-red-600">
-                                    <i className="ri-delete-bin-6-line text-2xl"></i>
-                                </button>
-                            </Popconfirm>
-                        </Tooltip>
-                    </div>
-                );
-            },
+            {/* Edit Button */}
+            <Tooltip title={
+                disableAll
+                    ? disabledTooltipMsg
+                    : (record.status !== "draft" ? "Editing is only allowed in draft status" : "Edit This Category")
+            }>
+                <button
+                    disabled={disableAll || record.status !== "draft"}
+                    className={`mx-1 ${(disableAll || record.status !== "draft")
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-500 hover:text-yellow-400"
+                        }`}
+                    onClick={() => {
+                        if (!disableAll && record.status === "draft") changeData(record);
+                    }}
+                >
+                    <i className="ri-pencil-line text-2xl"></i>
+                </button>
+            </Tooltip>
+
+            {/* Delete Button */}
+            <Tooltip title={disableAll ? disabledTooltipMsg : "Delete This Category"}>
+                <Popconfirm
+                    title="Delete Category"
+                    description="Are you sure to delete this category?"
+                    onConfirm={() => handleDelete(record._id)}
+                    disabled={disableAll}
+                    okText="Yes"
+                    cancelText="No"
+                >
+                    <button
+                      
+                        className={`mx-1 ${disableAll ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-red-600"}`}
+                    >
+                        <i className="ri-delete-bin-6-line text-2xl"></i>
+                    </button>
+                </Popconfirm>
+            </Tooltip>
+
+        </div>
+    );
+}
+
         }
     ];
 

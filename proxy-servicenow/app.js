@@ -10,7 +10,6 @@ const morgan = require('morgan');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 
-
 // Route imports
 const authRoutes = require('./api/auth/login');
 const signupRoutes = require('./api/auth/signup');
@@ -32,15 +31,19 @@ const priceList = require("./api/PriceList/index");
 const nlpRoutes = require('./api/ai-search/nlp');
 const chatbotCases = require('./api/ai-search/getCases');
 const Quote = require('./api/quote/index');
+const productsRouter = require('./controllers/ProductOffering/servicenowproducts');
 const emailroutes = require('./email/router');
 const contract = require('./api/contract');
+const contractQuote = require('./api/contractQuote')
+    // const createAccount = require('./api/createAccount/index')
 const knowledgeBaseRoute = require('./api/ai-search/chatboot');
 const productOfferingRoute = require('./api/ai-search/productoffering');
+const productSpecRoutes = require('./api/ProductSpecification/productSpecRoutes');
 
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 // Database connection
 connectDB();
@@ -114,15 +117,16 @@ app.use(express.urlencoded({ extended: true }));
 
 // Static files
 app.use('/images', express.static(path.join(__dirname, 'public/images'), {
-  setHeaders: (res, path) => {
-    res.set('X-Content-Type-Options', 'nosniff');
-  }
+    setHeaders: (res, path) => {
+        res.set('X-Content-Type-Options', 'nosniff');
+    }
 }));
 
 // Request logging
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
+app.use('/', productsRouter);
 
 // Public routes
 app.use('/api', [
@@ -140,22 +144,25 @@ app.use('/api', [
 ]);
 
 // Protected routes
-app.use('/api', verifyCookieAuth, [
-  ProductOfferingCatalog,
-  ProductOfferingCategory,
-  ProductOffering,
-  channel,
-  ProductSpecification,
-  AiSearch,
-  measurmentUnit,
-  priceList,
-  opportunity,
-  opportunityLine,
-  ProductOfferingPrice,
-  nlpRoutes,
-  chatbotCases,
-  contract,
-  Quote
+app.use('/api', authjwt, [
+    // routes that need middaleware
+    ProductOfferingCatalog,
+    ProductOfferingCategory,
+    ProductOffering,
+    channel,
+    ProductSpecification,
+    AiSearch,
+    measurmentUnit,
+    priceList,
+    opportunity,
+    opportunityLine,
+    ProductOfferingPrice,
+    nlpRoutes,
+    chatbotCases,
+    contract,
+    Quote,
+    contractQuote
+
 ]);
 
 // Health check endpoint
@@ -188,20 +195,21 @@ app.use((err, req, res, next) => {
 
 // 404 Handler
 app.use((req, res) => {
-  res.status(404).json({
-    error: 'Endpoint Not Found',
-    message: `Cannot ${req.method} ${req.originalUrl}`,
-    receivedCookies: req.cookies // For debugging
-  });
+    res.status(404).json({
+        error: 'Endpoint Not Found',
+        message: `Cannot ${req.method} ${req.originalUrl}`
+    });
 });
 
-// Server shutdown handlers
-process.on('SIGINT', async () => {
-  console.log('\nGracefully shutting down...');
-  process.exit(0);
+// Graceful shutdown on SIGINT
+process.on('SIGINT', async() => {
+    console.log('\nGracefully shutting down...');
+    // Perform DB cleanup or any other necessary shutdown tasks
+    process.exit(0);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
+
   console.error('Unhandled Rejection:', reason);
 });
 

@@ -168,6 +168,8 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
       title: 'Short Description',
       dataIndex: 'short_description',
       key: 'short_description',
+      width:"20%",
+      ellipsis: true,
     },
     {
       title: 'Account',
@@ -204,7 +206,8 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => ( record!==undefined && 
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-4 gap-2">
+          {/* first we must close opportunity as a win */}
           <Tooltip title={`Close Opportunity`}>
             <Popconfirm
               title="Close Opportunity"
@@ -219,27 +222,10 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
               </button>
             </Popconfirm>
           </Tooltip>
-          {<CreateQuote disabled={record.stage.type !== "closed_won"} opportunityId={record._id} />}
-          <Tooltip title={`Delete Opportunity`}>
-            <Popconfirm
-              title="Delete Opportunity"
-              description="Are you sure to delete this opportunity?"
-              onConfirm={() => handleDelete(record._id)}
-            >
-              <button className=" text-gray-500 hover:text-red-600">
-                  <i className="ri-delete-bin-6-line text-2xl"></i>
-              </button>
-            </Popconfirm>
-          </Tooltip>
-          <Tooltip title={"Update Opportunity Details"}>
-            <button
-                className="text-gray-500 hover:text-blue-600 disabled:text-gray-200"
-                onClick={() => showPricingModal(record)}
-            >
-                <i className="ri-pencil-line text-2xl"></i>
-            </button>
-        </Tooltip>
-        <Tooltip title={ (record.contract ? "Download":"Generate") +" Contract"}>
+          {/* after closing opportunity as a win we can now generate the Quote*/}
+          <CreateQuote disabled={record.stage.type !== "closed_won"} opportunityId={record._id} />
+          {/* Last we can now generate a contract only if the quote is approved 
+          <Tooltip title={ (record.contract ? "Download":"Generate") +" Contract"}>
         {record.contract ? 
               <button 
                 className=" text-gray-500 hover:text-orange-300"
@@ -259,6 +245,26 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
               </Popconfirm>
               }
             
+          </Tooltip>*/}
+          <Tooltip title={"Update Opportunity Details"}>
+            <button
+                className="text-gray-500 hover:text-blue-600 disabled:text-gray-200"
+                onClick={() => showPricingModal(record)}
+                disabled={record.stage.type === "closed_won"}
+            >
+                <i className="ri-pencil-line text-2xl"></i>
+            </button>
+        </Tooltip>
+          <Tooltip title={`Delete Opportunity`}>
+            <Popconfirm
+              title="Delete Opportunity"
+              description="Are you sure to delete this opportunity?"
+              onConfirm={() => handleDelete(record._id)}
+            >
+              <button className=" text-gray-500 hover:text-red-600">
+                  <i className="ri-delete-bin-6-line text-2xl"></i>
+              </button>
+            </Popconfirm>
           </Tooltip>
         </div>
       ),
@@ -276,10 +282,31 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
           setTimeout(dispatch(resetError()), 1000)
   }
 
+  const quoteColumns = [
+        {
+            title: 'Number',
+            key: 'number',
+            render: (_, record) => record?.number || 'N/A',
+        },
+        {
+            title: 'State',
+            key: 'state',
+            render: (_, record) => (<span className={`px-2 py-1 text-xs capitalize rounded w-5xl ${record.state.toLowerCase() === 'approved' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {record?.state}
+                </span>),
+        },
+        {
+            title: 'Expiration Date',
+            key: 'expiration_date',
+            render: (_, record) => record?.expiration_date || 'N/A',
+        }
+    ];
+
   return (
-    <div className="">
+    <div className="w-10/12">
       
       <Table
+        
         headerColor="rgba(0, 117, 149, 1)"
         columns={columns}
         dataSource={opportunities}
@@ -288,6 +315,32 @@ function OpportunityTable({ setData, setOpen, open, searchQuery }) {
           emptyText: <Empty description="No opportunities found" />,
         }}
         pagination={false}
+        expandable={{
+          expandedRowRender: (record) => (
+              <div className="ml-8 bg-gray-50 rounded">
+                  {record.quote?.length > 0 ? (
+                      <Table
+                          columns={quoteColumns}
+                          dataSource={record.quote}
+                          rowKey="id"
+                          bordered
+                          size="small"
+                          pagination={
+                              record.quote?.length > 4
+                                  ? { pageSize: 4, showSizeChanger: false }
+                                  : false
+                          }
+                      />
+                  ) : (
+                      <Empty
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          description="No quote lines found"
+                      />
+                  )}
+              </div>
+          ),
+          rowExpandable: (record) => record.quote?.length > 0,
+      }}
       />
       <div className="mt-6 flex justify-end">
         <Pagination

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Empty, Spin, Pagination, Modal, List } from 'antd';
+import { Empty, Spin, Pagination, Modal, Input, Tag, Button, Descriptions } from 'antd';
 import { getPublished } from '../../../features/servicenow/product-specification/productSpecificationSlice';
 import axios from 'axios';
+import { SearchOutlined, PlusOutlined, MinusOutlined } from '@ant-design/icons';
 
 function Table({ setData, setOpen, searchQuery }) {
   const dispatch = useDispatch();
@@ -20,9 +21,12 @@ function Table({ setData, setOpen, searchQuery }) {
   const [currentSpec, setCurrentSpec] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPageModal, setCurrentPageModal] = useState(1);
+  const [expandedOffers, setExpandedOffers] = useState([]);
 
   const filteredOfferings = offerings.filter(offering =>
-    offering.display_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    offering.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    offering.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    offering.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   useEffect(() => {
@@ -46,35 +50,51 @@ function Table({ setData, setOpen, searchQuery }) {
     setOpen(true);
   };
 
-const fetchOfferings = async (specSysId) => {
-  try {
-    const token = localStorage.getItem('access_token'); // ✅ bonne clé utilisée
-
-    if (!token) {
-      console.error("❌ Aucun token trouvé dans localStorage !");
-      return;
-    }
-
-    const response = await axios.get(
-      `${import.meta.env.VITE_BACKEND_URL}/api/product-offering/by-spec/${specSysId}`,
-      {
-        headers: {
-          Authorization: token // ✅ déjà formaté en Bearer ...
-        }
+  const fetchOfferings = async (specSysId) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        console.error("❌ Aucun token trouvé dans localStorage !");
+        return;
       }
+
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/product-offering/by-spec/${specSysId}`,
+        {
+          headers: {
+            Authorization: token
+          }
+        }
+      );
+
+      // Transformation des données pour inclure les champs nécessaires
+      const transformedData = response.data.data.map(item => ({
+        ...item,
+        validFor: item.validFor || {
+          startDateTime: item.start_date || null,
+          endDateTime: item.end_date || null
+        },
+        // Récupération du prix récurrent s'il existe
+        recurringPrice: item.productOfferingPrice?.find(p => p.priceType === 'recurring')?.price?.taxIncludedAmount || null
+      }));
+
+      setOfferings(transformedData);
+      setIsOfferingModalOpen(true);
+      setExpandedOffers([]);
+    } catch (error) {
+      console.error("❌ Erreur lors du chargement des offerings :", error);
+    }
+  };
+
+  const toggleExpandOffer = (offerId) => {
+    setExpandedOffers(prev => 
+      prev.includes(offerId) 
+        ? prev.filter(id => id !== offerId) 
+        : [...prev, offerId]
     );
+  };
 
-    setOfferings(response.data.data);
-    setIsOfferingModalOpen(true);
-  } catch (error) {
-    console.error("❌ Erreur lors du chargement des offerings :", error);
-  }
-};
-
-
-console.log(data);
-
-  if (loading) return <div className='h-full flex justify-center items-center'><Spin /></div>;
+  if (loading) return <div className='h-full flex justify-center items-center'><Spin size="large" /></div>;
   if (error) return <div className="text-red-500 p-4">Error: {error}</div>;
 
   return (
@@ -148,53 +168,136 @@ console.log(data);
         </div>
       </div>
 
-      {/* Modal affichant les offerings */}
-{/* Modal affichant les offerings */}
-<Modal
-  title={`Offres liées à : ${currentSpec?.display_name || (currentSpec?.displayName || '')}`}
-  open={isOfferingModalOpen}
-  onCancel={() => setIsOfferingModalOpen(false)}
-  footer={null}
-  width={700}
->
-  {/* Recherche */}
-  <input
-    type="text"
-    placeholder="Rechercher une offre..."
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-    className="w-full p-2 mb-4 border border-gray-300 rounded"
-  />
+      {/* Modal pour les offres liées */}
+      <Modal
+        title={
+          <div className="flex items-center">
+            <span className="text-xl font-semibold" style={{ color: '#005B70' }}>
+              Offres liées à: <span className="font-bold">{currentSpec?.display_name || currentSpec?.displayName || ''}</span>
+            </span>
+          </div>
+        }
+        open={isOfferingModalOpen}
+        onCancel={() => setIsOfferingModalOpen(false)}
+        footer={null}
+        width={800}
+        bodyStyle={{ padding: '20px 24px' }}
+      >
+        <div className="mb-6">
+          <Input
+            prefix={<SearchOutlined className="text-gray-400" />}
+            placeholder="Rechercher une offre..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            allowClear
+            className="w-full"
+            size="large"
+          />
+        </div>
 
-  {/* Pagination + filtre */}
-  {filteredOfferings.length > 0 ? (
-    <>
-      <List
-        itemLayout="vertical"
-        dataSource={filteredOfferings.slice((currentPage - 1) * 10, currentPage * 10)}
-        renderItem={(item) => (
-          <List.Item key={item.sys_id}>
-            <List.Item.Meta title={item.display_name || (item.displayName || 'Nom inconnu')} />
-          </List.Item>
+        {filteredOfferings.length > 0 ? (
+          <div className="space-y-3">
+            {filteredOfferings
+              .slice((currentPageModal - 1) * 5, currentPageModal * 5)
+              .map((item) => (
+                <div key={item.sys_id || item.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div 
+                    className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                    onClick={() => toggleExpandOffer(item.sys_id || item.id)}
+                  >
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                      <h3 className="font-medium text-gray-800 text-base sm:text-lg">
+                        {item.display_name || item.displayName || item.name || 'Nom inconnu'}
+                      </h3>
+                      <span className={`px-2 py-1 text-xs sm:text-sm rounded capitalize 
+                        ${
+                          item.status === 'published' || item.status === 'Published' 
+                            ? 'bg-green-100 text-green-800 border border-green-200' :
+                          item.status === 'draft' || item.status === 'In Draft' 
+                            ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                          item.status === 'archived' || item.status === 'Archived' 
+                            ? 'bg-red-100 text-red-800 border border-red-200' :
+                          'bg-gray-100 text-gray-800 border border-gray-200'
+                        }`
+                      }>
+                        {item.status || 'Inconnu'}
+                      </span>
+                    </div>
+                    <Button 
+                      type="text" 
+                      icon={expandedOffers.includes(item.sys_id || item.id) ? <MinusOutlined /> : <PlusOutlined />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleExpandOffer(item.sys_id || item.id);
+                      }}
+                    />
+                  </div>
+
+                  {expandedOffers.includes(item.sys_id || item.id) && (
+                    <div className="p-4 bg-gray-50 border-t border-gray-200">
+                      <Descriptions column={1} size="small">
+                        <Descriptions.Item label="Date de début">
+                          {item.start_date 
+                            ? new Date(item.start_date).toLocaleDateString()
+                            : (item.validFor?.startDateTime 
+                                ? new Date(item.validFor.startDateTime).toLocaleDateString()
+                                : 'N/A')}
+                        </Descriptions.Item>
+                        
+                        {item.description && (
+                          <Descriptions.Item label="Description">
+                            {item.description}
+                          </Descriptions.Item>
+                        )}
+                        
+                        {item.productOfferingTerm && (
+                          <Descriptions.Item label="Terme">
+                            {item.productOfferingTerm.replace(/_/g, ' ')}
+                          </Descriptions.Item>
+                        )}
+                        
+                        {item.recurringPrice && (
+                          <Descriptions.Item label="Prix récurrent">
+                            {`${item.recurringPrice.value} ${item.recurringPrice.unit}`}
+                          </Descriptions.Item>
+                        )}
+                        
+                        {item.externalId && (
+                          <Descriptions.Item label="ID Externe">
+                            {item.externalId}
+                          </Descriptions.Item>
+                        )}
+                      </Descriptions>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+            <div className="mt-6 flex justify-center">
+              <Pagination
+                current={currentPageModal}
+                pageSize={5}
+                total={filteredOfferings.length}
+                onChange={(page) => setCurrentPageModal(page)}
+                showSizeChanger={false}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="py-8 text-center">
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={
+                <span className="text-gray-500">
+                  {searchTerm ? 'Aucun résultat trouvé' : 'Aucune offre liée trouvée'}
+                </span>
+              }
+            />
+          </div>
         )}
-      />
-      <div className="mt-4 flex justify-center">
-        <Pagination
-          current={currentPage}
-          pageSize={10}
-          total={filteredOfferings.length}
-          onChange={(page) => setCurrentPage(page)}
-        />
-      </div>
-    </>
-  ) : (
-    <p>Aucune offre liée trouvée.</p>
-  )}
-</Modal>
-
-
+      </Modal>
     </div>
   );
 }
 
-export default Table;
+export default Table;
