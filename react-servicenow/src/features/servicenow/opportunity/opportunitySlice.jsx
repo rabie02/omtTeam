@@ -240,6 +240,9 @@ const opportunitySlice = createSlice({
     resetError: (state) => {
       state.error = null;
     },
+    resetData: (state) => {
+      state.currentOpportunity = null;
+    },
     setCurrentPage: (state, action) => {
       state.currentPage = action.payload;
     },
@@ -444,6 +447,6 @@ const opportunitySlice = createSlice({
   },
 });
 
-export const { resetError, setCurrentPage } = opportunitySlice.actions;
+export const { resetError, resetData, setCurrentPage } = opportunitySlice.actions;
 
 export default opportunitySlice.reducer;

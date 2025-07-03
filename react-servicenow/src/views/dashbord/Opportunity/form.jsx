@@ -17,7 +17,7 @@ import { formatDateForInput } from '@/utils/formatDateForInput.js';
 import {
   workflow,
   updateOpportunityPricing,
-  resetError,
+  resetData,
   getSalesCycleTypes,
   getStages,
   getUnitOfMeasures,
@@ -45,7 +45,7 @@ const OpportunityFormPage = () => {
   const dispatch = useDispatch();
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState('1');
-  const isEditMode = Boolean(id);
+  const [isEditMode, setEditMode] = useState(Boolean(id));
   const [currentStep, setCurrentStep] = useState(0);
   const [offSearchTerm, setOffSearchTerm] = useState('');
   const [pLSearchTerm, setPLSearchTerm] = useState('');
@@ -64,51 +64,29 @@ const OpportunityFormPage = () => {
   const priceLists = useSelector(state => state.priceList.priceLists);
   const { productOfferingPrices } = useSelector(state => state.productOfferingPrice);
 
-  // Fetch required data
-  useEffect(() => {
-    const fetchData = async () => {
-      console.log("here")
-      await dispatch(getSalesCycleTypes());
-      await dispatch(getStages());
-      await dispatch(getAccount({ page: 1, limit: 99, q: accSearchTerm }));
-      await dispatch(getUnitOfMeasures());
-      await dispatch(getProductOfferings({ page: 1, limit: 99, q: offSearchTerm }));
-      await dispatch(getPriceList({ page: 1, limit: 99, q: pLSearchTerm }));
-      if (isEditMode) {
-            console.log("here")
-              await dispatch(getOpportunity({id})).then(() => {dispatch(getByPriceList(initialData.price_list._id));})
-              .catch(error => {
-              console.error("Failed to load opportunity:", error);
-              setInitialized(true); // You might want to handle this differently
-      });
-    }
-      setInitialized(true);
-    };
-
-    fetchData();
-  }, [dispatch, id, isEditMode, accSearchTerm, offSearchTerm, pLSearchTerm]);
+  
 
   // Get initial values
   const getInitialValues = () => {
     const savedForm = localStorage.getItem(FORM_STORAGE_KEY);
     if (!isEditMode && savedForm) return  JSON.parse(savedForm);
     return {
-      createNewPriceList: initialData?.price_list?._id ?  false : true,
-      selectedPriceList: initialData?.price_list?._id || '',
+      createNewPriceList: isEditMode && initialData?.price_list?._id ?  false : true,
+      selectedPriceList: isEditMode && initialData?.price_list?._id || '',
       account: {
         name: "",
         email: ""
       },
       opportunity: {
-        short_description: initialData?.short_description||'',
-        estimated_closed_date: formatDateForInput(initialData?.estimated_closed_date)||formatDateForInput(new Date(new Date().getTime() + 86400000)),
-        description: initialData?.description||'',
-        term_month: initialData?.term_month||'12',
-        sales_cycle_type: initialData?.sales_cycle_type._id||'',
-        probability: initialData?.probability||'50',
-        stage: initialData?.stage._id||'6834b29a3582eabbafc8bec0',
+        short_description: isEditMode && initialData?.short_description||'',
+        estimated_closed_date: isEditMode && formatDateForInput(initialData?.estimated_closed_date)||formatDateForInput(new Date(new Date().getTime() + 86400000)),
+        description: isEditMode && initialData?.description||'',
+        term_month: isEditMode && initialData?.term_month||'12',
+        sales_cycle_type: isEditMode && initialData?.sales_cycle_type._id||'',
+        probability: isEditMode && initialData?.probability||'50',
+        stage: isEditMode && initialData?.stage._id||'6834b29a3582eabbafc8bec0',
         industry: "telecommunications",
-        account: initialData?.account._id||''
+        account: isEditMode && initialData?.account._id||''
       },
       priceList: {
         name: '',
@@ -365,6 +343,33 @@ const OpportunityFormPage = () => {
     validateOnMount: true,
   });
 
+  // Fetch required data
+  useEffect(() => {
+    const fetchData = async () => {
+      await dispatch(getSalesCycleTypes());
+      await dispatch(getStages());
+      await dispatch(getAccount({ page: 1, limit: 99, q: accSearchTerm }));
+      await dispatch(getUnitOfMeasures());
+      await dispatch(getProductOfferings({ page: 1, limit: 99, q: offSearchTerm }));
+      await dispatch(getPriceList({ page: 1, limit: 99, q: pLSearchTerm }));
+      if (isEditMode) {
+              await dispatch(getOpportunity({id}))
+              .then(() => {  
+                dispatch(getByPriceList(initialData.price_list._id)); 
+                formik.resetForm({ values: getInitialValues() })
+                setInitialized(true);
+              })
+              .catch(error => {
+              console.error("Failed to load opportunity:", error);
+              });
+    }else{
+      setInitialized(true); 
+    }
+    };
+
+    fetchData();
+  }, [dispatch, id, initialData?.price_list?._id, accSearchTerm, offSearchTerm, pLSearchTerm]);
+
   // Save form to localStorage
   useEffect(() => {
     if (!isEditMode && formik.dirty) {
@@ -372,17 +377,22 @@ const OpportunityFormPage = () => {
     }
   }, [isEditMode, formik.values, formik.dirty]);
 
-  const handleCancel = () => {
-    localStorage.removeItem(FORM_STORAGE_KEY);
-    formik.resetForm({ values: getInitialValues() });
+  const handleCancel = async () => {
+    if(isEditMode) {
+      setEditMode(false);
+      formik.resetForm()
+      await dispatch(resetData());
+    };
+    setCurrentStep(0);
     navigate('/dashboard/opportunity');
   };
 
   const handleReset = () => {
-    navigate('/dashboard/opportunity');
     localStorage.removeItem(FORM_STORAGE_KEY);
-    formik.resetForm({ values: getInitialValues() });
+    setEditMode(false);
+    formik.resetForm();
     setCurrentStep(0);
+    navigate('/dashboard/opportunity');
   };
 
   const handleQuoteGeneration = async () => {
@@ -636,6 +646,7 @@ const OpportunityFormPage = () => {
     );
   }
 
+  
   return (
     <div className="bg-gray-50 h-full flex flex-col">
       {/* Sticky Header */}

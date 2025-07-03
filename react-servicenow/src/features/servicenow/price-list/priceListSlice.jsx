@@ -45,6 +45,25 @@ export const getPriceList = createAsyncThunk(
   }
 );
 
+// GET One Price List
+export const getOnePriceList = createAsyncThunk(
+  'opportunity/getOnePriceList',
+  async ({ id }, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(
+        `${backendUrl}/api/price-list/${id}`,
+        {
+          headers: getHeaders(),
+          
+        }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 // DELETE Price List
 export const deletePriceList = createAsyncThunk(
   'opportunity/deletePriceList',
@@ -112,6 +131,19 @@ const priceListSlice = createSlice({
         state.priceLists = action.payload;
       })
       .addCase(getPriceList.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.error?.message || 'Failed to fetch Price List';
+      })
+
+      // Get One Price List
+      .addCase(getOnePriceList.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(getOnePriceList.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentPriceList = action.payload;
+      })
+      .addCase(getOnePriceList.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.error?.message || 'Failed to fetch Price List';
       })
