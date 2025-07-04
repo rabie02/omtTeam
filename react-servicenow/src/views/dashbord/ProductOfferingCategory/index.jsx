@@ -1,23 +1,18 @@
-// src/features/servicenow/product-offering/ProductOfferingCategory.jsx
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   getall,
-  deleteCategory
-} from '../../../features/servicenow/product-offering/productOfferingCategorySlice';
-import {
-  Pagination,
-  Spin,
-  Button
-} from 'antd';
+  deleteCatalog
+} from '../../../features/servicenow/product-offering/productOfferingCatalogSlice';
+import { Pagination, Spin, Button } from 'antd';
 import { debounce } from 'lodash';
 import { useNavigate } from 'react-router-dom';
 
 // Import components
 import PageHeader from '../../../layout/dashbord/headerTable';
-import CategoryTable from '../../../components/dashboard/ProductOfferingCategory/Table';
+import CatalogTable from '../../../components/dashboard/ProductOfferingCategory/Table';
 
-const ProductOfferingCategory = () => {
+const ProductOfferingCatalog = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const {
@@ -27,7 +22,7 @@ const ProductOfferingCategory = () => {
     totalItems,
     loading,
     error
-  } = useSelector(state => state.productOfferingCategory);
+  } = useSelector(state => state.productOfferingCatalog);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [pageSize, setPageSize] = useState(10);
@@ -59,19 +54,26 @@ const ProductOfferingCategory = () => {
   }, [currentPage]);
 
   // Navigation handlers
-  const navigateToCreate = () => navigate('/dashboard/category/create');
-  const handleRowClick = (id) => navigate(`/dashboard/category/edit/${id}`);
+  const navigateToCreate = () => navigate('/dashboard/catalog/create');
+  const handleRowClick = (id) => navigate(`/dashboard/catalog/edit/${id}`);
 
   // Bulk actions
   const handleBulkDelete = () => {
-    selectedRowKeys.forEach(id => dispatch(deleteCategory(id)));
+    const deletableKeys = selectedRowKeys.filter(key => {
+      const record = data.find(item => item._id === key);
+      return !record?.categories?.some(category => category.status === 'published');
+    });
+    
+    deletableKeys.forEach(id => dispatch(deleteCatalog(id)));
     setSelectedRowKeys([]);
     fetchData();
   };
 
 
+
   const handleClearSelection = () => setSelectedRowKeys([]);
 
+  // Table columns configuration
   const columns = [
     {
       title: (
@@ -81,6 +83,7 @@ const ProductOfferingCategory = () => {
       ),
       dataIndex: 'number',
       key: 'number',
+      fixed: 'left',
       sorter: (a, b) => a.number.localeCompare(b.number),
       render: (text, record) => (
         <span
@@ -102,7 +105,6 @@ const ProductOfferingCategory = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status) => {
-        // Define color mapping for all statuses
         const statusColors = {
           published: {
             dot: 'bg-green-500',
@@ -122,7 +124,6 @@ const ProductOfferingCategory = () => {
           }
         };
 
-        // Get colors for current status or use archived as default
         const colors = statusColors[status] || statusColors.archived;
         const displayText = status ?
           status.charAt(0).toUpperCase() + status.slice(1) :
@@ -163,35 +164,33 @@ const ProductOfferingCategory = () => {
     },
   ];
 
-// Custom row selection configuration
+  // Custom row selection configuration
   const rowSelection = {
     selectedRowKeys,
     onChange: (selectedKeys) => {
       setSelectedRowKeys(selectedKeys);
     },
     getCheckboxProps: (record) => {
-      const hasPublished = record.productOffering?.some(productOffering => productOffering.status === 'published') || false;
+      const hasPublishedCategory = record.categories?.some(category => category.status === 'published') || false;
       return {
-        disabled: hasPublished,
-        // This will show a native tooltip on hover for disabled checkboxes
-        title: hasPublished ? "Cannot select catalog with published categories" : undefined
+        disabled: hasPublishedCategory,
+        title: hasPublishedCategory ? "Cannot select catalog with published categories" : undefined
       };
     },
   };
-
 
   // Empty state configuration
   const emptyState = (
     <div className="py-12 text-center">
       <i className="ri-information-line mx-auto text-3xl text-gray-400 mb-3"></i>
-      <p className="text-gray-500">No categories found</p>
+      <p className="text-gray-500">No catalog items found</p>
       <Button
         type="primary"
         className="mt-4 flex items-center mx-auto bg-blue-600 hover:bg-blue-700 border-blue-600"
         icon={<i className="ri-add-line"></i>}
         onClick={navigateToCreate}
       >
-        Create New Category
+        Create New Item
       </Button>
     </div>
   );
@@ -200,7 +199,7 @@ const ProductOfferingCategory = () => {
   const bulkActionsProps = {
     selectedCount: selectedRowKeys.length,
     onDelete: handleBulkDelete,
-    onClear: handleClearSelection
+    onClear: handleClearSelection,
   };
 
   return (
@@ -208,8 +207,8 @@ const ProductOfferingCategory = () => {
       {/* Sticky Header */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
         <PageHeader
-          title="Product Offering Categories"
-          searchPlaceholder="Search by name..."
+          title="Product Offering Catalog"
+          searchPlaceholder="Search by name or number..."
           createButtonText="New"
           onSearchChange={(e) => setSearchTerm(e.target.value)}
           onSearch={(value) => setSearchTerm(value)}
@@ -235,12 +234,12 @@ const ProductOfferingCategory = () => {
           <div className="flex justify-center items-center h-64">
             <Spin
               size="large"
-              tip="Loading categories..."
+              tip="Loading catalog items..."
               indicator={<i className="ri-refresh-line animate-spin text-2xl"></i>}
             />
           </div>
         ) : (
-          <CategoryTable
+          <CatalogTable
             data={data}
             columns={columns}
             rowSelection={rowSelection}
@@ -264,11 +263,12 @@ const ProductOfferingCategory = () => {
             className="mt-2 md:mt-0"
           />
           <div className="text-gray-600 text-sm">
-              Showing {Math.min((current - 1) * pageSize + 1, totalItems)} to {Math.min(current * pageSize, totalItems)} of {totalItems} </div>
+            Showing {Math.min((current - 1) * pageSize + 1, totalItems)} to {Math.min(current * pageSize, totalItems)} of {totalItems}
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default ProductOfferingCategory;
+export default ProductOfferingCatalog;

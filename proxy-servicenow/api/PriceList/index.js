@@ -6,11 +6,13 @@ const getAll = require('../../controllers/PriceList/getAllPriceList');
 const getOne = require('../../controllers/PriceList/getOnePriceList');
 const create = require('../../controllers/PriceList/createPriceList');
 const deletePrice = require('../../controllers/PriceList/deletePriceList')
+const getOne = require('../../controllers/PriceList/getOne');
 
 // Define routes
 router.get('/price-list', getAll);
 router.get('/price-list/:id', getOne);
 router.post('/price-list', create);
 router.delete('/price-list/:id', deletePrice);
+router.get('/price-list/:id', getOne);
 
 module.exports = router;

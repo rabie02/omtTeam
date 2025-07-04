@@ -1,8 +1,8 @@
-// src/components/categories/CategoryTable.jsx
-import React, { useState, useEffect,useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Table, Badge, Tooltip, Popconfirm, Button } from 'antd';
+import { useMediaQuery } from 'react-responsive';
 
-// Integrated StatusCell component
+// StatusCell Component
 const StatusCell = ({ status }) => {
   const statusColors = {
     active: { dot: 'bg-green-500', text: 'text-green-700' },
@@ -25,7 +25,7 @@ const StatusCell = ({ status }) => {
   );
 };
 
-// Integrated BulkActions component
+// BulkActions Component
 const BulkActions = ({ 
   selectedCount, 
   onDelete, 
@@ -40,7 +40,7 @@ const BulkActions = ({
             className="text-white font-medium"
           />
           <span className="ml-2 text-gray-700 font-medium">
-            {selectedCount} item{selectedCount > 1 ? 's' : ''} selected
+             item{selectedCount > 1 ? 's' : ''} selected
           </span>
         </div>
 
@@ -77,7 +77,7 @@ const BulkActions = ({
   </div>
 );
 
-
+// Main CategoryTable Component
 const CategoryTable = ({ 
   data, 
   columns, 
@@ -88,55 +88,77 @@ const CategoryTable = ({
   bulkActionsProps
 }) => {
   const [scrollConfig, setScrollConfig] = useState({ x: 'max-content', y: undefined });
-  const tableRef = useRef(null);
-  const ROW_HEIGHT = 55; // Approx. height per row
-  const MIN_HEIGHT = 200; // Min table height
-  const MAX_HEIGHT_PERCENT = 0.7; // Max 70% of viewport
+  const containerRef = useRef(null);
+  const bulkActionsRef = useRef(null);
+  const ROW_HEIGHT = 55;
+  const MIN_HEIGHT = 200;
+  const PAGINATION_HEIGHT = 43; // Approx height of pagination component
 
   useEffect(() => {
-    const calculateScroll = () => {
-      // 1. Calculate required height based on data
+    const calculateTableHeight = () => {
+      if (!containerRef.current) return;
+
+      // Calculate total available height
+      const containerHeight = containerRef.current.clientHeight;
+      
+      // Calculate BulkActions height if visible
+      const bulkActionsHeight = bulkActionsProps?.selectedCount > 0 
+        ? (bulkActionsRef.current?.clientHeight || 60) 
+        : 0;
+
+      // Calculate available height for table (subtract both BulkActions and Pagination)
+      const availableHeight = containerHeight - bulkActionsHeight - PAGINATION_HEIGHT;
+      
+      // Calculate needed height based on rows
       const contentHeight = data.length * ROW_HEIGHT;
-      
-      // 2. Calculate max allowed height (70% of viewport)
-      const maxViewportHeight = window.innerHeight * MAX_HEIGHT_PERCENT;
-      
-      // 3. Determine the actual height to use
+
+      // Determine final table height
       const tableHeight = Math.max(
         MIN_HEIGHT,
-        Math.min(contentHeight, maxViewportHeight)
+        Math.min(contentHeight, availableHeight)
       );
 
-      // 4. Check if scrolling is needed
-      const shouldEnableScroll = contentHeight > tableHeight;
-
-      // 5. Update scroll config
       setScrollConfig({
         x: 'max-content',
-        y: shouldEnableScroll ? tableHeight : undefined, // Only set if needed
+        y: contentHeight > availableHeight ? tableHeight : undefined,
       });
     };
 
-    calculateScroll();
-    window.addEventListener('resize', calculateScroll);
-    return () => window.removeEventListener('resize', calculateScroll);
-  }, [data.length]);
+    calculateTableHeight();
+    
+    const resizeObserver = new ResizeObserver(calculateTableHeight);
+    resizeObserver.observe(containerRef.current);
+    
+    window.addEventListener('resize', calculateTableHeight);
+    return () => {
+      window.removeEventListener('resize', calculateTableHeight);
+      resizeObserver.disconnect();
+    };
+  }, [data.length, bulkActionsProps?.selectedCount]);
 
   const handleRow = (record) => ({
     onClick: () => onRowClick(record._id),
   });
 
   return (
-    <div className="flex flex-col h-full">
-      {bulkActionsProps?.selectedCount > 0 && <BulkActions {...bulkActionsProps} />}
+    <div 
+      className="flex flex-col h-full" 
+      ref={containerRef}
+      style={{ height: '100%' }}
+    >
+      {bulkActionsProps?.selectedCount > 0 && (
+        <div ref={bulkActionsRef}>
+          <BulkActions {...bulkActionsProps} />
+        </div>
+      )}
       
-      <div className="flex-grow" ref={tableRef}>
+      <div className="flex-grow overflow-hidden">
         <Table
           rowSelection={rowSelection}
           columns={columns}
           dataSource={data.map(item => ({ ...item, key: item._id }))}
           pagination={false}
-          scroll={scrollConfig} // Dynamic scroll (y only if needed)
+          scroll={scrollConfig}
           className="service-now-table"
           rowClassName="hover:bg-gray-50 cursor-pointer"
           loading={loading}
@@ -148,7 +170,8 @@ const CategoryTable = ({
   );
 };
 
+// Attach sub-components
 CategoryTable.StatusCell = StatusCell;
 CategoryTable.BulkActions = BulkActions;
-export default CategoryTable;
 
+export default CategoryTable;

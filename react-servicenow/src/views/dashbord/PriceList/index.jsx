@@ -22,28 +22,29 @@ const PriceList = () => {
   const navigate = useNavigate();
   const {
     priceLists,
+    currentPage,
+    totalPages,
+    limit,
     loading,
     error
   } = useSelector(state => state.priceList);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [pageSize, setPageSize] = useState(10);
-  const [current, setCurrent] = useState(1);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   // Fetch data with debounced search
-  const fetchData = debounce((query) => {
-    dispatch(getPriceList({ q: query }));
+  const fetchData = debounce((query, page = currentPage, pageSize = limit) => {
+    dispatch(getPriceList({ 
+      q: query,
+      page,
+      limit: pageSize 
+    }));
   }, 500);
 
-
-  console.log(priceLists);
-  
-
   useEffect(() => {
-    fetchData(searchTerm);
+    fetchData(searchTerm, currentPage, limit);
     return () => fetchData.cancel();
-  }, [searchTerm]);
+  }, [searchTerm, currentPage, limit]);
 
   // Navigation handlers
   const navigateToCreate = () => navigate('/dashboard/price-list/create');
@@ -53,10 +54,15 @@ const PriceList = () => {
   const handleBulkDelete = () => {
     selectedRowKeys.forEach(id => dispatch(deletePriceList(id)));
     setSelectedRowKeys([]);
-    fetchData();
+    fetchData(searchTerm, currentPage, limit);
   };
 
   const handleClearSelection = () => setSelectedRowKeys([]);
+
+  // Handle pagination change
+  const handlePageChange = (page, pageSize) => {
+    fetchData(searchTerm, page, pageSize);
+  };
 
   const columns = [
     {
@@ -67,6 +73,7 @@ const PriceList = () => {
       ),
       dataIndex: 'name',
       key: 'name',
+      fixed: 'left',
       sorter: (a, b) => a.name.localeCompare(b.name),
       render: (text, record) => (
         <span
@@ -123,6 +130,7 @@ const PriceList = () => {
       title: 'Currency',
       dataIndex: 'currency',
       key: 'currency',
+      width: 100,
       render: (text) => text || 'N/A'
     },
     {
@@ -215,20 +223,19 @@ const PriceList = () => {
         )}
       </div>
 
-      {/* Pagination - Note: Adjust based on your API response structure */}
+      {/* Pagination */}
       {priceLists?.length > 0 && (
         <div className="sticky bottom-0 z-10 bg-white border-t border-gray-200 p-4">
           <div className="flex flex-col md:flex-row justify-center items-center gap-4">
             <Pagination
-              current={current}
-              total={priceLists.length}
-              pageSize={pageSize}
+              current={currentPage}
+              total={totalPages * limit}
+              pageSize={limit}
               className="mt-2 md:mt-0"
-              onChange={(page) => setCurrent(page)}
-              onShowSizeChange={(current, size) => setPageSize(size)}
+              onChange={handlePageChange}
             />
             <div className="text-gray-600 text-sm">
-              Showing {Math.min(current * pageSize, priceLists.length)} of {priceLists.length}
+              Showing {((currentPage - 1) * limit) + 1} to {Math.min(currentPage * limit, totalPages * limit)} of {totalPages * limit}
             </div>
           </div>
         </div>
