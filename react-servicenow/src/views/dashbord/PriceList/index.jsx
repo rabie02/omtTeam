@@ -73,6 +73,7 @@ const PriceList = () => {
       ),
       dataIndex: 'name',
       key: 'name',
+      fixed: 'left',
       sorter: (a, b) => a.name.localeCompare(b.name),
       render: (text, record) => (
         <span

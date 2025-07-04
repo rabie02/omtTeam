@@ -133,6 +133,7 @@ const ProductOfferingCatalog = () => {
       ),
       dataIndex: 'number',
       key: 'number',
+      fixed: 'left',
       sorter: (a, b) => a.number.localeCompare(b.number),
       render: (text, record) => (
         <span
