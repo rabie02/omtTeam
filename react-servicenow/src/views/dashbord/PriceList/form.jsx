@@ -398,6 +398,7 @@ function PriceListForm() {
                                         ? 'bg-gray-100 border-gray-400 text-gray-400 cursor-not-allowed'
                                         : 'bg-white border-cyan-700 text-cyan-700 hover:bg-cyan-50 cursor-pointer'
                                         } ${formik.isSubmitting ? 'opacity-70' : ''}`}
+                                    hidden={isEditMode}
                                 >
                                     {formik.isSubmitting ? (
                                         <span>Processing...</span>

@@ -6,7 +6,7 @@ const getAll = require('../../controllers/PriceList/getAllPriceList');
 const getOne = require('../../controllers/PriceList/getOnePriceList');
 const create = require('../../controllers/PriceList/createPriceList');
 const deletePrice = require('../../controllers/PriceList/deletePriceList')
-const getOne = require('../../controllers/PriceList/getOne');
+
 
 // Define routes
 router.get('/price-list', getAll);
