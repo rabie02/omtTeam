@@ -21,6 +21,7 @@ const confirmCreation = async (req, res) => {
     const { userData } = registration;
     let accountId;
     let accountSysId;
+    console.log("1",accountSysId);
 
     // Use either system token or ServiceNow credentials
     const authConfig = {
@@ -42,10 +43,21 @@ const confirmCreation = async (req, res) => {
 
     // Step 1: Handle account creation/update
     if (userData.token) {
-      try {
-        const decoded = jwt.verify(userData.token.replace('Bearer ', ''), process.env.JWT_SECRET);
-        accountSysId = decoded.id;
-        
+    try {
+      // Remove "Bearer " prefix if present
+      const rawToken = userData.token.replace('Bearer ', '');
+
+      // Base64 decode the token (this matches your ServiceNow encoding)
+      const decoded = Buffer.from(rawToken, 'base64').toString('utf-8'); // "accountSysId:guid"
+
+      // Split to extract the accountSysId and GUID
+      const [accountSysId, guid] = decoded.split(':');
+      console.log("2",accountSysId);
+
+      if (!accountSysId) {
+        throw new Error('Invalid token structure');
+      }
+
         const account = await Account.findOne({ sys_id: accountSysId });
         if (!account) throw new Error('Account not found in MongoDB');
         accountId = account._id;
@@ -65,6 +77,7 @@ const confirmCreation = async (req, res) => {
         console.error("Account update failed:", err);
         throw new Error("Account update failed: " + err.message);
       }
+      console.log("3",accountSysId);
     } else {
       const accountPayload = {
         name: userData.name,
@@ -77,7 +90,7 @@ const confirmCreation = async (req, res) => {
       accountId = newAccount._id;
       accountSysId = newAccount.sys_id;
     }
-
+    console.log("4",accountSysId);
     // Arrays to store created contact and location IDs
     const contactIds = [];
     const locationIds = [];
@@ -111,6 +124,18 @@ const confirmCreation = async (req, res) => {
           },
           authConfig
         );
+        if (index === 0) {
+          primaryContactSysId = contactResponse.data.servicenow.sys_id;
+          console.log("5",accountSysId);
+          // Update ServiceNow account with primary contact
+          await axios.patch(
+            `${config.serviceNow.url}/api/now/table/customer_account/${accountSysId}`,
+            {
+              primary_contact: primaryContactSysId
+            },
+            authConfig
+          );
+        }
 
         // Create location for this contact
         const locationResponse = await axios.post(

@@ -63,6 +63,7 @@ const ProductSpecification = () => {
             title: 'Name',
             dataIndex: 'name',
             key: 'name',
+            fixed: 'left',
             sorter: (a, b) => a.name?.localeCompare(b.name),
             render: (text, record) => (
                 <span
@@ -191,7 +192,7 @@ const ProductSpecification = () => {
                         className="mt-2 md:mt-0"
                     />
                     <div className="text-gray-600 text-sm">
-                        to  {Math.min(current * pageSize, totalItems)} of {totalItems}
+                        Showing {Math.min((current - 1) * pageSize + 1, totalItems)} to {Math.min(current * pageSize, totalItems)} of {totalItems}
                     </div>
                 </div>
             </div>

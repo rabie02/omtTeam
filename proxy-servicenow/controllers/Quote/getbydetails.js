@@ -1,36 +1,113 @@
-const mongoose = require('mongoose');
-const ProductOfferingCategory = require('../../models/ProductOfferingCategory');
-const CatalogCategoryRelation = require('../../models/CatalogCategoryRelationship');
+const Quote = require('../../models/quote');
+const mongoose= require('mongoose')
 
 module.exports = async (req, res) => {
   try {
-    const { id: categoryId } = req.params;
+    const quoteId = req.params.id; // Assuming the ID comes from URL params like /quotes/:id
 
-    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
-      return res.status(400).json({ error: 'Invalid category ID format.' });
+    // Build aggregation pipeline for a single quote
+    const pipeline = [
+      { $match: { _id: new mongoose.Types.ObjectId(quoteId) } }, // Match by ID first for efficiency
+      
+      // Opportunity lookup with null preservation
+      {
+        $lookup: {
+          from: 'opportunities',
+          localField: 'opportunity',
+          foreignField: '_id',
+          as: 'opportunity'
+        }
+      },
+      { $unwind: { path: '$opportunity', preserveNullAndEmptyArrays: true } },
+      
+      // Contracts lookup
+      {
+        $lookup: {
+          from: 'contracts',
+          localField: '_id',
+          foreignField: 'quote',
+          as: 'contracts'
+        }
+      },
+      
+      // Account lookup with nested population
+      {
+        $lookup: {
+          from: 'accounts',
+          localField: 'account',
+          foreignField: '_id',
+          as: 'account',
+          pipeline: [
+            { $lookup: {
+                from: 'contacts',
+                localField: '_id',
+                foreignField: 'account',
+                as: 'contacts',
+              } 
+            },
+            { $lookup: {
+                from: 'locations',
+                localField: '_id',
+                foreignField: 'account',
+                as: 'locations'
+              }
+            },
+          ]
+        }
+      },
+      { $unwind: { path: '$account', preserveNullAndEmptyArrays: true } },
+      
+      // Price list lookup
+      {
+        $lookup: {
+          from: 'price_lists',
+          localField: 'price_list',
+          foreignField: '_id',
+          as: 'price_list'
+        }
+      },
+      { $unwind: { path: '$price_list', preserveNullAndEmptyArrays: true } },
+      
+      // Quote lines lookup with product offerings
+      {
+        $lookup: {
+          from: 'quotelines',
+          let: { quoteId: '$_id' },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$quote', '$$quoteId'] } } },
+            { $lookup: {
+                from: 'productofferings',
+                localField: 'product_offering',
+                foreignField: '_id',
+                as: 'product_offering'
+              }
+            },
+            { $unwind: { path: '$product_offering', preserveNullAndEmptyArrays: true } },
+            { $lookup: {
+                from: 'price_lists',
+                localField: 'price_list',
+                foreignField: '_id',
+                as: 'price_list'
+              }
+            },
+            { $unwind: { path: '$price_list', preserveNullAndEmptyArrays: true } }
+          ],
+          as: 'quote_lines'
+        }
+      }
+    ];
+
+    const result = await Quote.aggregate(pipeline);
+    
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Quote not found' });
     }
 
-    const category = await ProductOfferingCategory.findById(categoryId)
-      .populate('productOffering')  // now works due to virtual
-      .lean();
-
-    if (!category) {
-      return res.status(404).json({ error: 'Category not found.' });
-    }
-
-    const relations = await CatalogCategoryRelation.find({ category: categoryId })
-      .populate('catalog')  // catalog must be defined as ref in CatalogCategoryRelation
-      .lean();
-
-    category.catalogs = relations.map(r => r.catalog).filter(Boolean);
-
-    return res.json(category);
-
-  } catch (error) {
-    console.error('Error fetching category:', error);
-    return res.status(500).json({
-      error: 'Internal server error',
-      details: error.message
+    res.json(result[0]); // Return the first (and only) result
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
   }
 };

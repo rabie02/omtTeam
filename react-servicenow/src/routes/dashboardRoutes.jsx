@@ -15,9 +15,12 @@ import AiSearch from '../views/dashbord/ai-search';
 import Quote from '../views/dashbord/Quote/index';
 import QuoteFormPage from '../views/dashbord/Quote/form'
 import Profile from '../views/dashbord/ProfilePage'
-import Opportunity from '../views/dashbord/Opportunity';
+import Opportunity from '../views/dashbord/Opportunity/index';
+import OpportunityFormPage from '../views/dashbord/Opportunity/form';
 import PriceList from '../views/dashbord/PriceList';
+import PriceListForm from '../views/dashbord/PriceList/form';
 import Account from '../views/dashbord/Account';
+import ProductDetails from '../views/dashbord/productdetail';  
 import Contact from '../views/dashbord/Contact';
 import Location from '../views/dashbord/Location';
 
@@ -65,8 +68,24 @@ const dashboardRoutes = {
       path: 'product-specification/view/:id',
       element: <ProductSpecificationFormPage />
     },
+    {
+      path: 'opportunity/edit/:id',
+      element: <OpportunityFormPage />
+    },
+    {
+      path: 'opportunity/create',
+      element: <OpportunityFormPage />
+    },
     { path: 'opportunity', element: <Opportunity /> },
     { path: 'price-list', element: <PriceList /> },
+    {
+      path: 'price-list/edit/:id',
+      element: <PriceListForm />
+    },
+    {
+      path: 'price-list/create',
+      element: <PriceListForm />
+    },
     { path: 'help', element: <AiSearch /> },
     { path: 'quote', element: <Quote /> },
     {

@@ -1,8 +1,8 @@
-// src/components/categories/CategoryTable.jsx
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Table, Badge, Tooltip, Popconfirm, Button } from 'antd';
+import { useMediaQuery } from 'react-responsive';
 
-// Integrated StatusCell component
+// StatusCell Component
 const StatusCell = ({ status }) => {
   const statusColors = {
     active: { dot: 'bg-green-500', text: 'text-green-700' },
@@ -25,7 +25,7 @@ const StatusCell = ({ status }) => {
   );
 };
 
-// Integrated BulkActions component
+// BulkActions Component
 const BulkActions = ({ 
   selectedCount, 
   onDelete, 
@@ -40,7 +40,7 @@ const BulkActions = ({
             className="text-white font-medium"
           />
           <span className="ml-2 text-gray-700 font-medium">
-            {selectedCount} item{selectedCount > 1 ? 's' : ''} selected
+             item{selectedCount > 1 ? 's' : ''} selected
           </span>
         </div>
 
@@ -77,7 +77,7 @@ const BulkActions = ({
   </div>
 );
 
-// Main Table Component with integrated sub-components
+// Main CategoryTable Component
 const CategoryTable = ({ 
   data, 
   columns, 
@@ -87,25 +87,78 @@ const CategoryTable = ({
   onRowClick,
   bulkActionsProps
 }) => {
+  const [scrollConfig, setScrollConfig] = useState({ x: 'max-content', y: undefined });
+  const containerRef = useRef(null);
+  const bulkActionsRef = useRef(null);
+  const ROW_HEIGHT = 55;
+  const MIN_HEIGHT = 200;
+  const PAGINATION_HEIGHT = 43; // Approx height of pagination component
+
+  useEffect(() => {
+    const calculateTableHeight = () => {
+      if (!containerRef.current) return;
+
+      // Calculate total available height
+      const containerHeight = containerRef.current.clientHeight;
+      
+      // Calculate BulkActions height if visible
+      const bulkActionsHeight = bulkActionsProps?.selectedCount > 0 
+        ? (bulkActionsRef.current?.clientHeight || 60) 
+        : 0;
+
+      // Calculate available height for table (subtract both BulkActions and Pagination)
+      const availableHeight = containerHeight - bulkActionsHeight - PAGINATION_HEIGHT;
+      
+      // Calculate needed height based on rows
+      const contentHeight = data.length * ROW_HEIGHT;
+
+      // Determine final table height
+      const tableHeight = Math.max(
+        MIN_HEIGHT,
+        Math.min(contentHeight, availableHeight)
+      );
+
+      setScrollConfig({
+        x: 'max-content',
+        y: contentHeight > availableHeight ? tableHeight : undefined,
+      });
+    };
+
+    calculateTableHeight();
+    
+    const resizeObserver = new ResizeObserver(calculateTableHeight);
+    resizeObserver.observe(containerRef.current);
+    
+    window.addEventListener('resize', calculateTableHeight);
+    return () => {
+      window.removeEventListener('resize', calculateTableHeight);
+      resizeObserver.disconnect();
+    };
+  }, [data.length, bulkActionsProps?.selectedCount]);
+
   const handleRow = (record) => ({
-    onClick: () => onRowClick(record._id)
+    onClick: () => onRowClick(record._id),
   });
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Bulk Actions */}
-      {bulkActionsProps && bulkActionsProps.selectedCount > 0 && (
-        <BulkActions {...bulkActionsProps} />
+    <div 
+      className="flex flex-col h-full" 
+      ref={containerRef}
+      style={{ height: '100%' }}
+    >
+      {bulkActionsProps?.selectedCount > 0 && (
+        <div ref={bulkActionsRef}>
+          <BulkActions {...bulkActionsProps} />
+        </div>
       )}
       
-      {/* Main Table */}
-      <div className="flex-grow overflow-auto">
+      <div className="flex-grow overflow-hidden">
         <Table
           rowSelection={rowSelection}
           columns={columns}
           dataSource={data.map(item => ({ ...item, key: item._id }))}
           pagination={false}
-          scroll={{ x: 'max-content' }}
+          scroll={scrollConfig}
           className="service-now-table"
           rowClassName="hover:bg-gray-50 cursor-pointer"
           loading={loading}
@@ -117,7 +170,7 @@ const CategoryTable = ({
   );
 };
 
-// Attach sub-components to main component
+// Attach sub-components
 CategoryTable.StatusCell = StatusCell;
 CategoryTable.BulkActions = BulkActions;
 

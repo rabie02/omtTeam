@@ -20,7 +20,7 @@ const PrivateRoute = ({ children }) => {
   if (!token || !isTokenValid(token)) {
     // Clear invalid token
     localStorage.removeItem('access_token');
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return children;

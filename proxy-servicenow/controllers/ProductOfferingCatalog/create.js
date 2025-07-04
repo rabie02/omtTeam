@@ -24,10 +24,11 @@ module.exports = async (req, res) => {
       code: body.code,
       description: body.description || '',
       start_date: body.start_date || new Date().toISOString(),
-      start_end: body.start_end || null,
+      end_date: body.end_date || null,
       status: "draft",
       external_id: newId.toString()  // Set external_id to MongoDB _id
     };
+    
 
     const snResponse = await axios.post(
       `${process.env.SERVICE_NOW_URL}/api/now/table/sn_prd_pm_product_offering_catalog`,

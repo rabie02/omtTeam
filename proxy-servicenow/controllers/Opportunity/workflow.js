@@ -1,5 +1,4 @@
 const express = require('express');
-const router = express.Router();
 const handleMongoError = require('../../utils/handleMongoError');
 // Import controllers
 const createOpportunity = require('./createOpportunity');
@@ -7,6 +6,7 @@ const createPriceList = require('../PriceList/createPriceList');
 const createPOPrice = require('../ProductOfferingPrice/createProductOfferingPrice');
 const createOpportunityLineItem = require('../OpportunityLine/createOpportunityLine');
 const createAccount = require('../account/create');
+const createContact = require('../contact/create');
 const getOpportunityWithDetails = require("./getOpportuntityWithdetails");
 
 const Account = require("../../models/account");
@@ -28,10 +28,22 @@ module.exports = async (req, res) => {
     //create account or use an existing one
     payload.body = acc;
     account = acc.name !== "" ? await createAccount(payload) : await Account.findById(op.account);
+    //create contact to send notifications
+    console.log(JSON.stringify(account,null,2));
+    payload.body={
+      firstName: acc.name,
+      lastName: "",
+      email: acc.email,
+      phone: "",
+      account: account?._id,
+      isPrimaryContact: true,
+      active: true,
+    }
+    contact = acc.name !=="" && await createContact(payload);
 
     // Create price list if needed
     if (createNewPriceList) {
-      payload.body = {...pl, "account": account.sys_id.toString()};
+      payload.body = {...pl, "account": account.mongodb?.sys_id.toString() || account.sys_id.toString()};
       priceList = await createPriceList(payload);
     }
     
@@ -65,6 +77,8 @@ module.exports = async (req, res) => {
       opportunity: opportunity._id,
       unit_of_measurement: po.unitOfMeasure.id,
     };
+
+    console.log(JSON.stringify());
 
     const opLineItem = await createOpportunityLineItem(payload);
     

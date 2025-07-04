@@ -13,6 +13,8 @@ import quoteReducer from "../features/servicenow/quote/quotaSlice"
 import accountReducer from '../features/servicenow/account/accountSlice';
 import contactReducer from '../features/servicenow/contact/contactSlice';
 import locationReducer from '../features/servicenow/location/locationSlice';
+import contractQReducer from '../features/servicenow/contract-q/contractQSlice';
+import contractModelReducer from '../features/servicenow/contract-model/contractModelSlice';
 
 const store = configureStore({
   reducer: {
@@ -29,7 +31,9 @@ const store = configureStore({
     account: accountReducer,
     contact: contactReducer,
     location: locationReducer,
-    productOfferingPrice: productOfferingPriceReducer
+    productOfferingPrice: productOfferingPriceReducer,
+    contractQ: contractQReducer,
+    contractModel: contractModelReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -11,7 +11,6 @@ import {
   Button,
   Space,
   Popconfirm,
-  Tag,
   Pagination,
   Spin,
   Tooltip,
@@ -46,18 +45,6 @@ const ProductOfferingCatalog = () => {
 
   // Row selection state
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const selectionType = 'checkbox';
-
-  // Row selection configuration
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: (selectedKeys) => {
-      setSelectedRowKeys(selectedKeys);
-    },
-    getCheckboxProps: (record) => ({
-      disabled: record.status === 'inactive',
-    }),
-  };
 
   // Measure header height for sticky offset
   useEffect(() => {
@@ -91,58 +78,62 @@ const ProductOfferingCatalog = () => {
     navigate('/dashboard/catalog/create');
   };
 
-
-  // Custom sort indicator using remixicon classes
-  const renderSortIndicator = (field) => {
-    if (sortConfig.field !== field) {
-      return <i className="ri-arrow-up-line text-gray-400"></i>;
-    }
-
-    return sortConfig.direction === 'asc' ? (
-      <i className="ri-arrow-up-line text-blue-600"></i>
-    ) : (
-      <i className="ri-arrow-down-line text-blue-600"></i>
-    );
-  };
-
   // Handle number click to navigate to edit page
   const handleNumberClick = (id) => {
     navigate(`/dashboard/catalog/edit/${id}`);
   };
 
-  // Handle bulk actions
+  // Handle bulk actions with published category check
   const handleBulkDelete = () => {
-    selectedRowKeys.forEach(id => dispatch(deleteCatalog(id)));
+    const deletableKeys = selectedRowKeys.filter(key => {
+      const record = data.find(item => item._id === key);
+      return !record?.categories?.some(category => category.status === 'published');
+    });
+    
+    deletableKeys.forEach(id => dispatch(deleteCatalog(id)));
     setSelectedRowKeys([]);
-     fetchData();
+    fetchData();
   };
 
   const handleBulkStatusChange = (status) => {
-    selectedRowKeys.forEach(id =>
+    const updatableKeys = selectedRowKeys.filter(key => {
+      const record = data.find(item => item._id === key);
+      return !record?.categories?.some(category => category.status === 'published');
+    });
+    
+    updatableKeys.forEach(id =>
       dispatch(updateCatalogStatus({ id, status }))
     );
     setSelectedRowKeys([]);
   };
 
-  // ServiceNow-inspired category colors
-  const categoryColorMap = {
-    hardware: { color: '#0b5fff', bg: '#e6f0ff' },
-    software: { color: '#6f42c1', bg: '#f0e6ff' },
-    service: { color: '#28a745', bg: '#e6f7ec' },
-    bundle: { color: '#fd7e14', bg: '#fef5e7' },
-    default: { color: '#6c757d', bg: '#f0f0f0' },
+  // Custom row selection configuration
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (selectedKeys) => {
+      setSelectedRowKeys(selectedKeys);
+    },
+    getCheckboxProps: (record) => {
+      const hasPublishedCategory = record.categories?.some(category => category.status === 'published') || false;
+      return {
+        disabled: hasPublishedCategory,
+        // This will show a native tooltip on hover for disabled checkboxes
+        title: hasPublishedCategory ? "Cannot select catalog with published categories" : undefined
+      };
+    },
   };
 
   // Table columns configuration
   const columns = [
     {
       title: (
-        <div className="flex items-center  font-semibold">
+        <div className="flex items-center font-semibold">
           <span>Number</span>
         </div>
       ),
       dataIndex: 'number',
       key: 'number',
+      fixed: 'left',
       sorter: (a, b) => a.number.localeCompare(b.number),
       render: (text, record) => (
         <span
@@ -153,18 +144,17 @@ const ProductOfferingCatalog = () => {
         </span>
       )
     },
-      {
-            title: 'Name',
-            dataIndex: 'name',
-            key: 'name',
-            sorter: (a, b) => a.name.localeCompare(b.name),
-        },
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+      sorter: (a, b) => a.name.localeCompare(b.name),
+    },
     {
       title: <span className="font-semibold">Status</span>,
       dataIndex: 'status',
       key: 'status',
       render: (status) => {
-        // Define color mapping for all statuses
         const statusColors = {
           published: {
             dot: 'bg-green-500',
@@ -184,7 +174,6 @@ const ProductOfferingCatalog = () => {
           }
         };
 
-        // Get colors for current status or use archived as default
         const colors = statusColors[status] || statusColors.archived;
         const displayText = status ?
           status.charAt(0).toUpperCase() + status.slice(1) :
@@ -269,15 +258,15 @@ const ProductOfferingCatalog = () => {
 
         {/* Bulk Actions Toolbar with Animation */}
         <div
-          className="overflow-hidden transition-all duration-300 ease-in-out "
+          className="overflow-hidden transition-all duration-300 ease-in-out"
           style={{
             maxHeight: selectedRowKeys.length > 0 ? '100px' : '0',
             opacity: selectedRowKeys.length > 0 ? 1 : 0
           }}
         >
-          <div className="bg-gray-50 shadow-sm  border-y border-gray-300">
+          <div className="bg-gray-50 shadow-sm border-y border-gray-300">
             <div className="flex flex-wrap items-center bg-gray-200 justify-between gap-3 p-3 mx-6">
-              <div className="flex items-center tableX">
+              <div className="flex items-center">
                 <Badge
                   count={selectedRowKeys.length}
                   className="text-white font-medium"
@@ -343,17 +332,19 @@ const ProductOfferingCatalog = () => {
           </div>
         ) : (
           <Table
-            rowSelection={Object.assign({ type: selectionType }, rowSelection)}
+            rowSelection={rowSelection}
             columns={columns}
             dataSource={data.map(item => ({ ...item, key: item._id }))}
             pagination={false}
             scroll={{ x: 'max-content' }}
             sticky={{
-              // offsetHeader: headerHeight,
               offsetScroll: 0,
             }}
             className="service-now-table relative"
-            rowClassName="hover:bg-gray-50"
+            rowClassName={(record) => {
+              const hasPublishedCategory = record.categories?.some(category => category.status === 'published') || false;
+              return hasPublishedCategory ? 'disabled-row' : '';
+            }}
             locale={{
               emptyText: (
                 <div className="py-12 text-center">
@@ -377,24 +368,19 @@ const ProductOfferingCatalog = () => {
       {/* Sticky Pagination at Bottom */}
       <div className="sticky bottom-0 z-10 bg-white border-t border-gray-200 p-4">
         <div className="flex flex-col md:flex-row justify-center items-center gap-4">
-
           <Pagination
             current={current}
             total={totalItems}
             pageSize={pageSize}
-            // onChange={(page, size) => {
-            //   setCurrent(page);
-            //   setPageSize(size);
-            // }}
-            // showSizeChanger
-            // pageSizeOptions={[10, 20, 50, 100]}
+            onChange={(page) => {
+              setCurrent(page);
+            }}
             className="mt-2 md:mt-0"
           />
           <div className="text-gray-600 text-sm">
-            to  {Math.min(current * pageSize, totalItems)} of {totalItems}
+            Showing {Math.min((current - 1) * pageSize + 1, totalItems)} to {Math.min(current * pageSize, totalItems)} of {totalItems}
           </div>
         </div>
-
       </div>
     </div>
   );

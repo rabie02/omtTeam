@@ -59,7 +59,9 @@ const FormInput = ({ formik, name, label, type = 'text', inputRef, autoFocus, ..
         className={`w-full border rounded px-3 py-2 ${touched && error ? 'border-red-500' : 'border-gray-300'} disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500`}
         ref={inputRef}
         autoFocus={autoFocus}
+        onKeyDown={(e)=>{type === "date" ? e.preventDefault(): console.log()}}
         {...props}
+        
       />
       {props.description && <p className="text-gray-400 text-sm">{props.description}</p>}
       {touched && error && (
