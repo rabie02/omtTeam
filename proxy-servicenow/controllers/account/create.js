@@ -2,6 +2,8 @@ const axios = require('axios');
 const snConnection = require('../../utils/servicenowConnection');
 const handleMongoError = require('../../utils/handleMongoError');
 const Account = require('../../models/account');
+const mongoose = require('mongoose');
+
 
 async function createAccount(req, res=null) {
   try {
@@ -29,23 +31,32 @@ async function createAccount(req, res=null) {
     }
     
     console.log('Creating account in ServiceNow with payload:', req.body);
-    
+   
+    const newId = new mongoose.Types.ObjectId();
+
+    const snPay = {
+      ...req.body,
+      sn_tmt_core_external_id: newId
+    }
+
     // Step 1: Create in ServiceNow first
     const connection = snConnection.getConnection(req.user.sn_access_token);
     const snResponse = await axios.post(
       `${connection.baseURL}/api/now/table/customer_account`, 
-      req.body,
+      snPay,
       { headers: connection.headers }
     );
     
     console.log('Account created in ServiceNow:', snResponse.data.result.sys_id);
-    
+    const mongoPAy ={
+      _id:newId,
+      sys_id: snResponse.data.result.sys_id,
+      number: snResponse.data.result.number,
+      ...snResponse.data.result
+    }
     // Step 2: Create in MongoDB with ServiceNow response data
     try {
-      const account = new Account({
-        sys_id: snResponse.data.result.sys_id,
-        ...req.body
-    });
+      const account = new Account(mongoPAy);
       const savedAccount = await account.save();
       console.log('Account created in MongoDB:', savedAccount._id);
 
