@@ -52,10 +52,7 @@ export const getOnePriceList = createAsyncThunk(
     try {
       const response = await axios.get(
         `${backendUrl}/api/price-list/${id}`,
-        {
-          headers: getHeaders(),
-          
-        }
+        {headers: getHeaders()}
       );
       return response.data;
     } catch (error) {
@@ -105,6 +102,9 @@ const priceListSlice = createSlice({
     },
     setCurrentPriceList: (state, action) => {
       state.currentPriceList = action.payload;
+    },
+    resetCurrentPriceList: (state)=>{
+      state.currentPriceList = null;
     }
   },
   extraReducers: (builder) => {
@@ -163,6 +163,6 @@ const priceListSlice = createSlice({
   },
 });
 
-export const { resetError, setCurrentPage, setCurrentPriceList } = priceListSlice.actions;
+export const { resetError, setCurrentPage, setCurrentPriceList, resetCurrentPriceList } = priceListSlice.actions;
 
 export default priceListSlice.reducer;

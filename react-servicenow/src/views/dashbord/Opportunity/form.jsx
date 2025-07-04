@@ -513,7 +513,14 @@ const OpportunityFormPage = () => {
       title: 'Product Offering',
       dataIndex: ['productOffering', 'name'],
       key: 'productOffering',
-      render: (text) => <span className="text-gray-700">{text}</span>
+       render: (text, record) => (
+                <span
+                    className="text-cyan-600 font-medium hover:underline cursor-pointer"
+                    onClick={() => navigate(`/dashboard/product-offering/edit/${record.productOffering._id}`)}
+                >
+                    {text}
+                </span>
+            )
     },
     {
       title: 'Price',
@@ -544,7 +551,14 @@ const OpportunityFormPage = () => {
       title: 'Number',
       dataIndex: 'number',
       key: 'number',
-      render: (text) => <span className="font-medium">{text}</span>
+      render: (text, record) => (
+                <span
+                    className="text-cyan-600 font-medium hover:underline cursor-pointer"
+                    onClick={() => navigate(`/dashboard/quote/edit/${record._id}`)}
+                >
+                    {text}
+                </span>
+            )
     },
     {
       title: 'State',
